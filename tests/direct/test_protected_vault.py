@@ -20,3 +20,21 @@ def test_gate_pause_expires_by_transaction_time(direct_vm, direct_deploy, direct
     direct_vm.warp("2026-09-27T20:31:00Z")
     status = json.loads(vault.get_status_json())
     assert status["withdrawals_paused"] is False
+
+
+def test_deposit_withdraw_and_value_accounting(direct_vm, direct_deploy, direct_alice):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 10**16
+
+    direct_vm.sender = direct_alice
+    direct_vm.value = amount
+    assert int(vault.deposit()) == amount
+    status = json.loads(vault.get_status_json())
+    assert int(status["total_credits"]) == amount
+    assert int(vault.get_credit(to_hex(direct_alice))) == amount
+
+    direct_vm.value = 0
+    assert int(vault.withdraw(amount // 2)) == amount // 2
+    status = json.loads(vault.get_status_json())
+    assert int(status["total_credits"]) == amount // 2
+    assert int(vault.get_credit(to_hex(direct_alice))) == amount // 2

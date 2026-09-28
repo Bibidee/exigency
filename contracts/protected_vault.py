@@ -74,7 +74,7 @@ class ProtectedVault(gl.Contract):
         amount = gl.message.value
         if amount == u256(0):
             raise gl.vm.UserError("deposit value must be greater than zero")
-        holder = gl.message.sender_address.as_hex
+        holder = _address_hex(gl.message.sender_address)
         current = self.credits.get(holder, u256(0))
         self.credits[holder] = current + amount
         self.total_credits = self.total_credits + amount
@@ -86,7 +86,7 @@ class ProtectedVault(gl.Contract):
             raise gl.vm.UserError("withdrawals are temporarily paused")
         if amount == u256(0):
             raise gl.vm.UserError("withdraw amount must be greater than zero")
-        holder = gl.message.sender_address.as_hex
+        holder = _address_hex(gl.message.sender_address)
         current = self.credits.get(holder, u256(0))
         if current < amount:
             raise gl.vm.UserError("insufficient vault credit")
