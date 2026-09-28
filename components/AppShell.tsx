@@ -12,7 +12,7 @@ const nav = [
   { href: "/vault", label: "Vault", icon: Vault },
 ];
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+export default function AppShell({ children, onWalletConnected }: { children: React.ReactNode; onWalletConnected?: (address: `0x${string}`) => void }) {
   const pathname = usePathname();
   return (
     <div className="app-shell">
@@ -34,7 +34,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="rail-footer">
           <div className="network-chip"><RadioTower size={14} /> Studionet 61999</div>
-          <WalletButton compact />
+          <WalletButton compact onConnected={onWalletConnected} />
         </div>
       </aside>
       <main className="workspace">{children}</main>
