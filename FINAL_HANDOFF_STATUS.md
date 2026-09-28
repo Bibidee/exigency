@@ -26,7 +26,7 @@
 
 ## Verified in the current workspace
 
-See `VALIDATION_REPORT.md` and `REVIEW_EVIDENCE.md`. The local CLI is 0.39.1, toolchain guard, typecheck and production build pass; unit tests are 10/10 and Direct Mode is 8/8. The repository remote is configured and the final source commit is `fd1ac1c`. Four contracts are recorded on Studionet 61999 and the production frontend is live at https://exigency.vercel.app.
+See `VALIDATION_REPORT.md` and `REVIEW_EVIDENCE.md`. The local CLI is 0.39.1, toolchain guard, typecheck and production build pass; unit tests are 10/10 and Direct Mode is 8/8. The repository remote is configured and the final source commit is `17654be`. Four contracts are recorded on Studionet 61999 and the production frontend is live at https://exigency.vercel.app.
 
 ## Still required before final reviewer-ready completion
 
@@ -36,5 +36,6 @@ See `VALIDATION_REPORT.md` and `REVIEW_EVIDENCE.md`. The local CLI is 0.39.1, to
 - A live no-authority lifecycle has been observed and recorded. During it, the stable web response shape exposed a compatibility defect; the engine now accepts both CLI-native evidence arrays and stable response status/body shapes, with 13 unit tests passing and a fresh four-contract deployment finalized.
 - The newest deployment has a manually observed complete positive lifecycle: finalized `TRIGGER_CONFIRMED`, capability issuance, exact one-time execution, finalized ProtectedVault pause child, actual paused state, and replay rejection. Exact values are in `REVIEW_EVIDENCE.md`.
 - Exact deployed-source verification passes for all four contracts, and Vercel production has been redeployed and verified at https://exigency.vercel.app.
+- GitHub Actions is green for the final wallet-compatible commit. The Brave connection path now requests the account before network switching, formats provider errors, avoids the unsupported `wallet_getSnaps` handshake, and preserves the bottom-left wallet control.
 - Re-run exact deployed-source provenance when the Studionet RPC exposes contract bytes; the latest run could not retrieve them.
 - Update this file and `REVIEW_EVIDENCE.md` only with observed values.

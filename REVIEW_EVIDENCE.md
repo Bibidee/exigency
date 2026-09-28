@@ -6,7 +6,7 @@ This file records checks observed in the current workspace on 2026-09-28. Missin
 
 - Repository path: `C:\Users\ojiku\Downloads\EXIGENT\exigent`
 - Git remote: `https://github.com/Bibidee/exigency.git`
-- Final source commit: `fd1ac1c` (`wait for finalized Studionet receipts in frontend`)
+- Final source commit: `17654be` (`avoid unsupported wallet snaps handshake`)
 - Node: `v22.22.2`
 - npm: `10.9.7`
 - Local GenLayer CLI: `0.39.1` (`npx --no-install genlayer --version`)
@@ -39,6 +39,8 @@ This file records checks observed in the current workspace on 2026-09-28. Missin
 - Latest exact `gltest tests/integration -v -s --network studionet`: **1 passed**; the live test verified the manifest chain/RPC and read the deployed CharterRegistry and ProtectedVault state.
 - Production frontend: [https://exigency.vercel.app](https://exigency.vercel.app), HTTP 200 observed.
 - Production frontend redeployment: latest linked Vercel deployment `dpl_BttnN7MmKF6TRhKM46thGV2LaJRo` reached READY; `https://exigency.vercel.app`, `/command`, and `/vault` each returned HTTP 200 after the alias update.
+- Latest wallet-compatible Vercel deployment: `dpl_CYtPEaeSy18PLduDimysamc3qSjj` reached READY and `https://exigency.vercel.app` was aliased to it. Browser verification confirmed the wallet controls retain the connected address instead of displaying `[object Object]`; the provider no longer invokes unsupported `wallet_getSnaps` during connection or writes.
+- GitHub Actions for commits `2429783`, `7a98a5a`, and `17654be`: all completed successfully across Python, contract-validation, and frontend jobs.
 - Latest `npm run source:verify`: **PASS**. All four deployed SHA-256 values exactly matched repository source bytes: CharterRegistry `a8a8619b5882c7b82611bbbb9bb4c2c60d68670348a21ecfde4d6d18fcf3e638`; ExigencyEngine `937c25d5345a8890c23ccc968d49d7425d3506a933f72e27f35ccd4750a0bcef`; CapabilityGate `028325b29f6eebfb2fe31fd863514f355370167ed33a3af55b7db213d3d68c6a`; ProtectedVault `76953de7cc9b6cca9af8e6902d700a97ed68a14c60d6465e32eff0509a912a49`.
 
 ## Source changes made
