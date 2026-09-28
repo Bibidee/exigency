@@ -158,7 +158,10 @@ def test_live_studionet_lifecycle_writes():
     incident = f"CI-INC-{stamp}"
     protocol = f"CI-PROTOCOL-{stamp}"
     target = contracts["protectedVault"]
-    source = "https://raw.githubusercontent.com/Bibidee/exigency/main/README.md"
+    sources = [
+        "https://raw.githubusercontent.com/Bibidee/exigency/main/demo/evidence/active_incident_primary.md",
+        "https://raw.githubusercontent.com/Bibidee/exigency/main/demo/evidence/active_incident_secondary.md",
+    ]
 
     _finalize(_cli_write(
         contracts["charterRegistry"],
@@ -175,7 +178,7 @@ def test_live_studionet_lifecycle_writes():
         contracts["exigencyEngine"], "open_incident", incident, charter,
         "PAUSE_WITHDRAWALS", "10",
         "Automated live integration incident verifying source-grounded emergency authority and exact capability execution.",
-        json.dumps([source]),
+        json.dumps(sources),
     ))
     _finalize(_cli_write(contracts["exigencyEngine"], "assess_incident", incident))
     record = {}
