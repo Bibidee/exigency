@@ -30,11 +30,11 @@ See `VALIDATION_REPORT.md` and `REVIEW_EVIDENCE.md`. The local CLI is 0.39.1, to
 
 ## Still required before final reviewer-ready completion
 
-- The real `tests/integration/test_exigent_studionet.py` smoke test now runs against live Studionet; the exact `gltest tests/integration -v -s --network studionet` command passed.
-- Capture finalized charter publication, delayed activation rejection/success, deposit, incident, semantic assessment, capability child, exact execution, vault pause, replay rejection, direct-vault rejection and no-authority evidence.
+- The real `tests/integration/test_exigent_studionet.py` smoke test now runs against live Studionet; the exact read-only `gltest tests/integration -v -s --network studionet` command passed. The write lifecycle is implemented and opt-in, but its latest run did not complete because Studionet finality stalled; no automated write pass is claimed.
+- Manual live evidence includes finalized charter publication, delayed activation rejection/success, incident, semantic assessment, capability child, exact execution, vault pause, replay rejection, direct-vault rejection and no-authority evidence. Deposit/withdrawal value accounting is covered by passing Direct Mode tests; a wallet-mediated live deposit/withdrawal remains account/browser-specific and is not claimed as completed.
 - GenVM lint and validate now pass for all four contracts; the results are recorded in `REVIEW_EVIDENCE.md`.
 - A live no-authority lifecycle has been observed and recorded. During it, the stable web response shape exposed a compatibility defect; the engine now accepts both CLI-native evidence arrays and stable response status/body shapes, with 13 unit tests passing and a fresh four-contract deployment finalized.
-- The newest deployment now has a complete positive lifecycle: finalized `TRIGGER_CONFIRMED`, capability issuance, exact one-time execution, finalized ProtectedVault pause child, actual paused state, and replay rejection. Exact values are in `REVIEW_EVIDENCE.md`.
+- The newest deployment has a manually observed complete positive lifecycle: finalized `TRIGGER_CONFIRMED`, capability issuance, exact one-time execution, finalized ProtectedVault pause child, actual paused state, and replay rejection. Exact values are in `REVIEW_EVIDENCE.md`.
 - Exact deployed-source verification passes for all four contracts, and Vercel production has been redeployed and verified at https://exigency.vercel.app.
 - Re-run exact deployed-source provenance when the Studionet RPC exposes contract bytes; the latest run could not retrieve them.
 - Update this file and `REVIEW_EVIDENCE.md` only with observed values.

@@ -1,9 +1,9 @@
 """Opt-in live Studionet smoke checks.
 
 These checks use the repository-local GenLayer CLI and the deployed manifest;
-they do not mock contract state.  The full transaction lifecycle evidence is
-recorded separately in REVIEW_EVIDENCE.md because it uses fresh, expiring
-capabilities and must not be replayed automatically by CI.
+they do not mock contract state. The read-only check is safe for CI, while the
+complete write lifecycle is explicitly opt-in because it creates fresh
+on-chain records and consumes a funded, unlocked account.
 """
 
 import json
@@ -37,7 +37,14 @@ def _cli_call(address: str, method: str, *args: str) -> str:
     ]
     if args:
         command.extend(["--args", *args])
-    result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=True)
+    result = subprocess.run(
+        command,
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+        shell=os.name == "nt",
+    )
     marker = "Result:\n"
     if marker not in result.stdout:
         raise AssertionError(f"CLI did not return a result for {method}: {result.stdout}")
@@ -58,7 +65,14 @@ def _cli_write(address: str, method: str, *args: str) -> str:
     if args:
         encoded = [json.dumps(arg) if any(ch.isspace() for ch in arg) else arg for arg in args]
         command.extend(["--args", *encoded])
-    result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=True)
+    result = subprocess.run(
+        command,
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+        shell=os.name == "nt",
+    )
     return f"{result.stdout}\n{result.stderr}"
 
 
@@ -67,6 +81,8 @@ def _finalize(stdout: str) -> None:
     assert marker in stdout, stdout
     tx_hash = stdout.split(marker, 1)[1].strip().splitlines()[0].strip()
     assert tx_hash.startswith("0x"), stdout
+    retries = os.environ.get("EXIGENT_LIVE_RECEIPT_RETRIES", "36")
+    interval = os.environ.get("EXIGENT_LIVE_RECEIPT_INTERVAL_MS", "5000")
     command = [
         "npx.cmd" if os.name == "nt" else "npx",
         "--no-install",
@@ -75,10 +91,25 @@ def _finalize(stdout: str) -> None:
         tx_hash,
         "--status",
         "FINALIZED",
+        "--retries",
+        retries,
+        "--interval",
+        interval,
         "--rpc",
         "https://studio.genlayer.com/api",
     ]
-    subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=True)
+    result = subprocess.run(
+        command,
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        shell=os.name == "nt",
+    )
+    if result.returncode:
+        raise AssertionError(
+            f"Studionet transaction did not reach FINALIZED: {tx_hash}\n"
+            f"{result.stdout}\n{result.stderr}"
+        )
 
 
 def test_live_studionet_manifest_and_contract_reads():
