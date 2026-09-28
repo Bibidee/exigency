@@ -6,15 +6,19 @@ import { TransactionHashVariant } from "genlayer-js/types";
 import { NETWORK } from "@/lib/config";
 
 type ProviderError = Error & { code?: number };
+type InjectedProvider = {
+  request(args: { method: string; params?: unknown[] }): Promise<unknown>;
+  on?: (event: string, handler: (...args: unknown[]) => void) => void;
+  removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
+  isBraveWallet?: boolean;
+  isMetaMask?: boolean;
+  isCoinbaseWallet?: boolean;
+  providers?: InjectedProvider[];
+};
 
 declare global {
   interface Window {
-    ethereum?: {
-      request(args: { method: string; params?: unknown[] }): Promise<unknown>;
-      on?: (event: string, handler: (...args: unknown[]) => void) => void;
-      removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
-      providers?: Array<Window["ethereum"] & { isBraveWallet?: boolean; isMetaMask?: boolean; isCoinbaseWallet?: boolean }>;
-    };
+    ethereum?: InjectedProvider;
   }
 }
 
