@@ -15,6 +15,7 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -r requirements.txt
       - run: python -m py_compile contracts/*.py
+      - run: python scripts/repo-preflight.py
       - run: pytest tests/unit -q
       - run: pytest tests/direct -v
 
