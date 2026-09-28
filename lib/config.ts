@@ -16,10 +16,10 @@ export type DeploymentAddresses = {
 // these values, but the hosted UI remains functional when Vercel does not
 // import the local .env.local file.
 const DEPLOYED_ADDRESSES: DeploymentAddresses = {
-  charterRegistry: "0x39A43D2D5794b8D045b2a10ddd81De238DD65A46",
-  exigencyEngine: "0xb872aFf0A3E769A0EAfD6DD61fBA8D717d2b4319",
-  capabilityGate: "0xf7c424a46Aa63F33Ca1b7F852566b318b548c619",
-  protectedVault: "0x0D328549612835CbdC7e5CE3EC2267b13Ce86996",
+  charterRegistry: "0xBAeB7D6B7dC560A3b7AeaCdBA96c29c46BE6dB21",
+  exigencyEngine: "0xD312EbD571fD3353870098F902b1bdafA7457cA1",
+  capabilityGate: "0xa7181624F1cbFaedDeefb8Ff5811AF4Ee660357e",
+  protectedVault: "0x3778A8b18B0DF4288464DF6A745F5569668bdE1D",
 };
 
 export const ADDRESSES: DeploymentAddresses = {

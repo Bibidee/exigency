@@ -108,7 +108,7 @@ export async function readContract<T>(address: string, functionName: string, arg
   if (!address) throw new Error("Contract address is not configured.");
   const client = readClient();
   let lastError: unknown;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
     try {
       return await client.readContract({
         address: address as `0x${string}`,
@@ -118,7 +118,7 @@ export async function readContract<T>(address: string, functionName: string, arg
       } as never) as T;
     } catch (error) {
       lastError = error;
-      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+      if (attempt < 4) await new Promise((resolve) => setTimeout(resolve, 1000 * (2 ** attempt)));
     }
   }
   throw lastError instanceof Error ? lastError : new Error(walletErrorMessage(lastError));
