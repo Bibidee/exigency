@@ -29,7 +29,7 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - name: Pin GenVM validation artifact
         run: echo "GENVM_VERSION=v0.3.0-rc7" >> "$GITHUB_ENV"
-      - run: ./scripts/check-contracts.sh
+      - run: bash scripts/check-contracts.sh
 
   frontend:
     runs-on: ubuntu-latest
