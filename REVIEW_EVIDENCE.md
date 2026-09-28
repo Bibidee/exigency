@@ -37,6 +37,8 @@ This file records checks observed in the current workspace on 2026-09-28. Missin
 - Live defect fixed after that run: stable Studionet web responses required status/body compatibility handling; the corrected engine is the latest deployment above. A positive lifecycle must be rerun against this latest stack.
 - `gltest tests/integration -v -s --network studionet`: harness selected Studionet `61999` correctly, but collected **0 tests** because `tests/integration` is not yet present; this is not counted as a pass.
 - Production frontend: [https://exigency.vercel.app](https://exigency.vercel.app), HTTP 200 observed.
+- Production frontend redeployment: latest linked Vercel deployment `dpl_BttnN7MmKF6TRhKM46thGV2LaJRo` reached READY; `https://exigency.vercel.app`, `/command`, and `/vault` each returned HTTP 200 after the alias update.
+- Latest `npm run source:verify`: **PASS**. All four deployed SHA-256 values exactly matched repository source bytes: CharterRegistry `a8a8619b5882c7b82611bbbb9bb4c2c60d68670348a21ecfde4d6d18fcf3e638`; ExigencyEngine `937c25d5345a8890c23ccc968d49d7425d3506a933f72e27f35ccd4750a0bcef`; CapabilityGate `028325b29f6eebfb2fe31fd863514f355370167ed33a3af55b7db213d3d68c6a`; ProtectedVault `76953de7cc9b6cca9af8e6902d700a97ed68a14c60d6465e32eff0509a912a49`.
 
 ## Source changes made
 
