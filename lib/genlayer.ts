@@ -109,7 +109,7 @@ export async function waitForFinalization(hash: `0x${string}`) {
   const client = readClient();
   return client.waitForTransactionReceipt({
     hash: hash as never,
-    waitUntil: "finalized",
+    status: "FINALIZED",
     retries: 360,
     interval: 5000,
     fullTransaction: true,
