@@ -189,11 +189,12 @@ class ExigencyEngine(gl.Contract):
                 status = int(getattr(response, "status_code", getattr(response, "status", 0)))
                 raw_body = response.body
                 body = raw_body.decode("utf-8", errors="replace") if isinstance(raw_body, bytes) else str(raw_body)
+                excerpt = body if len(body) <= 6000 else body[:3000] + "\n[...middle omitted... ]\n" + body[-3000:]
                 fetched.append(
                     {
                         "url": url,
                         "status": status,
-                        "content": body[:6000],
+                        "content": excerpt,
                         "content_digest": hashlib.sha256(body.encode("utf-8")).hexdigest(),
                     }
                 )
@@ -263,6 +264,25 @@ Decision rules:
         prompt = self._assessment_prompt(charter, incident, fetched)
         raw = gl.nondet.exec_prompt(prompt, response_format="json")
         assessment = _normalise_assessment(raw, urls)
+
+        # A model label alone is never sufficient support.  A source must have
+        # a successful HTTP response and non-empty fetched content before it
+        # can contribute SUPPORTS_TRIGGER authority.
+        fetched_by_url = {str(item.get("url", "")): item for item in fetched}
+        invalid_support = False
+        for state in assessment.get("source_states", []):
+            source = fetched_by_url.get(str(state.get("url", "")), {})
+            if state.get("state") == "SUPPORTS_TRIGGER" and not (
+                200 <= int(source.get("status", 0)) < 300 and str(source.get("content", "")).strip()
+            ):
+                state["state"] = "UNAVAILABLE"
+                state["finding"] = "Source did not provide usable successful-response content."
+                invalid_support = True
+        if invalid_support or (
+            assessment.get("decision") == "TRIGGER_CONFIRMED"
+            and not any(item.get("state") == "SUPPORTS_TRIGGER" for item in assessment.get("source_states", []))
+        ):
+            assessment["decision"] = "INSUFFICIENT_EVIDENCE"
 
         # Provenance fields are code-derived from the actual fetched bytes, never trusted
         # to the LLM. They make the stored decision auditable without forcing validators

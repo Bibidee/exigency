@@ -124,5 +124,6 @@ export async function withdrawFromVault(account: `0x${string}`, value: bigint) {
 }
 
 export async function getVaultCredit(account: string) {
-  return readContract<bigint>(ADDRESSES.protectedVault, "get_credit", [account]);
+  const raw = await readContract<bigint | string | number>(ADDRESSES.protectedVault, "get_credit", [account]);
+  return BigInt(raw as bigint | string | number);
 }

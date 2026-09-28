@@ -12,7 +12,7 @@ const nav = [
   { href: "/vault", label: "Vault", icon: Vault },
 ];
 
-export default function AppShell({ children, onWalletConnected }: { children: React.ReactNode; onWalletConnected?: (address: `0x${string}`) => void }) {
+export default function AppShell({ children, onWalletConnected }: { children: React.ReactNode; onWalletConnected?: (address: `0x${string}` | "") => void }) {
   const pathname = usePathname();
   return (
     <div className="app-shell">

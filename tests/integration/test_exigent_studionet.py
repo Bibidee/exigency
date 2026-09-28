@@ -181,12 +181,22 @@ def test_live_studionet_lifecycle_writes():
     record = {}
     for _ in range(36):
         record = json.loads(_cli_call(contracts["exigencyEngine"], "get_incident_json", incident))
-        if record.get("status") == "TRIGGER_CONFIRMED":
+        # The parent assessment stores AUTHORITY_PENDING_FINALITY immediately;
+        # the capability is issued only by the finalized child message.
+        if record.get("status") == "AUTHORITY_PENDING_FINALITY" and record.get("capability_key"):
             break
         time.sleep(5)
-    assert record["status"] == "TRIGGER_CONFIRMED"
+    assert record["status"] == "AUTHORITY_PENDING_FINALITY"
     assert record["capability_key"]
-    capability = json.loads(_cli_call(contracts["capabilityGate"], "get_capability_json", record["capability_key"]))
+    capability = {}
+    for _ in range(36):
+        raw = _cli_call(contracts["capabilityGate"], "get_capability_json", record["capability_key"])
+        if raw:
+            capability = json.loads(raw)
+            if capability.get("issued_at", 0):
+                break
+        time.sleep(5)
+    assert capability.get("issued_at", 0), "capability child did not finalize"
     _finalize(_cli_write(
         contracts["capabilityGate"], "execute_capability", capability["capability_key"],
         capability["target"], capability["action_class"], str(capability["duration_minutes"]),

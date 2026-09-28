@@ -23,6 +23,7 @@ const specs = [
 ];
 
 const failures = [];
+let checked = 0;
 for (const [name, address, path] of specs) {
   if (!address) { failures.push(`${name}: missing address`); continue; }
   const repositoryBytes = readFileSync(new URL(`../${path}`, import.meta.url));
@@ -35,7 +36,7 @@ for (const [name, address, path] of specs) {
   }
 
   if (!deployedBytes) {
-    console.log(`${name}: deployed source bytes unavailable from current RPC; manual deployment-transaction provenance is still required.`);
+    failures.push(`${name}: deployed source bytes unavailable from current RPC`);
     continue;
   }
 
@@ -46,8 +47,14 @@ for (const [name, address, path] of specs) {
   console.log(`  repository_sha256=${sha256(repositoryBytes)}`);
   console.log(`  exact_byte_match=${exact}`);
   console.log(`  eol_normalized_match=${normalized}`);
+  checked += 1;
   if (!normalized) failures.push(`${name}: deployed source differs from repository source`);
 }
 
-if (failures.length) throw new Error(failures.join("; "));
-console.log("No deployed-source mismatch was observed for sources retrievable from Studionet.");
+if (checked !== specs.length) failures.push(`checked ${checked}/${specs.length} deployed sources`);
+if (failures.length) {
+  console.error(`UNVERIFIED: ${failures.join("; ")}`);
+  process.exitCode = 1;
+} else {
+  console.log("VERIFIED: all deployed sources exactly match repository source bytes.");
+}
