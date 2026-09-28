@@ -31,6 +31,7 @@ See `VALIDATION_REPORT.md` and `REVIEW_EVIDENCE.md`. The local CLI is 0.39.1, to
 ## Still required before final reviewer-ready completion
 
 - Add/run a real `tests/integration/test_exigent_studionet.py` lifecycle against Studionet.
+- The configured `gltest` Studionet invocation currently collects zero tests because that integration directory/file is still missing.
 - Capture finalized charter publication, delayed activation rejection/success, deposit, incident, semantic assessment, capability child, exact execution, vault pause, replay rejection, direct-vault rejection and no-authority evidence.
 - GenVM lint and validate now pass for all four contracts; the results are recorded in `REVIEW_EVIDENCE.md`.
 - Re-run exact deployed-source provenance when the Studionet RPC exposes contract bytes; the latest run could not retrieve them.

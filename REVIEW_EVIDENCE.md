@@ -27,6 +27,7 @@ This file records checks observed in the current workspace on 2026-09-28. Missin
 - Recorded finalized transactions: ExigencyEngine deployment `0x372bbc74e56d38b888cfd030074e87ba17f85bb77c7694a738ac1f58ae624587`; engine binding `0x428297cea1798ced79edb97ebe6d003c571ff0d40d14f097bd46bf958a0b2aab`; ProtectedVault deployment `0x21cb294527b4e7fc0f1ac5e59dfbe5dfac5b41294bbf774ced8db559b128c151`.
 - `npm run source:verify`: RPC did not expose contract bytes during this run; no mismatch was observed, but exact-source provenance remains pending for all four contracts.
 - Live charter/incident/capability/vault lifecycle evidence: **pending**.
+- `gltest tests/integration -v -s --network studionet`: harness selected Studionet `61999` correctly, but collected **0 tests** because `tests/integration` is not yet present; this is not counted as a pass.
 - Production frontend: [https://exigency.vercel.app](https://exigency.vercel.app), HTTP 200 observed.
 
 ## Source changes made
