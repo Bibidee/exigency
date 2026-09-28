@@ -18,6 +18,14 @@ def _now() -> int:
     return int(datetime.now(timezone.utc).timestamp())
 
 
+def _address_hex(value) -> str:
+    # The CLI decodes address calldata to Address objects, while Direct Mode
+    # commonly supplies strings. Accept both without wrapping Address twice.
+    if hasattr(value, "as_hex"):
+        return value.as_hex
+    return Address(value).as_hex
+
+
 class CharterRegistry(gl.Contract):
     charters: TreeMap[str, str]
     charter_keys: DynArray[str]
@@ -95,7 +103,7 @@ class CharterRegistry(gl.Contract):
         if activation_delay_minutes < 1 or activation_delay_minutes > 10080:
             raise gl.vm.UserError("activation delay must be between 1 minute and 7 days")
 
-        protected_target_hex = Address(protected_target).as_hex
+        protected_target_hex = _address_hex(protected_target)
 
         hosts = []
         for raw in evidence_hosts_csv.split(","):
