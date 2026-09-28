@@ -26,7 +26,7 @@ export default function CommandPage() {
   return (
     <AppShell>
       <PageIntro eyebrow="Authority overview" title="Command" copy="A read-only view of the active EXIGENT system. No browser state is treated as authority; every item below is loaded from the configured Studionet contracts." />
-      {!isConfigured && <div className="notice">Deployment addresses are intentionally blank in this handoff. Deploy the four contracts to Studionet 61999, copy <code>.env.generated</code> to <code>.env.local</code>, then restart the frontend. No mocked contract results are shown.</div>}
+      {!isConfigured && <div className="notice">Deployment addresses are not configured. No mocked contract results are shown.</div>}
       {error && <div className="notice bad" style={{marginTop:14}}>{error}</div>}
 
       <div className="grid-3" style={{marginTop:14}}>
