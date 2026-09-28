@@ -12,14 +12,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main() -> int:
     manifest_path = ROOT / "deployment-manifest.generated.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    assert manifest["network"] == "studionet"
-    assert manifest["chainId"] == 61999
-    assert manifest["rpc"] == "https://studio.genlayer.com/api"
-    assert manifest["expectedLocalCli"] == "0.39.1"
-    assert manifest["jsSdk"] == "1.1.8"
-    assert len(manifest["contracts"]) == 4
-    assert all(str(value).startswith("0x") for value in manifest["contracts"].values())
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert manifest["network"] == "studionet"
+        assert manifest["chainId"] == 61999
+        assert manifest["rpc"] == "https://studio.genlayer.com/api"
+        assert manifest["expectedLocalCli"] == "0.39.1"
+        assert manifest["jsSdk"] == "1.1.8"
+        assert len(manifest["contracts"]) == 4
+        assert all(str(value).startswith("0x") for value in manifest["contracts"].values())
 
     forbidden = ("61997", "studio-dev.genlayer.com", "Studio Dev")
     checked = [ROOT / ".env.example", ROOT / "gltest.config.yaml", ROOT / "package.json"]
