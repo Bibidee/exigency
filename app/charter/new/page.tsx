@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import AppShell from "@/components/AppShell";
+import { useWallet } from "@/components/WalletProvider";
 import PageIntro from "@/components/PageIntro";
 import Panel from "@/components/Panel";
 import TxNotice from "@/components/TxNotice";
-import WalletButton from "@/components/WalletButton";
 import { ADDRESSES, isConfigured } from "@/lib/config";
 import { publishCharter } from "@/lib/contracts";
 import { waitForFinalization } from "@/lib/genlayer";
@@ -15,7 +15,7 @@ const defaultTrigger = "Emergency authority is triggered only when credible, cur
 const defaultEvidence = "Use approved primary incident notices, security advisories, dependency status pages, or directly relevant public technical evidence. Prefer multiple independent sources when available. Treat unavailable, stale, circular, anonymous, or materially contradictory evidence as insufficient or conflicting rather than assuming an emergency.";
 
 export default function NewCharterPage() {
-  const [account, setAccount] = useState<`0x${string}` | "">("");
+  const { address: account } = useWallet();
   const [tx, setTx] = useState(""); const [error, setError] = useState(""); const [busy, setBusy] = useState(false); const [phase, setPhase] = useState(""); const [finalized, setFinalized] = useState(false);
   const [form, setForm] = useState({
     charterKey: `CHARTER-${new Date().getUTCFullYear()}-01`, protocolKey: "EXIGENT-DEMO", protocolName: "EXIGENT Protected Vault",
@@ -40,7 +40,7 @@ export default function NewCharterPage() {
   }
 
   return <AppShell>
-    <PageIntro eyebrow="Pre-commit authority" title="Publish Charter" copy="Freeze the emergency trigger before a crisis exists. The target, source hosts, semantic policy and hard execution limits become immutable under this charter key." action={<WalletButton onConnected={setAccount}/>}/>
+    <PageIntro eyebrow="Pre-commit authority" title="Publish Charter" copy="Freeze the emergency trigger before a crisis exists. The target, source hosts, semantic policy and hard execution limits become immutable under this charter key." />
     <form onSubmit={submit} className="stack">
       <Panel eyebrow="Identity" title="Protocol and target"><div className="panel-body grid-2">
         <div className="field"><label>Charter key</label><input value={form.charterKey} onChange={e=>set("charterKey",e.target.value)}/><span className="help">Immutable key. A policy change should publish a new version.</span></div>

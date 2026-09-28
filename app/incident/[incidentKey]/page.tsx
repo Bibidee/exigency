@@ -5,11 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import AppShell from "@/components/AppShell";
+import { useWallet } from "@/components/WalletProvider";
 import PageIntro from "@/components/PageIntro";
 import Panel from "@/components/Panel";
 import StatusPill from "@/components/StatusPill";
 import TxNotice from "@/components/TxNotice";
-import WalletButton from "@/components/WalletButton";
 import { assessIncident, getIncident, type IncidentRecord } from "@/lib/contracts";
 import { waitForFinalization } from "@/lib/genlayer";
 
@@ -18,14 +18,14 @@ function fmt(ts:number){return ts?new Date(ts*1000).toLocaleString():"—"}
 
 export default function IncidentDetail(){
   const params=useParams<{incidentKey:string}>(); const key=decodeURIComponent(params.incidentKey);
-  const [incident,setIncident]=useState<IncidentRecord|null>(null); const[account,setAccount]=useState<`0x${string}`|"">("");
+  const [incident,setIncident]=useState<IncidentRecord|null>(null); const { address: account } = useWallet();
   const[error,setError]=useState("");const[tx,setTx]=useState("");const[busy,setBusy]=useState(false);const[phase,setPhase]=useState("");
   async function load(){try{setIncident(await getIncident(key))}catch(e){setError(e instanceof Error?e.message:String(e))}}
   useEffect(()=>{load()},[key]);
   const assessment=useMemo<Assessment|null>(()=>{if(!incident?.assessment_json)return null;try{return JSON.parse(incident.assessment_json)}catch{return null}},[incident]);
   async function assess(){if(!account)return setError("Connect the incident requester wallet first.");setBusy(true);setError("");setTx("");setPhase("Submitting assessment");try{const h=await assessIncident(account,key);setTx(h);setPhase("Waiting for FINALIZED");await waitForFinalization(h);setPhase("Assessment finalized. Refreshing state");await load();setPhase("Finalized") }catch(e){setError(e instanceof Error?e.message:String(e));setPhase("")}finally{setBusy(false)}}
   const retryable=!assessment||["INSUFFICIENT_EVIDENCE","CONFLICTING_EVIDENCE"].includes(String(assessment.decision));
-  return <AppShell><PageIntro eyebrow="Consensus case" title={key} copy="The incident is frozen before assessment. Validators fetch the approved source URLs independently, reconstruct the emergency question and compare substantive source states, trigger clauses and material findings." action={<WalletButton onConnected={setAccount}/>}/>
+  return <AppShell><PageIntro eyebrow="Consensus case" title={key} copy="The incident is frozen before assessment. Validators fetch the approved source URLs independently, reconstruct the emergency question and compare substantive source states, trigger clauses and material findings." />
     {error&&<div className="notice bad">{error}</div>}
     {!incident?<Panel><div className="empty">Loading incident from Studionet…</div></Panel>:<div className="stack">
       <div className="grid-3"><div className="stat"><small>Incident state</small><strong><StatusPill value={incident.status}/></strong></div><div className="stat"><small>Requested action</small><strong style={{fontSize:15}}>{incident.action_class.replaceAll("_"," ")}</strong></div><div className="stat"><small>Duration</small><strong>{incident.duration_minutes}m</strong></div></div>

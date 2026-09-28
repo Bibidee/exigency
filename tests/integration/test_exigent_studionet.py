@@ -201,5 +201,7 @@ def test_live_studionet_lifecycle_writes():
         contracts["capabilityGate"], "execute_capability", capability["capability_key"],
         capability["target"], capability["action_class"], str(capability["duration_minutes"]),
     ))
+    consumed = json.loads(_cli_call(contracts["capabilityGate"], "get_capability_json", capability["capability_key"]))
+    assert consumed["consumed"] is True
     status = json.loads(_cli_call(contracts["protectedVault"], "get_status_json"))
     assert status["withdrawals_paused"] is True

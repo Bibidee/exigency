@@ -9,6 +9,12 @@ jobs:
   health:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
       - name: Check hosted routes
         run: |
           set -euo pipefail
@@ -22,3 +28,5 @@ jobs:
             -H 'content-type: application/json' \
             --data '{"jsonrpc":"2.0","id":1,"method":"gen_getChainId","params":[]}' \
             https://studio.genlayer.com/api >/dev/null
+      - name: Verify deployed contract sources
+        run: npm run source:verify
