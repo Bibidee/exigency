@@ -27,7 +27,7 @@ export default function CommandPage() {
     <AppShell>
       <PageIntro eyebrow="Authority overview" title="Command" copy="A read-only view of the active EXIGENT system. No browser state is treated as authority; every item below is loaded from the configured Studionet contracts." />
       {!isConfigured && <div className="notice">Deployment addresses are not configured. No mocked contract results are shown.</div>}
-      {error && <div className="notice bad" style={{marginTop:14}}>{error}</div>}
+      {error && <div className="notice bad" style={{marginTop:14}}>{error} <button className="btn-secondary" style={{marginTop:10}} onClick={() => window.location.reload()}>Retry reads</button></div>}
 
       <div className="grid-3" style={{marginTop:14}}>
         <div className="stat"><small>Charter versions</small><strong>{charters.length}</strong></div>
