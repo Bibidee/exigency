@@ -4,6 +4,11 @@ This file records checks observed in the current workspace on 2026-09-28. Missin
 
 ## Current verification update (2026-09-28)
 
+- Vault crash root cause found by Brave console trace: `get_credit` was returned by the RPC as a serialized numeric value, while `app/vault/page.tsx` formatted it as a native `bigint`; the mixed arithmetic threw `Cannot mix BigInt and other types`. The fix normalizes the contract result with `BigInt(...)` in `lib/contracts.ts`.
+- Wallet restore was also hardened: the restore effect now has stable listener lifetime, verifies active `eth_accounts`, handles account/network changes, and no longer depends on an inline callback identity. Vault reads now use explicit `LOADING`, `READY`, and `UNKNOWN / READ FAILED` state and disable writes until authoritative state is loaded.
+- Hardened evidence assessment to reject model-labelled support without a successful non-empty 2xx source response and to expose both head and tail excerpts when source bodies exceed 6,000 characters.
+- Source verification now fails closed with `UNVERIFIED` when any deployed source cannot be retrieved; it no longer reports success for partial checks.
+
 - Final source commits: `65afdf8` added the repository preflight gate; `bc39a9b` made generated deployment manifests optional for source-only CI checkouts.
 - GitHub Actions run `36468578851` passed all three jobs: Python/preflight/unit/direct, contract lint/validate, and frontend typecheck/build.
 - The preflight gate passed locally and in CI. It enforces Studionet 61999, the stable CLI/SDK pins, and rejects forbidden preview-network or committed-key markers.
@@ -11,6 +16,7 @@ This file records checks observed in the current workspace on 2026-09-28. Missin
 - `npm run source:verify` now passes for all four current addresses with exact byte matches. SHA-256 values: Registry `a8a8619b5882c7b82611bbbb9bb4c2c60d68670348a21ecfde4d6d18fcf3e638`; Engine `937c25d5345a8890c23ccc968d49d7425d3506a933f72e27f35ccd4750a0bcef`; Gate `028325b29f6eebfb2fe31fd863514f355370167ed33a3af55b7db213d3d68c6a`; Vault `ed91a37f70d0f341ef1af367476fd3869316b165fa7ab389631250dadc208025`.
 - Vercel production deployment `dpl_98ABkummouzyatSdWPqebGc4gCy8` reached READY, the public alias was updated, and `/`, `/command`, and `/vault` each returned HTTP 200. Brave browser walkthrough loaded all three routes without the Vercel login or generic page-load screen.
 - The scheduled deployment-health workflow remains configured to check all three public routes and the Studionet RPC every six hours.
+- Latest audited Vercel deployment `dpl_6QJP6ufNjnh66NnVUFn52bN4HbET` is READY and aliased to `exigency.vercel.app`; Brave loaded `/vault` after the fix without a crash and showed the connected account plus authoritative `OPEN` state.
 - Automated live write lifecycle and live payable deposit/withdrawal coverage remain opt-in/account-specific; no new financial transaction was initiated from the browser during this verification.
 
 ## Local checks

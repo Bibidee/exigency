@@ -2,6 +2,10 @@
 
 ## Current update — 2026-09-28
 
+- Vault runtime crash fixed: RPC `get_credit` values are normalized to `BigInt` before formatting, eliminating the observed mixed-number arithmetic exception.
+- Wallet restore/listener lifetime is stable and Vault state is fail-closed (`LOADING`, `OPEN`/`PAUSED`, or `UNKNOWN / READ FAILED`).
+- Provenance verification is fail-closed and the current four-contract deployment matches source exactly.
+
 - CI is green on commit `bc39a9b` (GitHub Actions run `36468578851`): repository preflight, Python/unit/direct tests, contract lint/validation, frontend typecheck, and production build all pass.
 - Current finalized Studionet 61999 deployment: Registry `0xBAeB7D6B7dC560A3b7AeaCdBA96c29c46BE6dB21`, Gate `0xa7181624F1cbFaedDeefb8Ff5811AF4Ee660357e`, Engine `0xD312EbD571fD3353870098F902b1bdafA7457cA1`, Vault `0x3778A8b18B0DF4288464DF6A745F5569668bdE1D`; bind transaction `0x690d58cbb13272bf9de545b4ef0fbe02554446bac0f669508a6ba394be87f1f4`.
 - Exact deployed-source verification passes for all four current contracts.
