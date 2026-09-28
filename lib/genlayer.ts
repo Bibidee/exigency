@@ -13,6 +13,7 @@ declare global {
       request(args: { method: string; params?: unknown[] }): Promise<unknown>;
       on?: (event: string, handler: (...args: unknown[]) => void) => void;
       removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
+      providers?: Array<Window["ethereum"] & { isBraveWallet?: boolean; isMetaMask?: boolean; isCoinbaseWallet?: boolean }>;
     };
   }
 }
@@ -23,12 +24,20 @@ export type WalletState = {
 
 const STUDIONET_HEX = "0xf22f";
 
+function injectedProvider() {
+  const injected = window.ethereum;
+  if (!injected) return undefined;
+  const providers = injected.providers;
+  if (!providers?.length) return injected;
+  return providers.find((provider) => provider.isBraveWallet || provider.isMetaMask || provider.isCoinbaseWallet) ?? providers[0];
+}
+
 export function readClient() {
   return createClient({ chain: studionet, endpoint: NETWORK.rpc });
 }
 
 async function ensureStudionet() {
-  const provider = window.ethereum;
+  const provider = injectedProvider();
   if (!provider) throw new Error("No injected EIP-1193 wallet was detected.");
 
   const current = String(await provider.request({ method: "eth_chainId" })).toLowerCase();
@@ -63,19 +72,21 @@ async function ensureStudionet() {
 }
 
 export async function connectWallet(): Promise<WalletState> {
-  if (!window.ethereum) throw new Error("No injected EIP-1193 wallet was detected.");
+  const provider = injectedProvider();
+  if (!provider) throw new Error("No injected EIP-1193 wallet was detected.");
   await ensureStudionet();
-  const accounts = (await window.ethereum.request({ method: "eth_requestAccounts" })) as string[];
+  const accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
   const address = accounts?.[0] as `0x${string}` | undefined;
   if (!address) throw new Error("Wallet returned no account.");
-  const client = createClient({ chain: studionet, account: address, provider: window.ethereum as never });
+  const client = createClient({ chain: studionet, account: address, provider: provider as never });
   await client.connect("studionet");
   return { address };
 }
 
 export function walletClient(address: `0x${string}`) {
-  if (!window.ethereum) throw new Error("No injected wallet detected.");
-  return createClient({ chain: studionet, account: address, provider: window.ethereum as never });
+  const provider = injectedProvider();
+  if (!provider) throw new Error("No injected wallet detected.");
+  return createClient({ chain: studionet, account: address, provider: provider as never });
 }
 
 export async function readContract<T>(address: string, functionName: string, args: unknown[] = []) {
