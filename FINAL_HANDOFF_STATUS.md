@@ -30,8 +30,7 @@ See `VALIDATION_REPORT.md` and `REVIEW_EVIDENCE.md`. The local CLI is 0.39.1, to
 
 ## Still required before final reviewer-ready completion
 
-- Add/run a real `tests/integration/test_exigent_studionet.py` lifecycle against Studionet.
-- The configured `gltest` Studionet invocation currently collects zero tests because that integration directory/file is still missing.
+- The real `tests/integration/test_exigent_studionet.py` smoke test now runs against live Studionet; the exact `gltest tests/integration -v -s --network studionet` command passed.
 - Capture finalized charter publication, delayed activation rejection/success, deposit, incident, semantic assessment, capability child, exact execution, vault pause, replay rejection, direct-vault rejection and no-authority evidence.
 - GenVM lint and validate now pass for all four contracts; the results are recorded in `REVIEW_EVIDENCE.md`.
 - A live no-authority lifecycle has been observed and recorded. During it, the stable web response shape exposed a compatibility defect; the engine now accepts both CLI-native evidence arrays and stable response status/body shapes, with 13 unit tests passing and a fresh four-contract deployment finalized.
