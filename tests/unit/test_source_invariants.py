@@ -69,6 +69,12 @@ def test_web_provenance_tolerates_stable_response_field_shape():
     assert "isinstance(raw_body, bytes)" in engine
 
 
+def test_capability_execution_accepts_cli_decoded_target_addresses():
+    gate = read("capability_gate.py")
+    assert "def _address_hex(value)" in gate
+    assert "target_hex = _address_hex(target)" in gate
+
+
 def test_incident_keeps_frozen_charter_after_later_activation():
     engine = read("exigency_engine.py")
     assert "def _require_active_charter" in engine

@@ -17,6 +17,13 @@ def _now() -> int:
     return int(datetime.now(timezone.utc).timestamp())
 
 
+def _address_hex(value) -> str:
+    # The unlocked CLI decodes address calldata before contract execution.
+    if hasattr(value, "as_hex"):
+        return value.as_hex
+    return Address(value).as_hex
+
+
 class CapabilityGate(gl.Contract):
     deployer: str
     engine_address: str
@@ -105,7 +112,7 @@ class CapabilityGate(gl.Contract):
         if _now() > int(record.get("expires_at", 0)):
             raise gl.vm.UserError("capability expired")
 
-        target_hex = Address(target).as_hex
+        target_hex = _address_hex(target)
         if target_hex != str(record.get("target", "")):
             raise gl.vm.UserError("target does not match capability")
         if action_class != str(record.get("action_class", "")):
