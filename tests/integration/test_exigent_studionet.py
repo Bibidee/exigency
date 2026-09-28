@@ -16,6 +16,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "deployment-manifest.generated.json"
+CLI = ["node", str(ROOT / "node_modules" / "genlayer" / "dist" / "index.js")] if os.name == "nt" else ["npx", "--no-install", "genlayer"]
 
 
 pytestmark = pytest.mark.skipif(
@@ -25,37 +26,39 @@ pytestmark = pytest.mark.skipif(
 
 
 def _cli_call(address: str, method: str, *args: str) -> str:
-    command = [
-        "npx.cmd" if os.name == "nt" else "npx",
-        "--no-install",
-        "genlayer",
-        "call",
-        address,
-        method,
-        "--rpc",
-        "https://studio.genlayer.com/api",
-    ]
-    if args:
-        command.extend(["--args", *args])
-    result = subprocess.run(
-        command,
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=True,
-        shell=os.name == "nt",
-    )
-    marker = "Result:\n"
-    if marker not in result.stdout:
-        raise AssertionError(f"CLI did not return a result for {method}: {result.stdout}")
-    return result.stdout.split(marker, 1)[1].split("\n", 1)[0].strip()
+    for attempt in range(6):
+        command = [
+            *CLI,
+            "call",
+            address,
+            method,
+            "--rpc",
+            "https://studio.genlayer.com/api",
+        ]
+        if args:
+            command.extend(["--args", *args])
+        result = subprocess.run(
+            command,
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=True,
+            shell=False,
+        )
+        marker = "Result:\n"
+        if marker in result.stdout:
+            lines = [line.strip() for line in result.stdout.split(marker, 1)[1].splitlines() if line.strip()]
+            for value in reversed(lines):
+                if value.startswith(("{", "[", '"')):
+                    return value
+        if attempt < 5:
+            __import__("time").sleep(3)
+    raise AssertionError(f"CLI did not return a non-empty result for {method}")
 
 
 def _cli_write(address: str, method: str, *args: str) -> str:
     command = [
-        "npx.cmd" if os.name == "nt" else "npx",
-        "--no-install",
-        "genlayer",
+        *CLI,
         "write",
         address,
         method,
@@ -63,7 +66,7 @@ def _cli_write(address: str, method: str, *args: str) -> str:
         "https://studio.genlayer.com/api",
     ]
     if args:
-        encoded = [json.dumps(arg) if any(ch.isspace() for ch in arg) else arg for arg in args]
+        encoded = [arg if arg.lstrip().startswith(("[", "{")) else json.dumps(arg) if any(ch.isspace() for ch in arg) else arg for arg in args]
         command.extend(["--args", *encoded])
     result = subprocess.run(
         command,
@@ -71,7 +74,7 @@ def _cli_write(address: str, method: str, *args: str) -> str:
         text=True,
         capture_output=True,
         check=True,
-        shell=os.name == "nt",
+        shell=False,
     )
     return f"{result.stdout}\n{result.stderr}"
 
@@ -84,9 +87,7 @@ def _finalize(stdout: str) -> None:
     retries = os.environ.get("EXIGENT_LIVE_RECEIPT_RETRIES", "36")
     interval = os.environ.get("EXIGENT_LIVE_RECEIPT_INTERVAL_MS", "5000")
     command = [
-        "npx.cmd" if os.name == "nt" else "npx",
-        "--no-install",
-        "genlayer",
+        *CLI,
         "receipt",
         tx_hash,
         "--status",
@@ -103,7 +104,7 @@ def _finalize(stdout: str) -> None:
         cwd=ROOT,
         text=True,
         capture_output=True,
-        shell=os.name == "nt",
+        shell=False,
     )
     if result.returncode:
         raise AssertionError(
@@ -167,8 +168,8 @@ def test_live_studionet_lifecycle_writes():
         contracts["charterRegistry"],
         "publish_charter",
         charter, protocol, "EXIGENT CI", target,
-        "The source must clearly describe the EXIGENT emergency authority protocol and its trigger conditions for this automated integration run.",
-        "The evidence source must be publicly retrievable and contain the declared trigger language.",
+            "SYNTHETIC TEST ONLY: trigger when approved public synthetic evidence confirms an active fictional security incident affecting withdrawal-safety assumptions and supports a proportionate temporary withdrawal pause. Never treat this fixture as a real incident.",
+            "Approved public synthetic test fixtures are acceptable only when retrievable, corroborated, current, and explicitly describe the fictional active incident and affected withdrawal-safety path.",
         "raw.githubusercontent.com", "PAUSE_WITHDRAWALS", "30", "30", "1",
     ))
     import time
