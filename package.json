@@ -1,0 +1,39 @@
+{
+  "name": "exigent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "pytest tests/unit -q",
+    "test:direct": "pytest tests/direct -v",
+    "test": "npm run test:unit",
+    "contracts:compile": "python -m py_compile contracts/*.py",
+    "contracts:check": "bash scripts/check-contracts.sh",
+    "toolchain:check": "node scripts/toolchain-check.mjs",
+    "deploy": "npx --no-install genlayer deploy",
+    "deploy:studionet": "npx --no-install genlayer deploy",
+    "cli:version": "npx --no-install genlayer --version",
+    "source:verify": "node scripts/verify-deployed-source.mjs"
+  },
+  "dependencies": {
+    "genlayer-js": "1.1.8",
+    "lucide-react": "0.468.0",
+    "next": "16.2.9",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/react": "19.0.3",
+    "@types/react-dom": "19.0.2",
+    "genlayer": "0.39.1",
+    "typescript": "5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
