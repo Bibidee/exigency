@@ -127,6 +127,20 @@ def test_live_studionet_manifest_and_contract_reads():
 
 
 @pytest.mark.skipif(
+    os.environ.get("EXIGENT_RUN_LIVE_ACCOUNTING") != "1",
+    reason="set EXIGENT_RUN_LIVE_ACCOUNTING=1 with EXIGENT_LIVE_PRIVATE_KEY for payable coverage",
+)
+def test_live_studionet_vault_deposit_withdraw_accounting():
+    """Exercise real payable value and credit accounting with a funded test key."""
+    command = ["node", str(ROOT / "scripts" / "live-vault-accounting.mjs")]
+    result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=True)
+    payload = json.loads(result.stdout.strip().splitlines()[-1])
+    assert payload["depositHash"].startswith("0x")
+    assert payload["withdrawHash"].startswith("0x")
+    assert int(payload["finalCredit"]) >= 0
+
+
+@pytest.mark.skipif(
     os.environ.get("EXIGENT_RUN_LIVE_LIFECYCLE") != "1",
     reason="set EXIGENT_RUN_LIVE_LIFECYCLE=1 with an unlocked CLI account",
 )
