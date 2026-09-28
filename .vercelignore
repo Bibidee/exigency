@@ -1,0 +1,8 @@
+.cache
+.next
+.pytest_cache
+.python312
+artifacts
+node_modules
+*.log
+.git

@@ -18,6 +18,13 @@ def _now() -> int:
     return int(datetime.now(timezone.utc).timestamp())
 
 
+def _address_hex(value: str) -> str:
+    raw = str(value).strip()
+    if raw.lower().startswith("0x"):
+        return raw.lower()
+    return Address(raw).as_hex.lower()
+
+
 class ProtectedVault(gl.Contract):
     gate_address: str
     credits: TreeMap[str, u256]
@@ -28,14 +35,14 @@ class ProtectedVault(gl.Contract):
     emergency_history: DynArray[str]
 
     def __init__(self, gate_address: str):
-        self.gate_address = Address(gate_address).as_hex
+        self.gate_address = _address_hex(gate_address)
         self.total_credits = u256(0)
         self.withdrawals_paused_until = u256(0)
         self.deposits_paused_until = u256(0)
         self.last_emergency_json = ""
 
     def _require_gate(self) -> None:
-        if gl.message.sender_address.as_hex != self.gate_address:
+        if gl.message.sender_address.as_hex.lower() != self.gate_address:
             raise gl.vm.UserError("emergency authority requires CapabilityGate")
 
     def _record_emergency(
@@ -150,7 +157,7 @@ class ProtectedVault(gl.Contract):
 
     @gl.public.view
     def get_credit(self, holder: str) -> u256:
-        return self.credits.get(Address(holder).as_hex, u256(0))
+        return self.credits.get(_address_hex(holder), u256(0))
 
     @gl.public.view
     def get_status_json(self) -> str:

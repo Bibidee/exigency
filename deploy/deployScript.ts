@@ -1,7 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import type { DecodedDeployData, GenLayerChain, GenLayerClient, TransactionHash } from "genlayer-js/types";
-import { localnet } from "genlayer-js/chains";
+import type { DecodedDeployData, GenLayerClient, TransactionHash } from "genlayer-js/types";
 
 const CHAIN_ID = 61999;
 const RPC = "https://studio.genlayer.com/api";
@@ -11,13 +10,18 @@ function code(file: string): Uint8Array {
 }
 
 async function waitFinal(client: GenLayerClient<any>, hash: TransactionHash) {
-  return client.waitForTransactionReceipt({ hash, waitUntil: "finalized", retries: 360, interval: 5000, fullTransaction: true } as any);
+  return client.waitForTransactionReceipt({
+    hash,
+    status: "FINALIZED",
+    retries: 360,
+    interval: 5000,
+    fullTransaction: true,
+  } as any);
 }
 
 function deployedAddress(client: GenLayerClient<any>, receipt: any): string {
-  const value = (client.chain as GenLayerChain).id === localnet.id
-    ? receipt?.data?.contract_address
-    : (receipt?.txDataDecoded as DecodedDeployData | undefined)?.contractAddress;
+  const value = receipt?.data?.contract_address
+    ?? (receipt?.txDataDecoded as DecodedDeployData | undefined)?.contractAddress;
   if (!value) throw new Error(`Deployment finalized but address was not decoded: ${JSON.stringify(receipt)}`);
   return String(value);
 }
