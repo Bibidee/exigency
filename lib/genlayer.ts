@@ -107,12 +107,21 @@ export function walletClient(address: `0x${string}`) {
 export async function readContract<T>(address: string, functionName: string, args: unknown[] = []) {
   if (!address) throw new Error("Contract address is not configured.");
   const client = readClient();
-  return client.readContract({
-    address: address as `0x${string}`,
-    functionName,
-    args,
-    transactionHashVariant: TransactionHashVariant.LATEST_FINAL,
-  } as never) as Promise<T>;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await client.readContract({
+        address: address as `0x${string}`,
+        functionName,
+        args,
+        transactionHashVariant: TransactionHashVariant.LATEST_FINAL,
+      } as never) as T;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error(walletErrorMessage(lastError));
 }
 
 export async function submitWrite(
