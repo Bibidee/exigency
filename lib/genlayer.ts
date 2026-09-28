@@ -28,6 +28,19 @@ export type WalletState = {
 
 const STUDIONET_HEX = "0xf22f";
 
+export function walletErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string" && error.trim()) return error;
+  if (error && typeof error === "object") {
+    const value = error as { message?: unknown; reason?: unknown; data?: { message?: unknown } };
+    for (const candidate of [value.message, value.reason, value.data?.message]) {
+      if (typeof candidate === "string" && candidate.trim()) return candidate;
+    }
+    try { return JSON.stringify(error); } catch { return "The wallet returned an unreadable error."; }
+  }
+  return "The wallet connection failed.";
+}
+
 function injectedProvider() {
   const injected = window.ethereum;
   if (!injected) return undefined;
@@ -78,12 +91,16 @@ async function ensureStudionet() {
 export async function connectWallet(): Promise<WalletState> {
   const provider = injectedProvider();
   if (!provider) throw new Error("No injected EIP-1193 wallet was detected.");
-  await ensureStudionet();
   const accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
   const address = accounts?.[0] as `0x${string}` | undefined;
   if (!address) throw new Error("Wallet returned no account.");
+  await ensureStudionet();
   const client = createClient({ chain: studionet, account: address, provider: provider as never });
-  await client.connect("studionet");
+  try {
+    await client.connect("studionet");
+  } catch (error) {
+    throw new Error(`Wallet connected, but GenLayer could not initialise Studionet: ${walletErrorMessage(error)}`);
+  }
   return { address };
 }
 

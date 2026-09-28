@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PlugZap, WalletCards } from "lucide-react";
-import { connectWallet } from "@/lib/genlayer";
+import { connectWallet, walletErrorMessage } from "@/lib/genlayer";
 
 export default function WalletButton({ compact = false, onConnected }: { compact?: boolean; onConnected?: (address: `0x${string}`) => void }) {
   const [address, setAddress] = useState<`0x${string}` | "">("");
@@ -25,7 +25,7 @@ export default function WalletButton({ compact = false, onConnected }: { compact
       window.sessionStorage.setItem("exigent.wallet", wallet.address);
       onConnected?.(wallet.address);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(walletErrorMessage(e));
     } finally { setBusy(false); }
   }
 
