@@ -2,6 +2,17 @@
 
 This file records checks observed in the current workspace on 2026-09-28. Missing live evidence is explicitly marked pending. The manually observed positive lifecycle is recorded separately from the opt-in automated lifecycle test; the latter requires a funded, unlocked account and can be delayed by Studionet finality.
 
+## Current verification update (2026-09-28)
+
+- Final source commits: `65afdf8` added the repository preflight gate; `bc39a9b` made generated deployment manifests optional for source-only CI checkouts.
+- GitHub Actions run `36468578851` passed all three jobs: Python/preflight/unit/direct, contract lint/validate, and frontend typecheck/build.
+- The preflight gate passed locally and in CI. It enforces Studionet 61999, the stable CLI/SDK pins, and rejects forbidden preview-network or committed-key markers.
+- A fresh four-contract Studionet deployment completed with all deployment and binding transactions finalized: CharterRegistry `0xBAeB7D6B7dC560A3b7AeaCdBA96c29c46BE6dB21`; CapabilityGate `0xa7181624F1cbFaedDeefb8Ff5811AF4Ee660357e`; ExigencyEngine `0xD312EbD571fD3353870098F902b1bdafA7457cA1`; ProtectedVault `0x3778A8b18B0DF4288464DF6A745F5569668bdE1D`; bind-engine transaction `0x690d58cbb13272bf9de545b4ef0fbe02554446bac0f669508a6ba394be87f1f4`.
+- `npm run source:verify` now passes for all four current addresses with exact byte matches. SHA-256 values: Registry `a8a8619b5882c7b82611bbbb9bb4c2c60d68670348a21ecfde4d6d18fcf3e638`; Engine `937c25d5345a8890c23ccc968d49d7425d3506a933f72e27f35ccd4750a0bcef`; Gate `028325b29f6eebfb2fe31fd863514f355370167ed33a3af55b7db213d3d68c6a`; Vault `ed91a37f70d0f341ef1af367476fd3869316b165fa7ab389631250dadc208025`.
+- Vercel production deployment `dpl_98ABkummouzyatSdWPqebGc4gCy8` reached READY, the public alias was updated, and `/`, `/command`, and `/vault` each returned HTTP 200. Brave browser walkthrough loaded all three routes without the Vercel login or generic page-load screen.
+- The scheduled deployment-health workflow remains configured to check all three public routes and the Studionet RPC every six hours.
+- Automated live write lifecycle and live payable deposit/withdrawal coverage remain opt-in/account-specific; no new financial transaction was initiated from the browser during this verification.
+
 ## Local checks
 
 - Repository path: `C:\Users\ojiku\Downloads\EXIGENT\exigent`
