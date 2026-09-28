@@ -1,11 +1,12 @@
 # EXIGENT Review Evidence
 
-This file records checks observed in the current workspace on 2026-09-28. It does not contain deployment or wallet claims.
+This file records checks observed in the current workspace on 2026-09-28. Missing live evidence is explicitly marked pending.
 
 ## Local checks
 
 - Repository path: `C:\Users\ojiku\Downloads\EXIGENT\exigent`
-- Git remote: none configured; no commit SHA is available.
+- Git remote: `https://github.com/Bibidee/exigency.git`
+- Final source commit: `fd1ac1c` (`wait for finalized Studionet receipts in frontend`)
 - Node: `v22.22.2`
 - npm: `10.9.7`
 - Local GenLayer CLI: `0.39.1` (`npx --no-install genlayer --version`)
@@ -16,9 +17,15 @@ This file records checks observed in the current workspace on 2026-09-28. It doe
 
 ## Contract and live-network checks
 
-- Python executable: unavailable in this workspace; contract compilation, unit tests, Direct Mode, GenVM lint and GenVM validate are pending.
-- Studionet deployment: not attempted; no wallet/account configuration was observed.
-- Chain ID, RPC, contract addresses, deployment transactions, finality, runtime chain results, charter/capability/incident evidence and frontend URL: pending.
+- Python 3.12 workspace runtime: available.
+- Unit tests: **10/10 PASS** (`.python312\\python.exe -m pytest tests/unit -q`).
+- Direct Mode tests: **8/8 PASS** (`.python312\\python.exe -m pytest tests/direct -q`).
+- Studionet deployment manifest records chain **61999** and RPC `https://studio.genlayer.com/api`.
+- Latest recorded contracts: CharterRegistry `0xfaf4C411E5b2A3CC294b451364D4C1E859e84456`; CapabilityGate `0x5499BF2A1f61Fb7697F6A5A26Cb21759aA4F97e7`; ExigencyEngine `0x98707314D124777966288b3895913B3D0211F69C`; ProtectedVault `0xD2624c1606E8E5DFE9a23A32742814e420bd836A`.
+- Recorded finalized transactions: ExigencyEngine deployment `0x372bbc74e56d38b888cfd030074e87ba17f85bb77c7694a738ac1f58ae624587`; engine binding `0x428297cea1798ced79edb97ebe6d003c571ff0d40d14f097bd46bf958a0b2aab`; ProtectedVault deployment `0x21cb294527b4e7fc0f1ac5e59dfbe5dfac5b41294bbf774ced8db559b128c151`.
+- `npm run source:verify`: RPC did not expose contract bytes during this run; no mismatch was observed, but exact-source provenance remains pending for all four contracts.
+- Live charter/incident/capability/vault lifecycle evidence: **pending**.
+- Production frontend: [https://exigency.vercel.app](https://exigency.vercel.app), HTTP 200 observed.
 
 ## Source changes made
 

@@ -24,12 +24,14 @@
 - Synthetic source fixtures for reproducible testing plus guidance to use independent public evidence in reviewer demonstration.
 - CI configuration, unit tests, Direct Mode test scaffolding, review/security/architecture/runbook documentation.
 
-## Verified in the build environment
+## Verified in the current workspace
 
-See `VALIDATION_REPORT.md` and `REVIEW_EVIDENCE.md`. In this workspace, the local CLI, toolchain guard, TypeScript typecheck and production build pass. Python contract syntax and test execution remain pending because no Python executable is available.
+See `VALIDATION_REPORT.md` and `REVIEW_EVIDENCE.md`. The local CLI is 0.39.1, toolchain guard, typecheck and production build pass; unit tests are 10/10 and Direct Mode is 8/8. The repository remote is configured and the final source commit is `fd1ac1c`. Four contracts are recorded on Studionet 61999 and the production frontend is live at https://exigency.vercel.app.
 
-## Intentionally left for Claude/Codex / account-specific execution
+## Still required before final reviewer-ready completion
 
-This workspace has no Python executable and no deployment wallet/account configuration. Direct Mode, GenVM lint/validate, Studionet deployment, real wallet lifecycle, negative/adversarial live cases and deployed-source provenance remain account/environment-specific.
-
-No deployment address, transaction hash, green Direct Mode result or live-app claim has been fabricated.
+- Add/run a real `tests/integration/test_exigent_studionet.py` lifecycle against Studionet.
+- Capture finalized charter publication, delayed activation rejection/success, deposit, incident, semantic assessment, capability child, exact execution, vault pause, replay rejection, direct-vault rejection and no-authority evidence.
+- Run and record GenVM lint/validate results in this current workspace.
+- Re-run exact deployed-source provenance when the Studionet RPC exposes contract bytes; the latest run could not retrieve them.
+- Update this file and `REVIEW_EVIDENCE.md` only with observed values.
