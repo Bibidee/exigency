@@ -50,6 +50,25 @@ def test_protocol_charter_chain_cannot_be_hijacked_or_rolled_back():
     assert "cannot roll back to an older charter version" in registry
 
 
+def test_charter_accepts_cli_decoded_address_objects():
+    registry = read("charter_registry.py")
+    assert "def _address_hex(value)" in registry
+    assert "if hasattr(value, \"as_hex\")" in registry
+    assert "protected_target_hex = _address_hex(protected_target)" in registry
+
+
+def test_incident_accepts_cli_decoded_evidence_lists():
+    engine = read("exigency_engine.py")
+    assert "isinstance(evidence_urls_json, list)" in engine
+    assert "json.loads(evidence_urls_json)" in engine
+
+
+def test_web_provenance_tolerates_stable_response_field_shape():
+    engine = read("exigency_engine.py")
+    assert "getattr(response, \"status_code\", getattr(response, \"status\", 0))" in engine
+    assert "isinstance(raw_body, bytes)" in engine
+
+
 def test_incident_keeps_frozen_charter_after_later_activation():
     engine = read("exigency_engine.py")
     assert "def _require_active_charter" in engine

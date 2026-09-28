@@ -186,8 +186,9 @@ class ExigencyEngine(gl.Contract):
         for url in urls:
             try:
                 response = gl.nondet.web.get(url)
-                status = int(response.status_code)
-                body = response.body.decode("utf-8", errors="replace")
+                status = int(getattr(response, "status_code", getattr(response, "status", 0)))
+                raw_body = response.body
+                body = raw_body.decode("utf-8", errors="replace") if isinstance(raw_body, bytes) else str(raw_body)
                 fetched.append(
                     {
                         "url": url,
@@ -304,7 +305,13 @@ Decision rules:
             raise gl.vm.UserError("incident reason must be between 30 and 2400 characters")
 
         try:
-            evidence_urls = json.loads(evidence_urls_json)
+            # Browser clients send the canonical JSON string; the unlocked CLI
+            # decodes JSON-looking arguments into a native list before calldata.
+            evidence_urls = (
+                evidence_urls_json
+                if isinstance(evidence_urls_json, list)
+                else json.loads(evidence_urls_json)
+            )
         except Exception:
             raise gl.vm.UserError("evidence URLs must be a JSON array")
         if not isinstance(evidence_urls, list) or len(evidence_urls) < 1 or len(evidence_urls) > 4:
