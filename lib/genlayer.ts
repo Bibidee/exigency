@@ -95,12 +95,6 @@ export async function connectWallet(): Promise<WalletState> {
   const address = accounts?.[0] as `0x${string}` | undefined;
   if (!address) throw new Error("Wallet returned no account.");
   await ensureStudionet();
-  const client = createClient({ chain: studionet, account: address, provider: provider as never });
-  try {
-    await client.connect("studionet");
-  } catch (error) {
-    throw new Error(`Wallet connected, but GenLayer could not initialise Studionet: ${walletErrorMessage(error)}`);
-  }
   return { address };
 }
 
@@ -131,7 +125,6 @@ export async function submitWrite(
   if (!address) throw new Error("Contract address is not configured.");
   await ensureStudionet();
   const client = walletClient(account);
-  await client.connect("studionet");
   const call = { address: address as `0x${string}`, functionName, args, value };
   const hash = await client.writeContract(call as never);
   return hash as `0x${string}`;
