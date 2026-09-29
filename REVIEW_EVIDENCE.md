@@ -43,8 +43,16 @@ and is aliased to [exigency.vercel.app](https://exigency.vercel.app).
 
 ## CURRENT AUTHORITY LIFECYCLE
 
-The earlier finalized positive authority lifecycle remains historical proof in
-Git history. The opt-in live fixture now uses immutable, real evidence files:
+The opt-in live fixture completed in 434.66 seconds against the current
+deployment:
+
+- charter: `CI-LIVE-1790723012`;
+- incident: `CI-INC-1790723012`, with `TRIGGER_CONFIRMED` in its assessment;
+- capability: `EXC-CI-INC-1790723012`, `APPLIED`, `consumed: true`,
+  `dispatch_count: 1`;
+- Vault: withdrawals paused for the requested duration.
+
+The fixture uses immutable, real evidence files:
 
 - [primary evidence](https://raw.githubusercontent.com/Bibidee/exigency/84de2b15e428497bc6dec64aedf54d1ee1c06761/demo/evidence/active_incident_primary.md)
 - [secondary evidence](https://raw.githubusercontent.com/Bibidee/exigency/84de2b15e428497bc6dec64aedf54d1ee1c06761/demo/evidence/active_incident_secondary.md)
@@ -78,8 +86,9 @@ Both URLs returned HTTP 200 before this update.
   external EOA value transfer. The contract retains recovery state across the
   holder acknowledgement, while the frontend proves the child before sending
   that acknowledgement.
-- The full live authority write fixture is opt-in because it creates fresh
-  consensus records.
+- The full live authority write fixture remains opt-in because it creates fresh
+  consensus records; it was executed successfully for the current deployment
+  during this final audit.
 
 ## HISTORICAL EVIDENCE
 

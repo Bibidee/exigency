@@ -84,7 +84,15 @@ required for the browser-authorized proof, and no secret was committed.
 
 ## Immutable lifecycle evidence
 
-The opt-in live lifecycle fixture uses immutable URLs pinned to pushed commit
-`84de2b15e428497bc6dec64aedf54d1ee1c06761`; both evidence files were verified
-with HTTP 200 before this update. The full positive lifecycle remains an
-opt-in write test because it creates fresh consensus records.
+The opt-in live lifecycle fixture completed successfully in 434.66 seconds
+against the redeployed Studionet stack. It created `CI-LIVE-1790723012`,
+finalized `CI-INC-1790723012`, confirmed `TRIGGER_CONFIRMED`, issued
+`EXC-CI-INC-1790723012`, dispatched the capability once, reconciled it to
+`APPLIED`, and left the Vault withdrawal pause active. The recorded live
+incident status was `AUTHORITY_PENDING_FINALITY`; the capability status was
+`APPLIED`, `consumed: true`, `dispatch_count: 1`.
+
+The fixture used immutable URLs pinned to pushed commit
+`84de2b15e428497bc6dec64aedf54d1ee1c06761`; both evidence files returned HTTP
+200 and were committed as source commitments by the live assessment. The test
+remains opt-in because it creates fresh consensus records.

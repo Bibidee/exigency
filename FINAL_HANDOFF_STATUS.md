@@ -76,8 +76,18 @@ recorded live proof and no secret was committed.
 
 ## IMMUTABLE LIFECYCLE EVIDENCE
 
-The opt-in live fixture uses commit-pinned evidence URLs at
-`84de2b15e428497bc6dec64aedf54d1ee1c06761`; both files returned HTTP 200.
+The opt-in live fixture completed against the current deployment in 434.66
+seconds:
+
+- charter: `CI-LIVE-1790723012`;
+- incident: `CI-INC-1790723012`, assessment decision `TRIGGER_CONFIRMED`;
+- capability: `EXC-CI-INC-1790723012`, `dispatch_status: APPLIED`,
+  `dispatch_count: 1`;
+- target: `0xFaCeF3154913C0b7e40E4D2A9233d770c399dD5C`, with withdrawals paused.
+
+The fixture uses commit-pinned evidence URLs at
+`84de2b15e428497bc6dec64aedf54d1ee1c06761`; both files returned HTTP 200 and
+were included in the finalized assessment commitments.
 
 ## HISTORICAL EVIDENCE
 
