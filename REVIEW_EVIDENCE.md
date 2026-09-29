@@ -1,5 +1,14 @@
 # EXIGENT Review Evidence
 
+## Authoritative current update — 2026-09-29 (live accounting proof)
+
+- Payout-child compatibility fix is committed as `b26a50b` and deployed to Vercel deployment `dpl_8iVqf4Zm3hwQNxz2ByYghYMF21hK`, which is READY and aliased to `exigency.vercel.app`.
+- Brave verified the fresh live vault on the current four-contract Studionet deployment. The authorized deposit finalized in `0x4930be0da7a66602cfb5e82192f92bc18f155589bc2bdd0783de8a2dbdb6760a`; the vault showed `0.0100 GEN` credit and `10000000000000000` total credited wei.
+- The authorized `0.005 GEN` withdrawal parent finalized in `0x002f6e453d267f1df5fda2f7714336cce03efee0d92356549a12df76268b2513`. Its payout child `0x1677b90448a449f7cdfe75d07ff7e9aeecc500ef205ab3a36f77e2e5e700aaff` finalized as a native value transfer with `value_credited: true`, recipient `0x4A7D76b8C4668a3426d6d54eC24b41Fa87b532f5`, and value `5000000000000000` wei.
+- The settlement transaction finalized in `0x40fe6717dcd51a4fcb144167769befc36469ed85ce5a85e7ad3c73a575ba85c9`. Authoritative reads show withdrawal `W-0x4a7d76b8c4668a3426d6d54ec24b41fa87b532f5-0` as `SETTLED`, `active_withdrawal_key` empty, `total_credits: 5000000000000000`, and holder credit `5000000000000000`.
+- The frontend now recognizes successful native payout children by finality plus `value_credited`, exact parent, recipient, and amount. It no longer misclassifies the native child’s `NO_MAJORITY` execution-result label as a payout failure, and it exposes a safe read-only “Prove payout child” reconciliation path after reload.
+- The committed live accounting script now applies the same native-child proof and continues to verify recipient balance before and after payout when an unlocked `EXIGENT_LIVE_PRIVATE_KEY` is supplied. The browser proof above is complete; the private-key-driven automated live script remains opt-in and was not run with a secret in this workspace.
+
 ## Authoritative current update — 2026-09-29 (latest)
 
 - Final source commit: `e8803dad778b59161ba52cfa516a7859d2a05539`.

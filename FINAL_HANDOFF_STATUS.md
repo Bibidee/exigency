@@ -1,5 +1,13 @@
 # EXIGENT Final Handoff Status
 
+## Authoritative current update — 2026-09-29 (live accounting proof)
+
+- Payout-child fix is committed as `b26a50b` and deployed in READY Vercel deployment `dpl_8iVqf4Zm3hwQNxz2ByYghYMF21hK` at [exigency.vercel.app](https://exigency.vercel.app).
+- Live browser proof completed on Studionet 61999: deposit `0.01 GEN` finalized; withdrawal parent `0.005 GEN` finalized; payout child `0.005 GEN` finalized and credited to the connected wallet; settlement finalized.
+- Authoritative final state: withdrawal `W-0x4a7d76b8c4668a3426d6d54ec24b41fa87b532f5-0` is `SETTLED`, active withdrawal is empty, and both total credits and holder credit are `5000000000000000` wei.
+- The frontend now handles GenLayer native payout-child receipts correctly (`FINALIZED` + `value_credited: true`) and provides post-reload payout reconciliation before enabling settlement.
+- The automated private-key live accounting and funded write lifecycle remain explicitly opt-in; no secret was available to run those scripts in this workspace. The browser-approved accounting lifecycle is verified above.
+
 ## Authoritative current update — 2026-09-29 (latest)
 
 - Final source commit is `e8803dad778b59161ba52cfa516a7859d2a05539`; [GitHub Actions run 36629523688](https://github.com/Bibidee/exigency/actions/runs/36629523688) is green across all four jobs.
