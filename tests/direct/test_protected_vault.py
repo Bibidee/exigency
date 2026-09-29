@@ -52,6 +52,25 @@ def test_withdraw_rejects_insufficient_balance_and_paused_withdrawal(direct_vm, 
         vault.withdraw(1)
 
 
+def test_zero_withdrawal_is_rejected(direct_vm, direct_deploy, direct_alice):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    direct_vm.sender = direct_alice
+    with direct_vm.expect_revert("withdraw amount must be greater than zero"):
+        vault.withdraw(0)
+
+
+def test_sender_origin_mismatch_fails_closed(direct_vm, direct_deploy, direct_alice, direct_bob):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    direct_vm.sender = direct_bob
+    direct_vm.origin = direct_alice
+    direct_vm.value = 10**16
+    with direct_vm.expect_revert("vault credit flows require a direct EOA caller"):
+        vault.deposit()
+    direct_vm.value = 0
+    with direct_vm.expect_revert("vault credit flows require a direct EOA caller"):
+        vault.withdraw(1)
+
+
 def test_duplicate_emergency_delivery_is_idempotent(direct_vm, direct_deploy, direct_alice):
     direct_vm.warp("2026-09-27T20:00:00Z")
     vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
@@ -112,8 +131,9 @@ def test_settled_withdrawal_cannot_be_replayed(direct_vm, direct_deploy, direct_
     direct_vm.value = 0
     vault.withdraw(10**16)
     withdrawal_id = vault.list_withdrawal_keys()[0]
-    assert vault.settle_withdrawal(withdrawal_id) == "SETTLED"
-    assert vault.settle_withdrawal(withdrawal_id) == "SETTLED"
+    assert vault.settle_withdrawal(withdrawal_id) == "ACKNOWLEDGED"
+    assert vault.settle_withdrawal(withdrawal_id) == "ACKNOWLEDGED"
+    assert vault.get_active_withdrawal_key(to_hex(direct_alice)) == ""
     with direct_vm.expect_revert("withdrawal is not recoverable"):
         vault.retry_withdrawal(withdrawal_id)
 
@@ -129,11 +149,13 @@ def test_settlement_before_child_resolution_preserves_refund_recovery(direct_vm,
     vault.withdraw(amount)
     withdrawal_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
 
-    # A direct holder settlement must not delete the callback correlation.
-    assert vault.settle_withdrawal(withdrawal_id) == "SETTLED"
+    # A direct holder acknowledgement must release the active lock without
+    # deleting the callback correlation.
+    assert vault.settle_withdrawal(withdrawal_id) == "ACKNOWLEDGED"
     settled = json.loads(vault.get_withdrawal_json(withdrawal_id))
-    assert settled["status"] == "SETTLED"
-    assert vault.get_active_withdrawal_key(to_hex(direct_alice)) == withdrawal_id
+    assert settled["status"] == "ACKNOWLEDGED"
+    assert vault.get_active_withdrawal_key(to_hex(direct_alice)) == ""
+    assert vault.get_recovery_withdrawal_keys(to_hex(direct_alice)) == [withdrawal_id]
 
     # A late child failure still restores exactly once and invalidates the
     # provisional settlement rather than losing the holder's credit.
@@ -218,3 +240,57 @@ def test_retry_preserves_holder_correlation_and_conservation(direct_vm, direct_d
     # Bob's credit and the total remain isolated while Alice retries.
     assert int(vault.get_credit(to_hex(direct_bob))) == amount
     assert int(json.loads(vault.get_status_json())["total_credits"]) == 2 * amount - amount
+
+
+def test_three_successful_withdrawals_same_holder_are_reusable(direct_vm, direct_deploy, direct_alice):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 10**16
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = 3 * amount
+    vault.deposit()
+    direct_vm.value = 0
+
+    withdrawal_ids = []
+    for expected_credit in (2 * amount, amount, 0):
+        assert int(vault.withdraw(amount)) == expected_credit
+        withdrawal_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+        assert withdrawal_id and withdrawal_id not in withdrawal_ids
+        withdrawal_ids.append(withdrawal_id)
+        assert vault.settle_withdrawal(withdrawal_id) == "ACKNOWLEDGED"
+        assert vault.get_active_withdrawal_key(to_hex(direct_alice)) == ""
+        assert json.loads(vault.get_withdrawal_json(withdrawal_id))["status"] == "ACKNOWLEDGED"
+
+    assert len(set(withdrawal_ids)) == 3
+    assert int(vault.get_credit(to_hex(direct_alice))) == 0
+    assert int(json.loads(vault.get_status_json())["total_credits"]) == 0
+    assert vault.list_withdrawal_keys() == withdrawal_ids
+
+
+def test_late_failure_after_acknowledgement_restores_exact_record_and_allows_next_payout(
+    direct_vm, direct_deploy, direct_alice
+):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 10**16
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = 2 * amount
+    vault.deposit()
+    direct_vm.value = 0
+
+    vault.withdraw(amount)
+    first_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+    vault.settle_withdrawal(first_id)
+    vault.withdraw(amount)
+    second_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+    assert second_id != first_id
+
+    # The first child can still fail after an early acknowledgement; creation
+    # order selects the first matching candidate and restores exactly once.
+    direct_vm.value = amount
+    vault.__on_errored_message__()
+    direct_vm.value = 0
+    assert json.loads(vault.get_withdrawal_json(first_id))["status"] == "FAILED_RECOVERABLE"
+    assert json.loads(vault.get_withdrawal_json(second_id))["status"] == "DISPATCHED"
+    assert int(vault.get_credit(to_hex(direct_alice))) == amount
+    assert int(json.loads(vault.get_status_json())["total_credits"]) == amount

@@ -13,7 +13,7 @@ import {
   getVaultStatus,
   getActiveWithdrawalKey,
   getWithdrawal,
-  listWithdrawalKeys,
+  listHolderWithdrawalKeys,
   retryWithdrawal,
   settleWithdrawal,
   withdrawFromVault,
@@ -52,7 +52,7 @@ export default function VaultPage() {
       const next = await getVaultStatus();
       const nextCredit = addr ? await getVaultCredit(addr) : 0n;
       const activeKey = addr ? await getActiveWithdrawalKey(addr) : "";
-      const keys = await listWithdrawalKeys();
+      const keys = addr ? await listHolderWithdrawalKeys(addr) : [];
       const lastKey = activeKey || keys.at(-1) || "";
       const nextWithdrawal = lastKey ? await getWithdrawal(lastKey) : null;
       setStatus(next);
@@ -78,7 +78,7 @@ export default function VaultPage() {
     const child = await waitForTriggeredValueTransfer(parentHash, expectedRecipient, expectedAmount);
     setWithdrawalChild(child);
     await load(account || undefined);
-    setPhase("Payout child finalized successfully. Submit settlement to acknowledge the payout.");
+    setPhase("Payout child finalized successfully. Acknowledge the payout to release the holder for another withdrawal.");
   }
 
   async function proveExistingPayout() {
@@ -131,7 +131,7 @@ export default function VaultPage() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
       if (kind === "withdraw" && parentFinalized) {
-        setPhase("Withdrawal parent finalized, but the payout child was not proven. Settlement is unavailable; the record remains recoverable.");
+        setPhase("Withdrawal parent finalized, but the payout child was not proven. Acknowledgement is unavailable; the record remains recoverable.");
         await load(account);
       } else {
         setPhase("");
@@ -143,17 +143,17 @@ export default function VaultPage() {
 
   async function settle() {
     if (!account || !withdrawal) return setError("Connect the withdrawal holder wallet first.");
-    if (withdrawal.status !== "DISPATCHED" || !withdrawalChild) return setError("The successful payout child must be proven before settlement.");
+    if (withdrawal.status !== "DISPATCHED" || !withdrawalChild) return setError("The successful payout child must be proven before acknowledgement.");
     setBusy(true);
     setError("");
-    setPhase("Submitting withdrawal settlement");
+    setPhase("Submitting payout acknowledgement");
     try {
       const hash = await settleWithdrawal(account, withdrawal.withdrawal_id);
       setTx(hash);
       await waitForFinalization(hash);
       await load(account);
       window.sessionStorage.removeItem("exigent.withdrawal.parent");
-      setPhase("Withdrawal settled successfully; the record cannot be replayed.");
+      setPhase("Payout acknowledged; the holder is available for another withdrawal and the exact recovery candidate is retained.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
       setPhase("");
@@ -215,7 +215,7 @@ export default function VaultPage() {
         <Panel eyebrow="Normal user path" title="Withdraw test GEN">
           <div className="panel-body stack">
             <div className="field"><label>Amount in GEN</label><input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" /></div>
-            <div className="notice">A withdrawal first reserves credit and emits a separate payout child. The record becomes settled only after that child is proven finalized and successful.</div>
+            <div className="notice">A withdrawal debits credit and emits a separate payout child. After that child is proven finalized and successful, acknowledge the payout; acknowledgement releases this holder for another withdrawal while retaining exact recovery state for an early child failure.</div>
             <button className="btn-secondary" onClick={() => run("withdraw")} disabled={busy || !known || !account || !validAmount}>Withdraw</button>
           </div>
         </Panel>
@@ -223,19 +223,19 @@ export default function VaultPage() {
       {phase && <div className="notice good" style={{ marginTop: 14 }}>{phase}</div>}
       {tx && <div style={{ marginTop: 14 }}><TxNotice hash={tx} /></div>}
       {withdrawal && (
-        <Panel eyebrow="Payout state machine" title="Withdrawal settlement">
+        <Panel eyebrow="Payout state machine" title="Withdrawal acknowledgement">
           <div className="panel-body stack">
             <div className="grid-3">
               <div className="stat"><small>Status</small><strong><StatusPill value={withdrawalStatus} /></strong></div>
               <div className="stat"><small>Amount</small><strong>{formatGenAmount(BigInt(withdrawal.amount))} GEN</strong></div>
               <div className="stat"><small>Retries</small><strong>{withdrawal.retry_count}</strong></div>
             </div>
-            <div className="notice">Withdrawal key: <span className="mono">{withdrawal.withdrawal_id}</span>. A failed payout is recoverable; a settled payout cannot be replayed.</div>
+            <div className="notice">Withdrawal key: <span className="mono">{withdrawal.withdrawal_id}</span>. A failed payout is recoverable exactly once; an acknowledged payout is non-blocking and cannot be replayed.</div>
             {withdrawalChild && <TxNotice hash={withdrawalChild} label="Payout child finalized" />}
-            {withdrawal.status === "DISPATCHED" && !withdrawalChild && <div className="notice">Settlement is disabled until the payout child transaction is discovered and proven successful.</div>}
+            {withdrawal.status === "DISPATCHED" && !withdrawalChild && <div className="notice">Acknowledgement is disabled until the payout child transaction is discovered and proven successful.</div>}
             <div className="form-actions">
               {withdrawal.status === "DISPATCHED" && !withdrawalChild && <button className="btn-secondary" onClick={() => void proveExistingPayout()} disabled={busy || !withdrawalParent}>Prove payout child</button>}
-              {withdrawal.status === "DISPATCHED" && <button className="btn" onClick={() => void settle()} disabled={busy || !withdrawalChild}>Settle payout</button>}
+              {withdrawal.status === "DISPATCHED" && <button className="btn" onClick={() => void settle()} disabled={busy || !withdrawalChild}>Acknowledge payout</button>}
               {withdrawal.status === "FAILED_RECOVERABLE" && <button className="btn-secondary" onClick={retry} disabled={busy}>Retry exact payout</button>}
             </div>
           </div>

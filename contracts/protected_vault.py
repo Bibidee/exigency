@@ -39,6 +39,7 @@ class ProtectedVault(gl.Contract):
     withdrawal_keys: DynArray[str]
     withdrawal_nonce: u256
     active_withdrawal_by_holder: TreeMap[str, str]
+    recovery_withdrawals_by_holder: TreeMap[str, str]
 
     def __init__(self, gate_address: str):
         self.gate_address = _address_hex(gate_address)
@@ -51,6 +52,51 @@ class ProtectedVault(gl.Contract):
     def _require_gate(self) -> None:
         if gl.message.sender_address.as_hex.lower() != self.gate_address:
             raise gl.vm.UserError("emergency authority requires CapabilityGate")
+
+    def _require_direct_user(self) -> str:
+        sender = _address_hex(gl.message.sender_address)
+        origin = _address_hex(gl.message.origin_address)
+        if sender != origin:
+            raise gl.vm.UserError("vault credit flows require a direct EOA caller")
+        return sender
+
+    def _recovery_ids(self, holder: str) -> list:
+        raw = self.recovery_withdrawals_by_holder.get(holder, "[]")
+        return list(json.loads(raw)) if raw else []
+
+    def _save_recovery_ids(self, holder: str, ids: list) -> None:
+        self.recovery_withdrawals_by_holder[holder] = json.dumps(ids, sort_keys=True)
+
+    def _add_recovery_candidate(self, holder: str, withdrawal_id: str) -> None:
+        ids = self._recovery_ids(holder)
+        if withdrawal_id not in ids:
+            ids.append(withdrawal_id)
+        self._save_recovery_ids(holder, ids)
+
+    def _remove_recovery_candidate(self, holder: str, withdrawal_id: str) -> None:
+        ids = [item for item in self._recovery_ids(holder) if item != withdrawal_id]
+        self._save_recovery_ids(holder, ids)
+
+    def _find_recovery_candidate(self, holder: str, amount: u256) -> str:
+        # The protocol exposes origin and value, but no child identifier in the
+        # errored-message context. Scan the immutable creation order so a late
+        # refund is assigned deterministically to the oldest matching record.
+        # A finalized successful external message cannot later emit a failure;
+        # the candidate list therefore covers only an early holder acknowledgement
+        # racing an unresolved child.
+        for index in range(len(self.withdrawal_keys)):
+            withdrawal_id = self.withdrawal_keys[index]
+            raw = self.withdrawal_records.get(withdrawal_id, "")
+            if not raw:
+                continue
+            record = json.loads(raw)
+            if str(record.get("holder", "")) != holder:
+                continue
+            if str(record.get("status", "")) not in {"DISPATCHED", "ACKNOWLEDGED"}:
+                continue
+            if u256(int(record.get("amount", "0"))) == amount:
+                return withdrawal_id
+        return ""
 
     def _record_emergency(
         self,
@@ -94,7 +140,7 @@ class ProtectedVault(gl.Contract):
         amount = gl.message.value
         if amount == u256(0):
             raise gl.vm.UserError("deposit value must be greater than zero")
-        holder = _address_hex(gl.message.sender_address)
+        holder = self._require_direct_user()
         current = self.credits.get(holder, u256(0))
         self.credits[holder] = current + amount
         self.total_credits = self.total_credits + amount
@@ -106,7 +152,7 @@ class ProtectedVault(gl.Contract):
             raise gl.vm.UserError("withdrawals are temporarily paused")
         if amount == u256(0):
             raise gl.vm.UserError("withdraw amount must be greater than zero")
-        holder = _address_hex(gl.message.sender_address)
+        holder = self._require_direct_user()
         current = self.credits.get(holder, u256(0))
         if current < amount:
             raise gl.vm.UserError("insufficient vault credit")
@@ -116,8 +162,12 @@ class ProtectedVault(gl.Contract):
         # correlated per holder rather than through one global vault lock.
         # One unfinished payout can therefore block only that holder; unrelated
         # holders remain free to withdraw.
-        if self.active_withdrawal_by_holder.get(holder, ""):
-            raise gl.vm.UserError("this holder has another withdrawal awaiting payout settlement")
+        active_id = self.active_withdrawal_by_holder.get(holder, "")
+        if active_id:
+            active_raw = self.withdrawal_records.get(active_id, "")
+            if active_raw and str(json.loads(active_raw).get("status", "")) == "DISPATCHED":
+                raise gl.vm.UserError("this holder has another withdrawal awaiting payout settlement")
+            self.active_withdrawal_by_holder[holder] = ""
 
         withdrawal_id = f"W-{holder}-{int(self.withdrawal_nonce)}"
         self.withdrawal_nonce = self.withdrawal_nonce + u256(1)
@@ -147,23 +197,25 @@ class ProtectedVault(gl.Contract):
         if not raw:
             raise gl.vm.UserError("withdrawal not found")
         record = json.loads(raw)
-        if _address_hex(gl.message.sender_address) != str(record.get("holder", "")):
+        holder = self._require_direct_user()
+        if holder != str(record.get("holder", "")):
             raise gl.vm.UserError("only withdrawal holder may settle")
         status = str(record.get("status", ""))
-        if status == "SETTLED":
+        if status == "ACKNOWLEDGED":
             return status
         if status != "DISPATCHED":
             raise gl.vm.UserError("withdrawal is not awaiting settlement")
-        # GenLayer has no contract-side successful-child callback for an
-        # external EOA value transfer. Do not destroy the recovery pointer when
-        # a holder acknowledges an externally proven payout: if the child later
-        # errors, __on_errored_message__ must still be able to restore credit.
-        # The callback can invalidate this provisional settlement exactly once.
-        record["status"] = "SETTLED"
-        record["settled_at"] = _now()
-        record["recovery_reserved"] = True
+        # This method is deliberately an acknowledgement, not an on-chain proof
+        # of child success. Retain a keyed recovery candidate for a possible
+        # early-acknowledgement failure, but release the active holder lock so a
+        # genuinely successful payout can be followed by another withdrawal.
+        record["status"] = "ACKNOWLEDGED"
+        record["acknowledged_at"] = _now()
+        record["recovery_pending"] = True
         self.withdrawal_records[withdrawal_id] = json.dumps(record, sort_keys=True)
-        return "SETTLED"
+        self._add_recovery_candidate(holder, withdrawal_id)
+        self.active_withdrawal_by_holder[holder] = ""
+        return "ACKNOWLEDGED"
 
     @gl.public.write
     def retry_withdrawal(self, withdrawal_id: str) -> str:
@@ -171,7 +223,8 @@ class ProtectedVault(gl.Contract):
         if not raw:
             raise gl.vm.UserError("withdrawal not found")
         record = json.loads(raw)
-        if _address_hex(gl.message.sender_address) != str(record.get("holder", "")):
+        holder = self._require_direct_user()
+        if holder != str(record.get("holder", "")):
             raise gl.vm.UserError("only withdrawal holder may retry")
         if str(record.get("status", "")) != "FAILED_RECOVERABLE":
             raise gl.vm.UserError("withdrawal is not recoverable")
@@ -189,6 +242,7 @@ class ProtectedVault(gl.Contract):
         record["redispatched_at"] = _now()
         self.withdrawal_records[withdrawal_id] = json.dumps(record, sort_keys=True)
         self.active_withdrawal_by_holder[holder] = withdrawal_id
+        self._remove_recovery_candidate(holder, withdrawal_id)
         _Recipient(gl.message.sender_address).emit_transfer(value=amount)
         return "DISPATCHED"
 
@@ -197,19 +251,17 @@ class ProtectedVault(gl.Contract):
         # GenLayer invokes this handler with the refunded value when an emitted
         # value-transfer child fails. `origin_address` is preserved through the
         # child message chain, so the refund is deterministically attributable
-        # to the holder's one active withdrawal without a global lock. No retry
-        # is emitted from this handler.
+        # to the holder's withdrawal records without a global lock. No retry is
+        # emitted from this handler.
         holder = _address_hex(gl.message.origin_address)
-        withdrawal_id = self.active_withdrawal_by_holder.get(holder, "")
+        withdrawal_id = self._find_recovery_candidate(holder, gl.message.value)
         if not withdrawal_id:
             raise gl.vm.UserError("errored payout has no active holder withdrawal")
         raw = self.withdrawal_records.get(withdrawal_id, "")
         if not raw:
             raise gl.vm.UserError("errored payout record is missing")
         record = json.loads(raw)
-        if str(record.get("status", "")) == "FAILED_RECOVERABLE":
-            return
-        if str(record.get("status", "")) not in {"DISPATCHED", "SETTLED"}:
+        if str(record.get("status", "")) not in {"DISPATCHED", "ACKNOWLEDGED"}:
             raise gl.vm.UserError("errored payout is not recoverable")
         amount = u256(int(record.get("amount", "0")))
         if amount != gl.message.value:
@@ -221,9 +273,11 @@ class ProtectedVault(gl.Contract):
         self.total_credits = self.total_credits + amount
         record["status"] = "FAILED_RECOVERABLE"
         record["failed_at"] = _now()
-        record["recovery_reserved"] = False
+        record["recovery_pending"] = False
         self.withdrawal_records[withdrawal_id] = json.dumps(record, sort_keys=True)
-        self.active_withdrawal_by_holder[holder] = ""
+        self._remove_recovery_candidate(holder, withdrawal_id)
+        if self.active_withdrawal_by_holder.get(holder, "") == withdrawal_id:
+            self.active_withdrawal_by_holder[holder] = ""
 
     @gl.public.write
     def emergency_pause_withdrawals(
@@ -329,6 +383,22 @@ class ProtectedVault(gl.Contract):
     @gl.public.view
     def get_active_withdrawal_key(self, holder: str) -> str:
         return self.active_withdrawal_by_holder.get(_address_hex(holder), "")
+
+    @gl.public.view
+    def get_recovery_withdrawal_keys(self, holder: str) -> list:
+        ids = self._recovery_ids(_address_hex(holder))
+        return [ids[i] for i in range(len(ids))]
+
+    @gl.public.view
+    def get_holder_withdrawal_keys(self, holder: str) -> list:
+        normalized = _address_hex(holder)
+        keys = []
+        for index in range(len(self.withdrawal_keys)):
+            withdrawal_id = self.withdrawal_keys[index]
+            raw = self.withdrawal_records.get(withdrawal_id, "")
+            if raw and str(json.loads(raw).get("holder", "")) == normalized:
+                keys.append(withdrawal_id)
+        return keys
 
     @gl.public.view
     def list_withdrawal_keys(self) -> list:
