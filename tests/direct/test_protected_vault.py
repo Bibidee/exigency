@@ -79,7 +79,7 @@ def test_duplicate_pause_classes_do_not_extend_after_time_advance(direct_vm, dir
         direct_vm.warp(f"2026-09-27T20:{index * 10 + 5:02d}:00Z")
         replay = getattr(vault, method)(10, "INC-" + action, "EXC-" + action, "d" * 64)
         assert replay == first
-        assert len(vault.list_emergency_history()) == 1
+        assert len(vault.list_emergency_history()) == index + 1
 
 
 def test_failed_payout_restores_credit_and_retry_is_single_record(direct_vm, direct_deploy, direct_alice):
