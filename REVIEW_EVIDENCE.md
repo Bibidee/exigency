@@ -15,8 +15,10 @@ address and transaction values.
 
 ## CURRENT CI
 
-The hardening commit is pushed to `main`. The exact-head CI and deployment-health
-run links are added here after GitHub finishes the final pushed workflow.
+The final hardening commit is [0f5228f](https://github.com/Bibidee/exigency/commit/0f5228f1d280a8ba8d4081331834f03ea0fe806a).
+Its exact-head [CI run](https://github.com/Bibidee/exigency/actions/runs/36642197118)
+passed: contract validation, Python/unit/direct tests, frontend typecheck/build,
+and 8 browser tests.
 
 ## CURRENT SOURCE VERIFICATION
 
@@ -31,7 +33,8 @@ run links are added here after GitHub finishes the final pushed workflow.
 
 ## CURRENT HEALTH
 
-Local health passed after redeployment. The check verifies all three hosted
+Local health passed after redeployment. The final [deployment-health run](https://github.com/Bibidee/exigency/actions/runs/36642215629)
+also passed. The check verifies all three hosted
 routes, RPC reachability, chain 61999, Registry/Engine/Gate/Vault reads, Vault
 → Gate wiring, Gate → Engine wiring and source verification in the workflow.
 

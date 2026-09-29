@@ -57,7 +57,9 @@ Deployment transaction hashes and SHA-256 values are recorded in
   gate wiring and gate engine wiring, checks all three hosted routes, confirms
   Studionet RPC reachability and runs exact source verification in the
   workflow.
-- Deployment-health is manually dispatched after each final deployment and is
+- The final exact-head [CI run](https://github.com/Bibidee/exigency/actions/runs/36642197118)
+  passed, including 8 browser tests. The final [deployment-health run](https://github.com/Bibidee/exigency/actions/runs/36642215629)
+  also passed. Deployment-health is manually dispatched after each final deployment and is
   also scheduled every six hours.
 
 ## Live accounting proof
