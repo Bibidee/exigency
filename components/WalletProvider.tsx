@@ -9,6 +9,7 @@ type WalletContextValue = {
   busy: boolean;
   error: string;
   connect: () => Promise<void>;
+  disconnect: () => void;
   clearError: () => void;
 };
 
@@ -65,7 +66,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }
   }, [applyAddress]);
 
-  const value = useMemo(() => ({ address, busy, error, connect, clearError: () => setError("") }), [address, busy, error, connect]);
+  const disconnect = useCallback(() => {
+    setError("");
+    applyAddress("");
+  }, [applyAddress]);
+
+  const value = useMemo(() => ({ address, busy, error, connect, disconnect, clearError: () => setError("") }), [address, busy, error, connect, disconnect]);
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }
 
