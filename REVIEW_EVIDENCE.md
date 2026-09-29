@@ -1,5 +1,15 @@
 # EXIGENT Review Evidence
 
+## Authoritative current update — 2026-09-29
+
+- Final source commit: `5ed405608ce9270e0ca8afedf3f7672048462751`.
+- GitHub Actions run `36624668894` passed for that exact commit: Python/unit/direct tests, contract validation, frontend typecheck/build, and Playwright browser regression.
+- Current finalized Studionet 61999 manifest: CharterRegistry `0x2e15E71e7bE2a94Df6763E4813a6561d26279a6F`; CapabilityGate `0xB1507D80C042F1741e2374819A26b3C4278d17E9`; ExigencyEngine `0x862146D4F97b3c8B7b7a2498E71F8f098252EcC8`; ProtectedVault `0x340910f52eaB0c3eB8a861C0C4feAA460AaFeBAA`.
+- Current deployment transactions and exact deployed-source SHA-256 values are recorded in `deployment-manifest.public.json`; `npm run source:verify` passed with exact byte matches.
+- Public Vercel deployment `dpl_FCXr28DkQPgpuzX8dtQ6tigvDXuG` is READY and unauthenticated. Brave verified `/`, `/command`, and `/vault`; `/command` reads the current four addresses and Studionet 61999, and `/vault` reports open deposits/withdrawals with zero credits on the fresh vault.
+- Deployment health monitoring is configured in `.github/workflows/health.yml` on a six-hour schedule and checks all public routes, RPC wiring, and deployed sources.
+- The live funded deposit/withdrawal proof remains the previously observed account-authorized run; no new financial write was initiated during this remediation pass.
+
 This file records checks observed in the current workspace on 2026-09-28. Missing live evidence is explicitly marked pending. The manually observed positive lifecycle is recorded separately from the opt-in automated lifecycle test; the latter requires a funded, unlocked account and can be delayed by Studionet finality.
 
 ## Current verification update (2026-09-28)

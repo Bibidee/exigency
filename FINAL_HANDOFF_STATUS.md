@@ -1,5 +1,13 @@
 # EXIGENT Final Handoff Status
 
+## Authoritative current update — 2026-09-29
+
+- Final source commit is `5ed405608ce9270e0ca8afedf3f7672048462751`; GitHub Actions run `36624668894` is green across Python/direct tests, contract validation, frontend build, and Playwright.
+- The current four-contract Studionet 61999 deployment is the one in `deployment-manifest.public.json`, and exact source verification passes.
+- Vercel is public again: deployment protection is disabled, deployment `dpl_FCXr28DkQPgpuzX8dtQ6tigvDXuG` is READY, and Brave verified `/`, `/command`, and `/vault`.
+- Health monitoring is present at `.github/workflows/health.yml` and runs every six hours.
+- The remaining account-specific item is a new funded live deposit/withdrawal run against the fresh vault; the earlier authorized live run remains recorded as proof, but no new financial write was performed here.
+
 ## Current update — 2026-09-28
 
 - Vault runtime crash fixed: RPC `get_credit` values are normalized to `BigInt` before formatting, eliminating the observed mixed-number arithmetic exception.
