@@ -120,7 +120,10 @@ class CapabilityGate(gl.Contract):
                 raise
             except Exception:
                 pass
-        if _now() > int(record.get("expires_at", 0)):
+        # Expiry gates only the first dispatch. Once a capability was dispatched
+        # with a valid envelope, exact recovery remains possible until the child
+        # is reconciled; recovery can never change the bound action.
+        if str(record.get("dispatch_status", "ISSUED")) == "ISSUED" and _now() > int(record.get("expires_at", 0)):
             raise gl.vm.UserError("capability expired")
 
         target_hex = _address_hex(target)
@@ -143,8 +146,11 @@ class CapabilityGate(gl.Contract):
 
         record["dispatch_status"] = "DISPATCHED"
         record["dispatch_count"] = int(record.get("dispatch_count", 0)) + 1
-        record["consumed"] = True
-        record["consumed_at"] = _now()
+        record["dispatched_at"] = record.get("dispatched_at") or _now()
+        # `consumed` is retained only as a compatibility field. It means APPLIED,
+        # never merely dispatched.
+        record["consumed"] = False
+        record["consumed_at"] = 0
         self.capabilities[capability_key] = json.dumps(record, sort_keys=True)
 
         protected = gl.get_contract_at(Address(target_hex))
@@ -174,6 +180,26 @@ class CapabilityGate(gl.Contract):
 
         return action_class
 
+    @gl.public.write
+    def reconcile_capability(self, capability_key: str) -> str:
+        raw = self.capabilities.get(capability_key, "")
+        if not raw:
+            raise gl.vm.UserError("capability not found")
+        record = json.loads(raw)
+        if gl.message.sender_address.as_hex != str(record.get("holder", "")):
+            raise gl.vm.UserError("only capability holder may reconcile")
+        if str(record.get("dispatch_status", "ISSUED")) != "DISPATCHED":
+            return str(record.get("dispatch_status", "ISSUED"))
+        protected = gl.get_contract_at(Address(str(record["target"])))
+        applied = protected.view().get_applied_capability_digest(capability_key)
+        if str(applied) == str(record.get("action_digest", "")):
+            record["dispatch_status"] = "APPLIED"
+            record["consumed"] = True
+            record["consumed_at"] = _now()
+            self.capabilities[capability_key] = json.dumps(record, sort_keys=True)
+            return "APPLIED"
+        return "DISPATCHED"
+
     @gl.public.view
     def get_capability_json(self, capability_key: str) -> str:
         raw = self.capabilities.get(capability_key, "")
@@ -186,6 +212,8 @@ class CapabilityGate(gl.Contract):
                 applied = protected.view().get_applied_capability_digest(capability_key)
                 if str(applied) == str(record.get("action_digest", "")):
                     record["dispatch_status"] = "APPLIED"
+                    record["consumed"] = True
+                    record["consumed_at"] = _now()
             except Exception:
                 pass
         return json.dumps(record, sort_keys=True)

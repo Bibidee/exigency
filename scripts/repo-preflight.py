@@ -17,10 +17,12 @@ def main() -> int:
         assert manifest["network"] == "studionet"
         assert manifest["chainId"] == 61999
         assert manifest["rpc"] == "https://studio.genlayer.com/api"
-        assert manifest["expectedLocalCli"] == "0.39.1"
-        assert manifest["jsSdk"] == "1.1.8"
         assert len(manifest["contracts"]) == 4
         assert all(str(value).startswith("0x") for value in manifest["contracts"].values())
+
+    package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+    assert package["devDependencies"]["genlayer"] == "0.39.1"
+    assert package["dependencies"]["genlayer-js"] == "1.1.8"
 
     forbidden = ("61997", "studio-dev.genlayer.com", "Studio Dev")
     checked = [ROOT / ".env.example", ROOT / "gltest.config.yaml", ROOT / "package.json"]

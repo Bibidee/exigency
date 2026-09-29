@@ -10,13 +10,19 @@ function code(file: string): Uint8Array {
 }
 
 async function waitFinal(client: GenLayerClient<any>, hash: TransactionHash) {
-  return client.waitForTransactionReceipt({
+  const receipt: any = await client.waitForTransactionReceipt({
     hash,
     status: "FINALIZED",
     retries: 360,
     interval: 5000,
     fullTransaction: true,
   } as any);
+  const leader = receipt?.consensus_data?.leader_receipt?.find((entry: any) => entry?.execution_result)?.execution_result;
+  const result = receipt?.txExecutionResultName ?? (leader === "SUCCESS" ? "FINISHED_WITH_RETURN" : leader === "ERROR" ? "FINISHED_WITH_ERROR" : undefined);
+  if (result !== "FINISHED_WITH_RETURN") {
+    throw new Error(`Finalized transaction did not prove successful execution: ${String(hash)} (${String(result ?? "unknown")})`);
+  }
+  return receipt;
 }
 
 function deployedAddress(client: GenLayerClient<any>, receipt: any): string {
@@ -75,8 +81,6 @@ export default async function main(client: GenLayerClient<any>) {
     network: "studionet",
     chainId: CHAIN_ID,
     rpc: RPC,
-    expectedLocalCli: "0.39.1",
-    jsSdk: "1.1.8",
     contracts: { charterRegistry: registry.address, exigencyEngine: engine.address, capabilityGate: gate.address, protectedVault: vault.address },
     deploymentTransactions: {
       charterRegistry: registry.txId,

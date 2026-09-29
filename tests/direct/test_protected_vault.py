@@ -62,3 +62,54 @@ def test_duplicate_emergency_delivery_is_idempotent(direct_vm, direct_deploy, di
     assert status["withdrawals_paused_until"] == first_until
     assert len(vault.list_emergency_history()) == 1
     assert vault.get_applied_capability_digest("EXC-IDEMPOTENT") == "c" * 64
+
+
+def test_duplicate_pause_classes_do_not_extend_after_time_advance(direct_vm, direct_deploy, direct_alice):
+    for action, method in (
+        ("PAUSE_WITHDRAWALS", "emergency_pause_withdrawals"),
+        ("PAUSE_DEPOSITS", "emergency_pause_deposits"),
+        ("PAUSE_ALL", "emergency_pause_all"),
+    ):
+        direct_vm.warp("2026-09-27T20:00:00Z")
+        vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+        direct_vm.sender = direct_alice
+        first = getattr(vault, method)(10, "INC-" + action, "EXC-" + action, "d" * 64)
+        direct_vm.warp("2026-09-27T20:05:00Z")
+        replay = getattr(vault, method)(10, "INC-" + action, "EXC-" + action, "d" * 64)
+        assert replay == first
+        assert len(vault.list_emergency_history()) == 1
+
+
+def test_failed_payout_restores_credit_and_retry_is_single_record(direct_vm, direct_deploy, direct_alice):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 10**16
+    direct_vm.sender = direct_alice
+    direct_vm.value = amount
+    vault.deposit()
+    direct_vm.value = 0
+    assert int(vault.withdraw(amount)) == 0
+    withdrawal_id = vault.list_withdrawal_keys()[0]
+    assert json.loads(vault.get_withdrawal_json(withdrawal_id))["status"] == "DISPATCHED"
+    direct_vm.value = amount
+    vault.__on_errored_message__()
+    direct_vm.value = 0
+    assert int(vault.get_credit(to_hex(direct_alice))) == amount
+    failed = json.loads(vault.get_withdrawal_json(withdrawal_id))
+    assert failed["status"] == "FAILED_RECOVERABLE"
+    direct_vm.value = 0
+    assert vault.retry_withdrawal(withdrawal_id) == "DISPATCHED"
+    assert json.loads(vault.get_withdrawal_json(withdrawal_id))["retry_count"] == 1
+
+
+def test_settled_withdrawal_cannot_be_replayed(direct_vm, direct_deploy, direct_alice):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    direct_vm.sender = direct_alice
+    direct_vm.value = 10**16
+    vault.deposit()
+    direct_vm.value = 0
+    vault.withdraw(10**16)
+    withdrawal_id = vault.list_withdrawal_keys()[0]
+    assert vault.settle_withdrawal(withdrawal_id) == "SETTLED"
+    assert vault.settle_withdrawal(withdrawal_id) == "SETTLED"
+    with direct_vm.expect_revert("withdrawal is not recoverable"):
+        vault.retry_withdrawal(withdrawal_id)

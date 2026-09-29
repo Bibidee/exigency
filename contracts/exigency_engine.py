@@ -137,6 +137,9 @@ class ExigencyEngine(gl.Contract):
             or len(url) > 500
             or any(ord(char) < 0x21 or ord(char) == 0x7F for char in url)
             or "\\" in url
+            or "%" in url
+            or "?" in url
+            or "#" in url
         ):
             raise gl.vm.UserError("evidence URLs must be canonical https URLs")
         remainder = url[8:]
@@ -153,17 +156,35 @@ class ExigencyEngine(gl.Contract):
             raise gl.vm.UserError("evidence URLs must use a canonical hostname without userinfo or port")
         return authority
 
+    def _canonical_url(self, url: str) -> str:
+        """Return a fail-closed URL with a canonical path.
+
+        Percent-encoding, queries, fragments, dot segments and backslashes are
+        rejected rather than interpreted differently by different validators.
+        Repeated slashes are collapsed before the URL is frozen in the incident.
+        """
+        self._host(url)
+        remainder = url[8:]
+        authority, separator, raw_path = remainder.partition("/")
+        if not separator:
+            raw_path = "/"
+        segments = raw_path.split("/")
+        if any(segment in (".", "..") for segment in segments):
+            raise gl.vm.UserError("evidence URL contains a dot path segment")
+        path = "/" + "/".join(segment for segment in segments if segment)
+        return "https://" + authority.lower() + path
+
     def _scope_allowed(self, url: str, charter: dict) -> bool:
         remainder = url[8:]
         authority, _, path = remainder.partition("/")
         host = authority.lower()
-        path = "/" + path
+        path = "/" + "/".join(part for part in path.split("/") if part)
         scopes = charter.get("evidence_scopes", [])
         if scopes:
             for scope in scopes:
                 allowed_host = str(scope.get("host", "")).lower()
                 prefix = str(scope.get("path_prefix", "/"))
-                if host == allowed_host and path.startswith(prefix):
+                if host == allowed_host and (prefix == "/" or path == prefix.rstrip("/") or path.startswith(prefix)):
                     return True
             return False
         for allowed in charter.get("evidence_hosts", []):
@@ -365,7 +386,7 @@ Decision rules:
 
         canonical_urls = []
         for raw in evidence_urls:
-            url = str(raw).strip()
+            url = self._canonical_url(str(raw).strip())
             host = self._host(url)
             if not self._scope_allowed(url, charter):
                 raise gl.vm.UserError("evidence URL is outside the charter evidence scope")

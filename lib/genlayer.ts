@@ -165,3 +165,9 @@ export async function waitForFinalization(hash: `0x${string}`) {
 export async function getTransaction(hash: `0x${string}`) {
   return readClient().getTransaction({ hash: hash as never });
 }
+
+export async function getTriggeredTransactionIds(hash: `0x${string}`): Promise<`0x${string}`[]> {
+  const client = readClient() as typeof readClient extends () => infer T ? T : never;
+  const ids = await (client as unknown as { getTriggeredTransactionIds(args: { hash: `0x${string}` }): Promise<string[]> }).getTriggeredTransactionIds({ hash });
+  return (ids ?? []).filter((id): id is `0x${string}` => typeof id === "string" && id.startsWith("0x")) as `0x${string}`[];
+}

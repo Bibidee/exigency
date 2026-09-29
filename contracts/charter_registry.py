@@ -68,10 +68,13 @@ class CharterRegistry(gl.Contract):
         prefix = "/"
         if len(parts) == 2:
             prefix = parts[1].strip()
-            if not prefix.startswith("/") or "\\" in prefix or any(ord(c) < 0x21 or ord(c) == 0x7f for c in prefix) or len(prefix) > 240:
+            if not prefix.startswith("/") or "\\" in prefix or "%" in prefix or "." in prefix or any(ord(c) < 0x21 or ord(c) == 0x7f for c in prefix) or len(prefix) > 240:
                 raise gl.vm.UserError("invalid evidence path prefix")
             if "?" in prefix or "#" in prefix:
                 raise gl.vm.UserError("evidence path prefix must not contain query or fragment")
+            prefix = "/" + "/".join(part for part in prefix.split("/") if part)
+            if prefix != "/":
+                prefix += "/"
         return host, prefix
 
     @gl.public.write

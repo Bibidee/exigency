@@ -56,6 +56,9 @@ export type CapabilityRecord = {
   expires_at: number;
   consumed: boolean;
   consumed_at: number;
+  dispatch_status: "ISSUED" | "DISPATCHED" | "APPLIED" | "RECOVERY_REQUIRED" | string;
+  dispatch_count: number;
+  dispatched_at?: number;
 };
 
 export async function getCharter(key: string): Promise<CharterRecord | null> {
@@ -113,6 +116,10 @@ export async function executeCapability(account: `0x${string}`, capability: Capa
     capability.action_class,
     capability.duration_minutes,
   ]);
+}
+
+export async function reconcileCapability(account: `0x${string}`, capabilityKey: string) {
+  return submitWrite(account, ADDRESSES.capabilityGate, "reconcile_capability", [capabilityKey]);
 }
 
 export async function depositToVault(account: `0x${string}`, value: bigint) {

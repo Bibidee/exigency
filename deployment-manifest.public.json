@@ -5,24 +5,24 @@
   "rpc": "https://studio.genlayer.com/api",
   "explorer": "https://explorer-studio.genlayer.com",
   "contracts": {
-    "charterRegistry": "0x819E1bA4bf1315A8Cd3075C3AC4C7dEB65Ee2896",
-    "exigencyEngine": "0x3fBD057a4c0C4504ab90b40287c065C742ec7F07",
-    "capabilityGate": "0x91b807DC61e624055E9C0C98BDCf3b7E9bE943C3",
-    "protectedVault": "0xbc0aD59dd14aa45211Aae0B2224537DB443e4C67"
+    "charterRegistry": "0x2e15E71e7bE2a94Df6763E4813a6561d26279a6F",
+    "exigencyEngine": "0x862146D4F97b3c8B7b7a2498E71F8f098252EcC8",
+    "capabilityGate": "0xB1507D80C042F1741e2374819A26b3C4278d17E9",
+    "protectedVault": "0x340910f52eaB0c3eB8a861C0C4feAA460AaFeBAA"
   },
   "bindEngineTransaction": "0x867d776c00a2a3392bffe2b10dc7969c5d17d6aa9e70313a52e151e2cd99e228",
   "deploymentTransactions": {
-    "charterRegistry": "0xf55263d456efd2ef6e92262a54df2758685050410c395521e0cf63ec32b2f7f0",
-    "capabilityGate": "0xe780a1b0fa3d902981f559edc529fe7e4e509c705e96cef6523a59f9b33b3a8d",
-    "exigencyEngine": "0xa96c27280124d0f6c248c1a7ed04cfb75cbd237052ae487586e8bbfa513ca2f9",
-    "protectedVault": "0xb4c1300bd1332bb54fb473b9337aa5692baf4ef7727be4729396817612c9ea5e"
+    "charterRegistry": "0x165cd7ccac02b240da8f8ff88a8fd4f2bda1c44401c394e12b13c5ba157f3495",
+    "capabilityGate": "0x7a5343d49a658a0ba745f484c971a3e74cd95f5fa69c6ff9d24978fdd677f221",
+    "exigencyEngine": "0xd8dbb4ea75818465dea69425b79fca6beab743235c6bd2b18e0bed80caf88de6",
+    "protectedVault": "0x665afc8f671cffe181530b03d1b4d657e3af01fd027a318f0253a323444d0343"
   },
   "deployedSourceSha256": {
-    "charterRegistry": "da355fcbe1848fdca9ea3818bd11d92710d5467b72d5a0b9d00008694f8b8636",
-    "exigencyEngine": "afa2f130d47a2c0200b32dac57cb44e037e6cc6043b01a7e541899b7d4da3319",
-    "capabilityGate": "bcb8bcd20f1942d2ff9e17451f60a47b55be56259dca3cc0fe0d060757552627",
-    "protectedVault": "c75563df5304a50b6802ed7eae9118194272c38f3fe41c26fae334353fe4a00c"
+    "charterRegistry": "ea59f36b845897a247063e6664e6e5164af6ec53dbf4e7d85c489e2bebc99218",
+    "exigencyEngine": "0ad4fb5fdae59962d69c76eec9befc11b508ac43185ca69c0e0127514f885244",
+    "capabilityGate": "0480c0a730a111ee9a2e7542a92668a5976ee0ce57086a562b15e9a43ba2fdfe",
+    "protectedVault": "e4be14348128b33f8fa3f3b05b42f136259cf8284cc51e9f9d7b83bedff0eb2b"
   },
   "sourceVerification": "verified-exact-byte-match",
-  "sourceCommit": "29b91c9"
+  "sourceCommit": "158ce3e"
 }

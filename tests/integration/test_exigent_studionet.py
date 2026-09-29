@@ -162,8 +162,8 @@ def test_live_studionet_lifecycle_writes():
     protocol = f"CI-PROTOCOL-{stamp}"
     target = contracts["protectedVault"]
     sources = [
-        "https://raw.githubusercontent.com/Bibidee/exigency/main/demo/evidence/active_incident_primary.md",
-        "https://raw.githubusercontent.com/Bibidee/exigency/main/demo/evidence/active_incident_secondary.md",
+        "https://raw.githubusercontent.com/Bibidee/exigency/9b25b1a95325f9609ca0db522c8a2b7506562b46/demo/evidence/active_incident_primary.md",
+        "https://raw.githubusercontent.com/Bibidee/exigency/9b25b1a95325f9609ca0db522c8a2b7506562b46/demo/evidence/active_incident_secondary.md",
     ]
 
     _finalize(_cli_write(
