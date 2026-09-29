@@ -152,6 +152,10 @@ export async function listWithdrawalKeys() {
   return readContract<string[]>(ADDRESSES.protectedVault, "list_withdrawal_keys", []);
 }
 
+export async function getActiveWithdrawalKey(account: string) {
+  return readContract<string>(ADDRESSES.protectedVault, "get_active_withdrawal_key", [account]);
+}
+
 export async function settleWithdrawal(account: `0x${string}`, withdrawalKey: string) {
   return submitWrite(account, ADDRESSES.protectedVault, "settle_withdrawal", [withdrawalKey]);
 }

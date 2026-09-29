@@ -95,6 +95,7 @@ def test_failed_payout_restores_credit_and_retry_is_single_record(direct_vm, dir
     direct_vm.value = amount
     vault.__on_errored_message__()
     direct_vm.value = 0
+    direct_vm.origin = direct_alice
     assert int(vault.get_credit(to_hex(direct_alice))) == amount
     failed = json.loads(vault.get_withdrawal_json(withdrawal_id))
     assert failed["status"] == "FAILED_RECOVERABLE"
@@ -115,3 +116,105 @@ def test_settled_withdrawal_cannot_be_replayed(direct_vm, direct_deploy, direct_
     assert vault.settle_withdrawal(withdrawal_id) == "SETTLED"
     with direct_vm.expect_revert("withdrawal is not recoverable"):
         vault.retry_withdrawal(withdrawal_id)
+
+
+def test_settlement_before_child_resolution_preserves_refund_recovery(direct_vm, direct_deploy, direct_alice):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 10**16
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = amount
+    vault.deposit()
+    direct_vm.value = 0
+    vault.withdraw(amount)
+    withdrawal_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+
+    # A direct holder settlement must not delete the callback correlation.
+    assert vault.settle_withdrawal(withdrawal_id) == "SETTLED"
+    settled = json.loads(vault.get_withdrawal_json(withdrawal_id))
+    assert settled["status"] == "SETTLED"
+    assert vault.get_active_withdrawal_key(to_hex(direct_alice)) == withdrawal_id
+
+    # A late child failure still restores exactly once and invalidates the
+    # provisional settlement rather than losing the holder's credit.
+    direct_vm.value = amount
+    vault.__on_errored_message__()
+    direct_vm.value = 0
+    failed = json.loads(vault.get_withdrawal_json(withdrawal_id))
+    assert failed["status"] == "FAILED_RECOVERABLE"
+    assert int(vault.get_credit(to_hex(direct_alice))) == amount
+    assert int(json.loads(vault.get_status_json())["total_credits"]) == amount
+
+    # Duplicate failure delivery is idempotent and cannot double-credit.
+    direct_vm.value = amount
+    with direct_vm.expect_revert("errored payout has no active holder withdrawal"):
+        vault.__on_errored_message__()
+    direct_vm.value = 0
+    assert int(vault.get_credit(to_hex(direct_alice))) == amount
+
+
+def test_pending_withdrawal_is_scoped_to_holder(direct_vm, direct_deploy, direct_alice, direct_bob):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 10**16
+
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = amount
+    vault.deposit()
+    direct_vm.sender = direct_bob
+    direct_vm.origin = direct_bob
+    direct_vm.value = amount
+    vault.deposit()
+
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = 0
+    vault.withdraw(amount // 2)
+    alice_key = vault.get_active_withdrawal_key(to_hex(direct_alice))
+    assert alice_key
+
+    # Alice's unresolved payout no longer freezes Bob.
+    direct_vm.sender = direct_bob
+    direct_vm.origin = direct_bob
+    assert int(vault.withdraw(amount // 2)) == amount // 2
+    bob_key = vault.get_active_withdrawal_key(to_hex(direct_bob))
+    assert bob_key and bob_key != alice_key
+
+    # The refund callback uses origin, so Alice's failure cannot alter Bob.
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = amount // 2
+    vault.__on_errored_message__()
+    direct_vm.value = 0
+    assert int(vault.get_credit(to_hex(direct_alice))) == amount
+    assert int(vault.get_credit(to_hex(direct_bob))) == amount // 2
+    assert json.loads(vault.get_withdrawal_json(alice_key))["status"] == "FAILED_RECOVERABLE"
+    assert json.loads(vault.get_withdrawal_json(bob_key))["status"] == "DISPATCHED"
+
+
+def test_retry_preserves_holder_correlation_and_conservation(direct_vm, direct_deploy, direct_alice, direct_bob):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 10**16
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = amount
+    vault.deposit()
+    direct_vm.sender = direct_bob
+    direct_vm.origin = direct_bob
+    direct_vm.value = amount
+    vault.deposit()
+
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = 0
+    vault.withdraw(amount)
+    alice_key = vault.get_active_withdrawal_key(to_hex(direct_alice))
+    direct_vm.value = amount
+    vault.__on_errored_message__()
+    direct_vm.value = 0
+    assert vault.retry_withdrawal(alice_key) == "DISPATCHED"
+    assert vault.get_active_withdrawal_key(to_hex(direct_alice)) == alice_key
+
+    # Bob's credit and the total remain isolated while Alice retries.
+    assert int(vault.get_credit(to_hex(direct_bob))) == amount
+    assert int(json.loads(vault.get_status_json())["total_credits"]) == 2 * amount - amount

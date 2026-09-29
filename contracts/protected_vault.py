@@ -38,7 +38,7 @@ class ProtectedVault(gl.Contract):
     withdrawal_records: TreeMap[str, str]
     withdrawal_keys: DynArray[str]
     withdrawal_nonce: u256
-    active_withdrawal_key: str
+    active_withdrawal_by_holder: TreeMap[str, str]
 
     def __init__(self, gate_address: str):
         self.gate_address = _address_hex(gate_address)
@@ -47,7 +47,6 @@ class ProtectedVault(gl.Contract):
         self.deposits_paused_until = u256(0)
         self.last_emergency_json = ""
         self.withdrawal_nonce = u256(0)
-        self.active_withdrawal_key = ""
 
     def _require_gate(self) -> None:
         if gl.message.sender_address.as_hex.lower() != self.gate_address:
@@ -112,13 +111,13 @@ class ProtectedVault(gl.Contract):
         if current < amount:
             raise gl.vm.UserError("insufficient vault credit")
 
-        # A value-transfer child has its own outcome. Keep one payout in flight
-        # at a time so an errored-message refund can be matched unambiguously.
-        # The debit is recorded before dispatch, then restored by
-        # __on_errored_message__ if the payout child fails. A successful payout
-        # remains settled in the accounting and cannot be replayed.
-        if self.active_withdrawal_key:
-            raise gl.vm.UserError("another withdrawal is awaiting payout settlement")
+        # A value-transfer child has its own outcome. GenLayer preserves the
+        # original transaction origin through child messages, so recovery is
+        # correlated per holder rather than through one global vault lock.
+        # One unfinished payout can therefore block only that holder; unrelated
+        # holders remain free to withdraw.
+        if self.active_withdrawal_by_holder.get(holder, ""):
+            raise gl.vm.UserError("this holder has another withdrawal awaiting payout settlement")
 
         withdrawal_id = f"W-{holder}-{int(self.withdrawal_nonce)}"
         self.withdrawal_nonce = self.withdrawal_nonce + u256(1)
@@ -135,7 +134,7 @@ class ProtectedVault(gl.Contract):
             sort_keys=True,
         )
         self.withdrawal_keys.append(withdrawal_id)
-        self.active_withdrawal_key = withdrawal_id
+        self.active_withdrawal_by_holder[holder] = withdrawal_id
 
         self.credits[holder] = current - amount
         self.total_credits = self.total_credits - amount
@@ -155,11 +154,15 @@ class ProtectedVault(gl.Contract):
             return status
         if status != "DISPATCHED":
             raise gl.vm.UserError("withdrawal is not awaiting settlement")
+        # GenLayer has no contract-side successful-child callback for an
+        # external EOA value transfer. Do not destroy the recovery pointer when
+        # a holder acknowledges an externally proven payout: if the child later
+        # errors, __on_errored_message__ must still be able to restore credit.
+        # The callback can invalidate this provisional settlement exactly once.
         record["status"] = "SETTLED"
         record["settled_at"] = _now()
+        record["recovery_reserved"] = True
         self.withdrawal_records[withdrawal_id] = json.dumps(record, sort_keys=True)
-        if self.active_withdrawal_key == withdrawal_id:
-            self.active_withdrawal_key = ""
         return "SETTLED"
 
     @gl.public.write
@@ -172,10 +175,10 @@ class ProtectedVault(gl.Contract):
             raise gl.vm.UserError("only withdrawal holder may retry")
         if str(record.get("status", "")) != "FAILED_RECOVERABLE":
             raise gl.vm.UserError("withdrawal is not recoverable")
-        if self.active_withdrawal_key:
-            raise gl.vm.UserError("another withdrawal is awaiting payout settlement")
-        amount = u256(int(record["amount"]))
         holder = str(record["holder"])
+        if self.active_withdrawal_by_holder.get(holder, ""):
+            raise gl.vm.UserError("this holder has another withdrawal awaiting payout settlement")
+        amount = u256(int(record["amount"]))
         current = self.credits.get(holder, u256(0))
         if current < amount:
             raise gl.vm.UserError("insufficient vault credit for retry")
@@ -185,34 +188,42 @@ class ProtectedVault(gl.Contract):
         record["retry_count"] = int(record.get("retry_count", 0)) + 1
         record["redispatched_at"] = _now()
         self.withdrawal_records[withdrawal_id] = json.dumps(record, sort_keys=True)
-        self.active_withdrawal_key = withdrawal_id
+        self.active_withdrawal_by_holder[holder] = withdrawal_id
         _Recipient(gl.message.sender_address).emit_transfer(value=amount)
         return "DISPATCHED"
 
     @gl.public.write.payable
     def __on_errored_message__(self):
         # GenLayer invokes this handler with the refunded value when an emitted
-        # value-transfer child fails. Since only one payout is in flight, the
-        # refund is deterministically attributable and can be restored exactly
-        # once. No retry is emitted from this handler.
-        withdrawal_id = self.active_withdrawal_key
+        # value-transfer child fails. `origin_address` is preserved through the
+        # child message chain, so the refund is deterministically attributable
+        # to the holder's one active withdrawal without a global lock. No retry
+        # is emitted from this handler.
+        holder = _address_hex(gl.message.origin_address)
+        withdrawal_id = self.active_withdrawal_by_holder.get(holder, "")
         if not withdrawal_id:
-            return
+            raise gl.vm.UserError("errored payout has no active holder withdrawal")
         raw = self.withdrawal_records.get(withdrawal_id, "")
         if not raw:
-            self.active_withdrawal_key = ""
-            return
+            raise gl.vm.UserError("errored payout record is missing")
         record = json.loads(raw)
+        if str(record.get("status", "")) == "FAILED_RECOVERABLE":
+            return
+        if str(record.get("status", "")) not in {"DISPATCHED", "SETTLED"}:
+            raise gl.vm.UserError("errored payout is not recoverable")
         amount = u256(int(record.get("amount", "0")))
         if amount != gl.message.value:
             raise gl.vm.UserError("errored payout value does not match active withdrawal")
-        holder = str(record["holder"])
-        self.credits[holder] = self.credits.get(holder, u256(0)) + amount
+        record_holder = str(record["holder"])
+        if record_holder != holder:
+            raise gl.vm.UserError("errored payout holder does not match origin")
+        self.credits[record_holder] = self.credits.get(record_holder, u256(0)) + amount
         self.total_credits = self.total_credits + amount
         record["status"] = "FAILED_RECOVERABLE"
         record["failed_at"] = _now()
+        record["recovery_reserved"] = False
         self.withdrawal_records[withdrawal_id] = json.dumps(record, sort_keys=True)
-        self.active_withdrawal_key = ""
+        self.active_withdrawal_by_holder[holder] = ""
 
     @gl.public.write
     def emergency_pause_withdrawals(
@@ -296,7 +307,9 @@ class ProtectedVault(gl.Contract):
                 "deposits_paused_until": int(self.deposits_paused_until),
                 "last_emergency_json": self.last_emergency_json,
                 "applied_capability_count": len(self.emergency_history),
-                "active_withdrawal_key": self.active_withdrawal_key,
+                # Kept as an empty compatibility field; use
+                # get_active_withdrawal_key(holder) for holder-scoped state.
+                "active_withdrawal_key": "",
             },
             sort_keys=True,
         )
@@ -312,6 +325,10 @@ class ProtectedVault(gl.Contract):
     @gl.public.view
     def get_withdrawal_json(self, withdrawal_id: str) -> str:
         return self.withdrawal_records.get(withdrawal_id, "")
+
+    @gl.public.view
+    def get_active_withdrawal_key(self, holder: str) -> str:
+        return self.active_withdrawal_by_holder.get(_address_hex(holder), "")
 
     @gl.public.view
     def list_withdrawal_keys(self) -> list:

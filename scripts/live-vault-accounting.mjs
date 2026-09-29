@@ -91,7 +91,7 @@ if (payoutBalanceDelta <= 0n || payoutBalanceDelta > withdrawalAmount) {
 }
 
 const afterDispatch = await readStatus();
-const withdrawalId = String(afterDispatch.active_withdrawal_key || "");
+const withdrawalId = String(await client.readContract({ address: vault, functionName: "get_active_withdrawal_key", args: [account.address] }));
 if (!withdrawalId) throw new Error("withdrawal did not expose an active settlement record");
 const dispatchedRecord = JSON.parse(await client.readContract({ address: vault, functionName: "get_withdrawal_json", args: [withdrawalId] }));
 if (dispatchedRecord.status !== "DISPATCHED") throw new Error(`unexpected withdrawal status: ${dispatchedRecord.status}`);
@@ -102,7 +102,6 @@ const finalStatus = await readStatus();
 const finalRecord = JSON.parse(await client.readContract({ address: vault, functionName: "get_withdrawal_json", args: [withdrawalId] }));
 const finalCredit = await readCredit();
 if (finalRecord.status !== "SETTLED") throw new Error(`withdrawal was not settled: ${finalRecord.status}`);
-if (finalStatus.active_withdrawal_key) throw new Error("settled withdrawal remained active");
 if (finalCredit !== beforeCredit + amount - withdrawalAmount) throw new Error("final credit mismatch after settlement");
 if (BigInt(finalStatus.total_credits) !== BigInt(before.total_credits) + amount - withdrawalAmount) throw new Error("final total mismatch after settlement");
 

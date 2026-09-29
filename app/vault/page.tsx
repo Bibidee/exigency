@@ -11,6 +11,7 @@ import {
   depositToVault,
   getVaultCredit,
   getVaultStatus,
+  getActiveWithdrawalKey,
   getWithdrawal,
   listWithdrawalKeys,
   retryWithdrawal,
@@ -50,7 +51,7 @@ export default function VaultPage() {
     try {
       const next = await getVaultStatus();
       const nextCredit = addr ? await getVaultCredit(addr) : 0n;
-      const activeKey = String(next.active_withdrawal_key || "");
+      const activeKey = addr ? await getActiveWithdrawalKey(addr) : "";
       const keys = await listWithdrawalKeys();
       const lastKey = activeKey || keys.at(-1) || "";
       const nextWithdrawal = lastKey ? await getWithdrawal(lastKey) : null;
@@ -77,7 +78,7 @@ export default function VaultPage() {
     const child = await waitForTriggeredValueTransfer(parentHash, expectedRecipient, expectedAmount);
     setWithdrawalChild(child);
     await load(account || undefined);
-    setPhase("Payout child finalized successfully. Submit settlement to close the withdrawal record.");
+    setPhase("Payout child finalized successfully. Submit settlement to acknowledge the payout.");
   }
 
   async function proveExistingPayout() {
