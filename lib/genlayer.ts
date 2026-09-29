@@ -139,7 +139,20 @@ export async function submitWrite(
   return hash as `0x${string}`;
 }
 
-export async function waitForFinalization(hash: `0x${string}`) {
+type TransactionReceiptRecord = Record<string, unknown>;
+
+function asWei(value: unknown) {
+  try {
+    return BigInt(String(value ?? "0"));
+  } catch {
+    return 0n;
+  }
+}
+
+export async function waitForFinalization(
+  hash: `0x${string}`,
+  options: { allowValueTransfer?: boolean } = {},
+) {
   const client = readClient();
   const receipt = await client.waitForTransactionReceipt({
     hash: hash as never,
@@ -148,16 +161,48 @@ export async function waitForFinalization(hash: `0x${string}`) {
     interval: 5000,
     fullTransaction: true,
   } as never);
-  const value = receipt as unknown as Record<string, unknown>;
+  const value = receipt as unknown as TransactionReceiptRecord;
   const directResult = (receipt as { txExecutionResultName?: ExecutionResult }).txExecutionResultName;
   const consensus = value.consensus_data as { leader_receipt?: Array<{ execution_result?: string }> } | undefined;
   const leaderResult = consensus?.leader_receipt?.find((entry) => entry.execution_result)?.execution_result;
   const executionResult = directResult ?? (leaderResult === "SUCCESS" ? ExecutionResult.FINISHED_WITH_RETURN : leaderResult === "ERROR" ? ExecutionResult.FINISHED_WITH_ERROR : undefined);
+  const statusName = String(value.statusName ?? value.status_name ?? "").toUpperCase();
+  const valueCredited = value.value_credited === true || value.valueCredited === true;
+  const nativeValueTransferFinalized = options.allowValueTransfer
+    && statusName === "FINALIZED"
+    && valueCredited
+    && asWei(value.value) > 0n;
   if (executionResult === ExecutionResult.FINISHED_WITH_ERROR) {
     throw new Error(`Studionet finalized the transaction with a contract execution error (${hash}).`);
   }
-  if (executionResult !== ExecutionResult.FINISHED_WITH_RETURN) {
+  if (executionResult !== ExecutionResult.FINISHED_WITH_RETURN && !nativeValueTransferFinalized) {
     throw new Error(`Studionet finalized the transaction without a successful execution result (${hash}).`);
+  }
+  return receipt;
+}
+
+export async function waitForValueTransferFinalization(
+  hash: `0x${string}`,
+  expectedRecipient: string,
+  expectedAmount: bigint,
+  expectedParent?: string,
+) {
+  const receipt = await waitForFinalization(hash, { allowValueTransfer: true });
+  const value = receipt as unknown as TransactionReceiptRecord;
+  const recipient = String(value.recipient ?? value.to_address ?? "").toLowerCase();
+  const triggeredBy = String(value.triggered_by ?? value.triggeredBy ?? "").toLowerCase();
+  const actualAmount = asWei(value.value);
+  if (recipient !== expectedRecipient.toLowerCase()) {
+    throw new Error(`Payout child recipient mismatch for ${hash}.`);
+  }
+  if (actualAmount !== expectedAmount) {
+    throw new Error(`Payout child amount mismatch for ${hash}: expected ${expectedAmount}, got ${actualAmount}.`);
+  }
+  if (expectedParent && triggeredBy !== expectedParent.toLowerCase()) {
+    throw new Error(`Payout child parent mismatch for ${hash}.`);
+  }
+  if (!(value.value_credited === true || value.valueCredited === true)) {
+    throw new Error(`Payout child value was not credited for ${hash}.`);
   }
   return receipt;
 }
@@ -194,4 +239,25 @@ export async function waitForTriggeredChildren(hash: `0x${string}`): Promise<`0x
   const children = await waitForTriggeredTransactionIds(hash);
   for (const child of children) await waitForFinalization(child);
   return children;
+}
+
+export async function waitForTriggeredValueTransfer(
+  parentHash: `0x${string}`,
+  expectedRecipient: string,
+  expectedAmount: bigint,
+): Promise<`0x${string}`> {
+  const children = await waitForTriggeredTransactionIds(parentHash);
+  const matches: `0x${string}`[] = [];
+  for (const child of children) {
+    try {
+      await waitForValueTransferFinalization(child, expectedRecipient, expectedAmount, parentHash);
+      matches.push(child);
+    } catch {
+      // A parent may emit other children. Only the uniquely matching, credited payout is acceptable.
+    }
+  }
+  if (matches.length !== 1) {
+    throw new Error(`Expected exactly one successful payout child for ${parentHash}, found ${matches.length}.`);
+  }
+  return matches[0];
 }

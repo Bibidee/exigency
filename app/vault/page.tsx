@@ -18,7 +18,7 @@ import {
   withdrawFromVault,
   type WithdrawalRecord,
 } from "@/lib/contracts";
-import { waitForFinalization, waitForTriggeredChildren } from "@/lib/genlayer";
+import { waitForFinalization, waitForTriggeredValueTransfer } from "@/lib/genlayer";
 import { formatGenAmount, parseGenAmount } from "@/lib/amount";
 
 function fmt(ts: number) {
@@ -37,6 +37,13 @@ export default function VaultPage() {
   const [phase, setPhase] = useState("");
   const [withdrawal, setWithdrawal] = useState<WithdrawalRecord | null>(null);
   const [withdrawalChild, setWithdrawalChild] = useState("");
+  const [withdrawalParent, setWithdrawalParent] = useState("");
+
+  useEffect(() => {
+    const queryParent = new URLSearchParams(window.location.search).get("withdrawalParent");
+    const savedParent = window.sessionStorage.getItem("exigent.withdrawal.parent") || "";
+    setWithdrawalParent(queryParent || savedParent);
+  }, []);
 
   const load = useCallback(async (addr?: string) => {
     setStatusState("LOADING");
@@ -65,13 +72,29 @@ export default function VaultPage() {
     void load(account || undefined);
   }, [account, load]);
 
-  async function provePayout(parentHash: `0x${string}`) {
+  async function provePayout(parentHash: `0x${string}`, expectedAmount: bigint, expectedRecipient: string) {
     setPhase("Discovering the withdrawal payout child transaction");
-    const children = await waitForTriggeredChildren(parentHash);
-    const child = children[children.length - 1];
+    const child = await waitForTriggeredValueTransfer(parentHash, expectedRecipient, expectedAmount);
     setWithdrawalChild(child);
     await load(account || undefined);
     setPhase("Payout child finalized successfully. Submit settlement to close the withdrawal record.");
+  }
+
+  async function proveExistingPayout() {
+    if (!account || !withdrawal || !withdrawalParent) {
+      setError("The finalized withdrawal parent hash is required to reconcile this payout.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await provePayout(withdrawalParent as `0x${string}`, BigInt(withdrawal.amount), withdrawal.destination);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+      setPhase("Withdrawal parent is finalized, but the payout child is not yet proven.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function run(kind: "deposit" | "withdraw") {
@@ -91,11 +114,15 @@ export default function VaultPage() {
         ? await depositToVault(account, value)
         : await withdrawFromVault(account, value);
       setTx(hash);
+      if (kind === "withdraw") {
+        window.sessionStorage.setItem("exigent.withdrawal.parent", hash);
+        setWithdrawalParent(hash);
+      }
       setPhase("Waiting for FINALIZED and successful execution");
       await waitForFinalization(hash);
       parentFinalized = true;
       if (kind === "withdraw") {
-        await provePayout(hash);
+        await provePayout(hash, value, account);
       } else {
         await load(account);
         setPhase("Deposit finalized successfully and state refreshed");
@@ -124,6 +151,7 @@ export default function VaultPage() {
       setTx(hash);
       await waitForFinalization(hash);
       await load(account);
+      window.sessionStorage.removeItem("exigent.withdrawal.parent");
       setPhase("Withdrawal settled successfully; the record cannot be replayed.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -143,7 +171,9 @@ export default function VaultPage() {
       const hash = await retryWithdrawal(account, withdrawal.withdrawal_id);
       setTx(hash);
       await waitForFinalization(hash);
-      await provePayout(hash);
+      window.sessionStorage.setItem("exigent.withdrawal.parent", hash);
+      setWithdrawalParent(hash);
+      await provePayout(hash, BigInt(withdrawal.amount), withdrawal.destination);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
       setPhase("");
@@ -203,7 +233,8 @@ export default function VaultPage() {
             {withdrawalChild && <TxNotice hash={withdrawalChild} label="Payout child finalized" />}
             {withdrawal.status === "DISPATCHED" && !withdrawalChild && <div className="notice">Settlement is disabled until the payout child transaction is discovered and proven successful.</div>}
             <div className="form-actions">
-              {withdrawal.status === "DISPATCHED" && <button className="btn" onClick={settle} disabled={busy || !withdrawalChild}>Settle payout</button>}
+              {withdrawal.status === "DISPATCHED" && !withdrawalChild && <button className="btn-secondary" onClick={() => void proveExistingPayout()} disabled={busy || !withdrawalParent}>Prove payout child</button>}
+              {withdrawal.status === "DISPATCHED" && <button className="btn" onClick={() => void settle()} disabled={busy || !withdrawalChild}>Settle payout</button>}
               {withdrawal.status === "FAILED_RECOVERABLE" && <button className="btn-secondary" onClick={retry} disabled={busy}>Retry exact payout</button>}
             </div>
           </div>

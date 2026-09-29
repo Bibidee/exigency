@@ -26,6 +26,19 @@ const finalized = async (hash) => {
   return receipt;
 };
 
+const payoutFinalized = async (hash, expectedParent) => {
+  const receipt = await client.waitForTransactionReceipt({ hash, status: "FINALIZED", retries: 120, interval: 5000, fullTransaction: true });
+  const statusName = String(receipt.statusName ?? receipt.status_name ?? "").toUpperCase();
+  const valueCredited = receipt.value_credited === true || receipt.valueCredited === true;
+  const recipient = String(receipt.recipient ?? receipt.to_address ?? "").toLowerCase();
+  const triggeredBy = String(receipt.triggered_by ?? receipt.triggeredBy ?? "").toLowerCase();
+  if (statusName !== "FINALIZED" || !valueCredited) throw new Error(`payout child was not finalized and credited: ${hash}`);
+  if (recipient !== account.address.toLowerCase()) throw new Error(`payout recipient mismatch: ${hash}`);
+  if (BigInt(String(receipt.value ?? 0)) !== withdrawalAmount) throw new Error(`payout value mismatch: ${hash}`);
+  if (triggeredBy !== expectedParent.toLowerCase()) throw new Error(`payout parent mismatch: ${hash}`);
+  return receipt;
+};
+
 const waitForPayoutChildren = async (parentHash) => {
   let children = [];
   for (let attempt = 0; attempt < 60; attempt += 1) {
@@ -34,8 +47,17 @@ const waitForPayoutChildren = async (parentHash) => {
     await sleep(2000);
   }
   if (!children.length) throw new Error(`withdrawal payout child was not discovered for ${parentHash}`);
-  for (const child of children) await finalized(child);
-  return children;
+  const matches = [];
+  for (const child of children) {
+    try {
+      await payoutFinalized(child, parentHash);
+      matches.push(child);
+    } catch {
+      // Ignore unrelated children; exactly one credited payout is required below.
+    }
+  }
+  if (matches.length !== 1) throw new Error(`expected one successful payout child, found ${matches.length}`);
+  return matches;
 };
 
 const before = await readStatus();
