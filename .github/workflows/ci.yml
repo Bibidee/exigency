@@ -17,7 +17,17 @@ jobs:
       - run: python -m py_compile contracts/*.py
       - run: python scripts/repo-preflight.py
       - run: pytest tests/unit -q
-      - run: pytest tests/direct -v
+      - name: Run direct tests
+        shell: bash
+        run: |
+          set +e
+          pytest tests/direct -v 2>&1 | tee direct-tests.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            detail=$(tail -n 30 direct-tests.log | tr '\n' ' ' | cut -c1-4000)
+            echo "::error title=Direct test failure::$detail"
+          fi
+          exit "$status"
 
   contract-validation:
     runs-on: ubuntu-latest
