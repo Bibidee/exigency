@@ -148,7 +148,11 @@ export async function waitForFinalization(hash: `0x${string}`) {
     interval: 5000,
     fullTransaction: true,
   } as never);
-  const executionResult = (receipt as { txExecutionResultName?: ExecutionResult }).txExecutionResultName;
+  const value = receipt as unknown as Record<string, unknown>;
+  const directResult = (receipt as { txExecutionResultName?: ExecutionResult }).txExecutionResultName;
+  const consensus = value.consensus_data as { leader_receipt?: Array<{ execution_result?: string }> } | undefined;
+  const leaderResult = consensus?.leader_receipt?.find((entry) => entry.execution_result)?.execution_result;
+  const executionResult = directResult ?? (leaderResult === "SUCCESS" ? ExecutionResult.FINISHED_WITH_RETURN : leaderResult === "ERROR" ? ExecutionResult.FINISHED_WITH_ERROR : undefined);
   if (executionResult === ExecutionResult.FINISHED_WITH_ERROR) {
     throw new Error(`Studionet finalized the transaction with a contract execution error (${hash}).`);
   }
