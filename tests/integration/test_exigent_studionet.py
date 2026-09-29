@@ -79,12 +79,13 @@ def _cli_write(address: str, method: str, *args: str) -> str:
     return f"{result.stdout}\n{result.stderr}"
 
 
-def _finalize(stdout: str) -> None:
+def _finalize(stdout: str) -> str:
     marker = "Write Transaction Hash:"
     assert marker in stdout, stdout
     tx_hash = stdout.split(marker, 1)[1].strip().splitlines()[0].strip()
     assert tx_hash.startswith("0x"), stdout
     _finalize_hash(tx_hash)
+    return tx_hash
 
 
 def _finalize_hash(tx_hash: str) -> None:
@@ -193,7 +194,11 @@ def test_live_studionet_lifecycle_writes():
         "Automated live integration incident verifying source-grounded emergency authority and exact capability execution.",
         json.dumps(sources),
     ))
-    _finalize(_cli_write(contracts["exigencyEngine"], "assess_incident", incident))
+    assessment_hash = _finalize(_cli_write(contracts["exigencyEngine"], "assess_incident", incident))
+    assessment_children = _triggered_children(assessment_hash)
+    assert assessment_children, "assessment did not emit the finalized capability issuance child"
+    for child_hash in assessment_children:
+        _finalize_hash(child_hash)
     record = {}
     for _ in range(36):
         record = json.loads(_cli_call(contracts["exigencyEngine"], "get_incident_json", incident))
@@ -204,6 +209,10 @@ def test_live_studionet_lifecycle_writes():
         time.sleep(5)
     assert record["status"] == "AUTHORITY_PENDING_FINALITY"
     assert record["capability_key"]
+    assessment = json.loads(record["assessment_json"])
+    assert assessment["decision"] == "TRIGGER_CONFIRMED"
+    assert assessment["incident_digest"] == record["incident_digest"]
+    assert assessment["charter_digest"] == record["charter_digest"]
     capability = {}
     for _ in range(36):
         raw = _cli_call(contracts["capabilityGate"], "get_capability_json", record["capability_key"])
@@ -228,5 +237,7 @@ def test_live_studionet_lifecycle_writes():
     applied = json.loads(_cli_call(contracts["capabilityGate"], "get_capability_json", capability["capability_key"]))
     assert applied["dispatch_status"] == "APPLIED"
     assert applied["consumed"] is True
+    assert int(applied["dispatch_count"]) == 1
+    assert applied["action_digest"]
     status = json.loads(_cli_call(contracts["protectedVault"], "get_status_json"))
     assert status["withdrawals_paused"] is True

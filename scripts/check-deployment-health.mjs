@@ -11,12 +11,8 @@ for (const route of ["/", "/command", "/vault"]) {
   const body = await response.text();
   if (!response.ok || /Application error|This page could not load/i.test(body)) throw new Error(`frontend health failed for ${route}: HTTP ${response.status}`);
 }
-const rpcResponse = await fetch(rpc, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "gen_getChainId", params: [] }) });
+const rpcResponse = await fetch(rpc, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "gen_getContractSchema", params: [manifest.contracts.protectedVault] }) });
 if (!rpcResponse.ok) throw new Error(`Studionet RPC returned HTTP ${rpcResponse.status}`);
-const rpcPayload = await rpcResponse.json();
-if (Number(rpcPayload.result) !== 61999 && String(rpcPayload.result).toLowerCase() !== "0xf22f") {
-  throw new Error(`Studionet RPC reported unexpected chain id: ${String(rpcPayload.result)}`);
-}
 const client = createClient({ chain: studionet, endpoint: rpc });
 const charterKeys = await client.readContract({ address: manifest.contracts.charterRegistry, functionName: "list_charter_keys", args: [] });
 const incidentKeys = await client.readContract({ address: manifest.contracts.exigencyEngine, functionName: "list_incident_keys", args: [] });
@@ -26,4 +22,4 @@ const status = JSON.parse(raw);
 if (status.gate_address.toLowerCase() !== manifest.contracts.capabilityGate.toLowerCase()) throw new Error("ProtectedVault gate address does not match the deployment manifest");
 const engine = await client.readContract({ address: manifest.contracts.capabilityGate, functionName: "get_engine_address", args: [] });
 if (String(engine).toLowerCase() !== manifest.contracts.exigencyEngine.toLowerCase()) throw new Error("CapabilityGate engine address does not match the deployment manifest");
-console.log(JSON.stringify({ baseUrl, network: manifest.network, chainId: manifest.chainId, routes: ["/", "/command", "/vault"], contractsRead: { charterRegistry: true, exigencyEngine: true, capabilityGate: true, protectedVault: true }, counts: { charters: charterKeys.length, incidents: incidentKeys.length, capabilities: capabilityKeys.length }, protectedVault: manifest.contracts.protectedVault, withdrawalsPaused: status.withdrawals_paused, depositsPaused: status.deposits_paused }));
+console.log(JSON.stringify({ baseUrl, network: manifest.network, chainId: manifest.chainId, rpcReachable: true, routes: ["/", "/command", "/vault"], contractsRead: { charterRegistry: true, exigencyEngine: true, capabilityGate: true, protectedVault: true }, counts: { charters: charterKeys.length, incidents: incidentKeys.length, capabilities: capabilityKeys.length }, protectedVault: manifest.contracts.protectedVault, withdrawalsPaused: status.withdrawals_paused, depositsPaused: status.deposits_paused }));

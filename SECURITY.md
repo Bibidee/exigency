@@ -46,9 +46,33 @@ response is too large. These are processing limits, not a claim that the
 upstream network transfer was interrupted early.
 
 Vault withdrawals debit accounting at dispatch and create a unique withdrawal
-record. A failed value-transfer child invokes the vault's errored-message
-handler, which restores the exact amount and marks the record
-`FAILED_RECOVERABLE`; retry uses the same record and amount and is idempotent.
-Successful payouts cannot be replayed, and only one payout may be in flight so
-refund attribution is deterministic. A holder may mark a finalized payout
-`SETTLED` without creating another transfer.
+record. In-flight correlation is stored per holder, not in one global lock, so
+one unresolved payout cannot freeze unrelated users.
+
+GenLayer preserves `origin_address` through child message chains. A failed
+value-transfer child invokes the vault's errored-message handler, which uses
+that origin and the exact refunded value to restore credit and total credit
+exactly once, then marks the record `FAILED_RECOVERABLE`. A duplicate callback
+cannot double-credit. Retry reuses the same withdrawal id, amount and
+destination.
+
+GenLayer currently exposes no contract-side successful-child callback for an
+external EOA value transfer. The frontend therefore proves the finalized child,
+parent, recipient, amount and `value_credited` before submitting the holder
+acknowledgement. The acknowledgement marks the record `SETTLED` but retains the
+recovery pointer; a late failure callback can still invalidate that provisional
+settlement and restore the exact amount. Settlement never destroys recovery
+state, and a settled record cannot be retried or paid a second time.
+
+Accounting states:
+
+| State | Holder credit | Total credit | Retry | Restore |
+| --- | --- | --- | --- | --- |
+| `DISPATCHED` | debited | debited | no | exact origin/value callback |
+| `SETTLED` | debited | debited | no | yes, if a failure callback arrives |
+| `FAILED_RECOVERABLE` | restored | restored | exact record only | no second restore |
+
+Studio simulates balances; live proof must still verify the recipient wallet
+balance before and after the finalized payout. The platform boundary and
+message-context assumptions are recorded in
+`docs/GENLAYER_VALUE_TRANSFER_SEMANTICS.md`.

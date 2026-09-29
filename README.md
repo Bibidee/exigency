@@ -43,7 +43,7 @@ Stores immutable charter versions. Each charter freezes:
 - capability TTL;
 - activation delay.
 
-The charter text is never edited. The first publisher claims the protocol key; later charter versions for that protocol must come from the same wallet. Activation changes only which immutable version is selected for **future** incidents, and an older version cannot roll back a newer active version. An incident snapshots the active charter digest and remains assessable against that frozen version even after a later charter activates.
+The charter text is never edited. The first publisher claims the protocol key; later charter versions for that protocol must come from the same wallet. Each protocol uses a deterministic monotonic version counter. Activation changes only which immutable version is selected for **future** incidents, and an older version cannot roll back a newer active version. An incident snapshots the active charter digest and remains assessable against that frozen version even after a later charter activates.
 
 ### `ExigencyEngine`
 

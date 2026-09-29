@@ -71,4 +71,20 @@ The TTL starts inside `CapabilityGate.issue_capability`, i.e. when the finality-
 
 ## Versioning
 
-Charter policy is immutable. New policy requires a new `charter_key`. The first publisher claims a protocol key and only that wallet can publish subsequent versions. `active_by_protocol` selects which immutable version may open **new** incidents, and activation is monotonic by publication time so an older version cannot replace a newer active charter. Every incident snapshots the charter digest; assessment retrieves that frozen version directly rather than requiring it to remain active, so later activation changes do not rewrite or brick an existing case.
+Charter policy is immutable. New policy requires a new `charter_key`. The first publisher claims a protocol key and only that wallet can publish subsequent versions. `active_by_protocol` selects which immutable version may open **new** incidents. Each protocol has a deterministic monotonic version counter; activation rejects any version that is not newer than the currently active version, so an older version cannot replace a newer active charter. Every incident snapshots the charter digest; assessment retrieves that frozen version directly rather than requiring it to remain active, so later activation changes do not rewrite or brick an existing case.
+
+## Withdrawal architecture
+
+`ProtectedVault` debits a holder and records a unique `DISPATCHED` withdrawal
+before emitting the finalized native-value child. In-flight correlation is
+stored in `active_withdrawal_by_holder`, and GenLayer's preserved
+`origin_address` identifies the holder inside `__on_errored_message__`. An
+unfinished payout therefore blocks only its own holder.
+
+The platform exposes an errored-message hook for failed value transfers, but no
+contract-side successful-child callback for a transfer to an EOA. The holder
+acknowledgement is consequently non-destructive: it is accepted only after the
+application proves the child externally, while the recovery pointer remains.
+A failure callback can still move the record to `FAILED_RECOVERABLE` and
+restore the exact amount. The acknowledgement never enables retry, and a
+duplicate failure callback cannot restore twice.
