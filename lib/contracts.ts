@@ -61,6 +61,18 @@ export type CapabilityRecord = {
   dispatched_at?: number;
 };
 
+export type WithdrawalRecord = {
+  withdrawal_id: string;
+  holder: string;
+  destination: string;
+  amount: string;
+  status: "DISPATCHED" | "SETTLED" | "FAILED_RECOVERABLE" | string;
+  requested_at: number;
+  settled_at?: number;
+  failed_at?: number;
+  retry_count: number;
+};
+
 export async function getCharter(key: string): Promise<CharterRecord | null> {
   const raw = await readContract<string>(ADDRESSES.charterRegistry, "get_charter_json", [key]);
   return raw ? (JSON.parse(raw) as CharterRecord) : null;
@@ -128,6 +140,24 @@ export async function depositToVault(account: `0x${string}`, value: bigint) {
 
 export async function withdrawFromVault(account: `0x${string}`, value: bigint) {
   return submitWrite(account, ADDRESSES.protectedVault, "withdraw", [value]);
+}
+
+export async function getWithdrawal(withdrawalKey: string): Promise<WithdrawalRecord | null> {
+  if (!withdrawalKey) return null;
+  const raw = await readContract<string>(ADDRESSES.protectedVault, "get_withdrawal_json", [withdrawalKey]);
+  return raw ? (JSON.parse(raw) as WithdrawalRecord) : null;
+}
+
+export async function listWithdrawalKeys() {
+  return readContract<string[]>(ADDRESSES.protectedVault, "list_withdrawal_keys", []);
+}
+
+export async function settleWithdrawal(account: `0x${string}`, withdrawalKey: string) {
+  return submitWrite(account, ADDRESSES.protectedVault, "settle_withdrawal", [withdrawalKey]);
+}
+
+export async function retryWithdrawal(account: `0x${string}`, withdrawalKey: string) {
+  return submitWrite(account, ADDRESSES.protectedVault, "retry_withdrawal", [withdrawalKey]);
 }
 
 export async function getVaultCredit(account: string) {

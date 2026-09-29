@@ -84,21 +84,11 @@ def _finalize(stdout: str) -> None:
     assert marker in stdout, stdout
     tx_hash = stdout.split(marker, 1)[1].strip().splitlines()[0].strip()
     assert tx_hash.startswith("0x"), stdout
-    retries = os.environ.get("EXIGENT_LIVE_RECEIPT_RETRIES", "36")
-    interval = os.environ.get("EXIGENT_LIVE_RECEIPT_INTERVAL_MS", "5000")
-    command = [
-        *CLI,
-        "receipt",
-        tx_hash,
-        "--status",
-        "FINALIZED",
-        "--retries",
-        retries,
-        "--interval",
-        interval,
-        "--rpc",
-        "https://studio.genlayer.com/api",
-    ]
+    _finalize_hash(tx_hash)
+
+
+def _finalize_hash(tx_hash: str) -> None:
+    command = ["node", str(ROOT / "scripts" / "wait-finalized.mjs"), tx_hash]
     result = subprocess.run(
         command,
         cwd=ROOT,
@@ -111,6 +101,26 @@ def _finalize(stdout: str) -> None:
             f"Studionet transaction did not reach FINALIZED: {tx_hash}\n"
             f"{result.stdout}\n{result.stderr}"
         )
+
+
+def _triggered_children(parent_hash: str) -> list[str]:
+    retries = int(os.environ.get("EXIGENT_LIVE_CHILD_RETRIES", "60"))
+    interval = float(os.environ.get("EXIGENT_LIVE_CHILD_INTERVAL", "2"))
+    for attempt in range(retries):
+        result = subprocess.run(
+            ["node", str(ROOT / "scripts" / "triggered-transactions.mjs"), parent_hash],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=True,
+            shell=False,
+        )
+        children = json.loads(result.stdout.strip().splitlines()[-1])
+        if children:
+            return children
+        if attempt < retries - 1:
+            __import__("time").sleep(interval)
+    raise AssertionError(f"no child transaction was discovered for {parent_hash}")
 
 
 def test_live_studionet_manifest_and_contract_reads():
@@ -162,8 +172,8 @@ def test_live_studionet_lifecycle_writes():
     protocol = f"CI-PROTOCOL-{stamp}"
     target = contracts["protectedVault"]
     sources = [
-        "https://raw.githubusercontent.com/Bibidee/exigency/9b25b1a95325f9609ca0db522c8a2b7506562b46/demo/evidence/active_incident_primary.md",
-        "https://raw.githubusercontent.com/Bibidee/exigency/9b25b1a95325f9609ca0db522c8a2b7506562b46/demo/evidence/active_incident_secondary.md",
+        "https://raw.githubusercontent.com/Bibidee/exigency/158ce3e8a06c6b3d312b8c2e79bacc24c3ed9baf/demo/evidence/active_incident_primary.md",
+        "https://raw.githubusercontent.com/Bibidee/exigency/158ce3e8a06c6b3d312b8c2e79bacc24c3ed9baf/demo/evidence/active_incident_secondary.md",
     ]
 
     _finalize(_cli_write(
@@ -203,11 +213,20 @@ def test_live_studionet_lifecycle_writes():
                 break
         time.sleep(5)
     assert capability.get("issued_at", 0), "capability child did not finalize"
-    _finalize(_cli_write(
+    execute_output = _cli_write(
         contracts["capabilityGate"], "execute_capability", capability["capability_key"],
         capability["target"], capability["action_class"], str(capability["duration_minutes"]),
-    ))
-    consumed = json.loads(_cli_call(contracts["capabilityGate"], "get_capability_json", capability["capability_key"]))
-    assert consumed["consumed"] is True
+    )
+    execute_hash = execute_output.split("Write Transaction Hash:", 1)[1].strip().splitlines()[0].strip()
+    _finalize_hash(execute_hash)
+    child_hashes = _triggered_children(execute_hash)
+    for child_hash in child_hashes:
+        _finalize_hash(child_hash)
+    dispatched = json.loads(_cli_call(contracts["capabilityGate"], "get_capability_json", capability["capability_key"]))
+    assert dispatched["dispatch_status"] in {"DISPATCHED", "APPLIED"}
+    _finalize(_cli_write(contracts["capabilityGate"], "reconcile_capability", capability["capability_key"]))
+    applied = json.loads(_cli_call(contracts["capabilityGate"], "get_capability_json", capability["capability_key"]))
+    assert applied["dispatch_status"] == "APPLIED"
+    assert applied["consumed"] is True
     status = json.loads(_cli_call(contracts["protectedVault"], "get_status_json"))
     assert status["withdrawals_paused"] is True

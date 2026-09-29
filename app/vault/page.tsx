@@ -7,25 +7,216 @@ import PageIntro from "@/components/PageIntro";
 import Panel from "@/components/Panel";
 import StatusPill from "@/components/StatusPill";
 import TxNotice from "@/components/TxNotice";
-import { depositToVault, getVaultCredit, getVaultStatus, withdrawFromVault } from "@/lib/contracts";
-import { waitForFinalization } from "@/lib/genlayer";
+import {
+  depositToVault,
+  getVaultCredit,
+  getVaultStatus,
+  getWithdrawal,
+  listWithdrawalKeys,
+  retryWithdrawal,
+  settleWithdrawal,
+  withdrawFromVault,
+  type WithdrawalRecord,
+} from "@/lib/contracts";
+import { waitForFinalization, waitForTriggeredChildren } from "@/lib/genlayer";
 import { formatGenAmount, parseGenAmount } from "@/lib/amount";
 
-function fmt(ts:number){return ts?new Date(ts*1000).toLocaleString():"—"}
+function fmt(ts: number) {
+  return ts ? new Date(ts * 1000).toLocaleString() : "—";
+}
 
-export default function VaultPage(){
-  const { address: account } = useWallet();const[status,setStatus]=useState<Record<string,unknown>|null>(null);const[statusState,setStatusState]=useState<"LOADING"|"READY"|"UNKNOWN">("LOADING");const[credit,setCredit]=useState<bigint>(0n);const[amount,setAmount]=useState("0.10");const[error,setError]=useState("");const[tx,setTx]=useState("");const[busy,setBusy]=useState(false);const[phase,setPhase]=useState("");
-  const load=useCallback(async(addr?:string)=>{setStatusState("LOADING");try{const next=await getVaultStatus();const nextCredit=addr?await getVaultCredit(addr):0n;setStatus(next);setCredit(nextCredit);setError("");setStatusState("READY")}catch(e){setStatus(null);setCredit(0n);setStatusState("UNKNOWN");setError(e instanceof Error?e.message:String(e))}},[]);
-  useEffect(()=>{void load(account||undefined)},[account,load]);
-  async function run(kind:"deposit"|"withdraw"){if(!account)return setError("Connect a wallet first.");setBusy(true);setError("");setTx("");setPhase(kind==="deposit"?"Submitting deposit":"Submitting withdrawal");try{const value=parseGenAmount(amount);const h=kind==="deposit"?await depositToVault(account,value):await withdrawFromVault(account,value);setTx(h);setPhase("Waiting for FINALIZED and successful execution");await waitForFinalization(h);await load(account);setPhase("Finalized successfully and state refreshed")}catch(e){setError(e instanceof Error?e.message:String(e));setPhase("")}finally{setBusy(false)}}
-  const known= statusState === "READY" && status !== null;
-  const validAmount = (() => { try { parseGenAmount(amount); return true; } catch { return false; } })();
-  const stateLabel=(paused:unknown)=>!known?"UNKNOWN / READ FAILED":Boolean(paused)?"PAUSED":"OPEN";
-  return <AppShell><PageIntro eyebrow="Consequential target" title="Protected Vault" copy="This demo target holds test GEN credits. There is deliberately no administrator pause button: emergency pause methods reject every caller except CapabilityGate." />
-    {error&&<div className="notice bad">{error} <button className="btn-secondary" style={{marginTop:10}} onClick={()=>load(account||undefined)}>Retry reads</button></div>}
-    <div className="grid-3"><div className="stat"><small>Withdrawals</small><strong><StatusPill value={stateLabel(status?.withdrawals_paused)}/></strong></div><div className="stat"><small>Deposits</small><strong><StatusPill value={stateLabel(status?.deposits_paused)}/></strong></div><div className="stat"><small>Your credit</small><strong>{known?formatGenAmount(credit):"—"} GEN</strong></div></div>
-    <div className="grid-2" style={{marginTop:14}}><Panel eyebrow="Normal user path" title="Deposit test GEN"><div className="panel-body stack"><div className="field"><label>Amount in GEN</label><input value={amount} onChange={e=>setAmount(e.target.value)} inputMode="decimal"/></div><div className="notice">The payable amount and GenLayer protocol fee are estimated separately. If deposits are paused by a finalized EXIGENT capability, this write reverts.</div><button className="btn" onClick={()=>run("deposit")} disabled={busy||!known||!account||!validAmount}>Deposit</button></div></Panel><Panel eyebrow="Normal user path" title="Withdraw test GEN"><div className="panel-body stack"><div className="field"><label>Amount in GEN</label><input value={amount} onChange={e=>setAmount(e.target.value)} inputMode="decimal"/></div><div className="notice">Withdrawals are the visible consequence of emergency authority. When paused, the contract itself rejects this path until the transaction-time expiry.</div><button className="btn-secondary" onClick={()=>run("withdraw")} disabled={busy||!known||!account||!validAmount}>Withdraw</button></div></Panel></div>
-    {phase&&<div className="notice good" style={{marginTop:14}}>{phase}</div>}{tx&&<div style={{marginTop:14}}><TxNotice hash={tx}/></div>}
-    <Panel eyebrow="Current protected state" title="Vault authority surface" className="" ><div className="panel-body"><dl className="keyvals"><div className="keyval"><dt>Gate</dt><dd className="digest">{known?String(status?.gate_address||"Not configured"):"UNKNOWN / READ FAILED"}</dd></div><div className="keyval"><dt>Withdrawals paused until</dt><dd>{known?fmt(Number(status?.withdrawals_paused_until||0)):"—"}</dd></div><div className="keyval"><dt>Deposits paused until</dt><dd>{known?fmt(Number(status?.deposits_paused_until||0)):"—"}</dd></div><div className="keyval"><dt>Total credited wei</dt><dd className="mono">{known?String(status?.total_credits||"0"):"—"}</dd></div></dl></div></Panel>
-  </AppShell>
+export default function VaultPage() {
+  const { address: account } = useWallet();
+  const [status, setStatus] = useState<Record<string, unknown> | null>(null);
+  const [statusState, setStatusState] = useState<"LOADING" | "READY" | "UNKNOWN">("LOADING");
+  const [credit, setCredit] = useState<bigint>(0n);
+  const [amount, setAmount] = useState("0.10");
+  const [error, setError] = useState("");
+  const [tx, setTx] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState("");
+  const [withdrawal, setWithdrawal] = useState<WithdrawalRecord | null>(null);
+  const [withdrawalChild, setWithdrawalChild] = useState("");
+
+  const load = useCallback(async (addr?: string) => {
+    setStatusState("LOADING");
+    try {
+      const next = await getVaultStatus();
+      const nextCredit = addr ? await getVaultCredit(addr) : 0n;
+      const activeKey = String(next.active_withdrawal_key || "");
+      const keys = await listWithdrawalKeys();
+      const lastKey = activeKey || keys.at(-1) || "";
+      const nextWithdrawal = lastKey ? await getWithdrawal(lastKey) : null;
+      setStatus(next);
+      setCredit(nextCredit);
+      setWithdrawal(nextWithdrawal);
+      setError("");
+      setStatusState("READY");
+    } catch (cause) {
+      setStatus(null);
+      setCredit(0n);
+      setWithdrawal(null);
+      setStatusState("UNKNOWN");
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }, []);
+
+  useEffect(() => {
+    void load(account || undefined);
+  }, [account, load]);
+
+  async function provePayout(parentHash: `0x${string}`) {
+    setPhase("Discovering the withdrawal payout child transaction");
+    const children = await waitForTriggeredChildren(parentHash);
+    const child = children[children.length - 1];
+    setWithdrawalChild(child);
+    await load(account || undefined);
+    setPhase("Payout child finalized successfully. Submit settlement to close the withdrawal record.");
+  }
+
+  async function run(kind: "deposit" | "withdraw") {
+    if (!account) {
+      setError("Connect a wallet first.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setTx("");
+    setWithdrawalChild("");
+    setPhase(kind === "deposit" ? "Submitting deposit" : "Submitting withdrawal");
+    let parentFinalized = false;
+    try {
+      const value = parseGenAmount(amount);
+      const hash = kind === "deposit"
+        ? await depositToVault(account, value)
+        : await withdrawFromVault(account, value);
+      setTx(hash);
+      setPhase("Waiting for FINALIZED and successful execution");
+      await waitForFinalization(hash);
+      parentFinalized = true;
+      if (kind === "withdraw") {
+        await provePayout(hash);
+      } else {
+        await load(account);
+        setPhase("Deposit finalized successfully and state refreshed");
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+      if (kind === "withdraw" && parentFinalized) {
+        setPhase("Withdrawal parent finalized, but the payout child was not proven. Settlement is unavailable; the record remains recoverable.");
+        await load(account);
+      } else {
+        setPhase("");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function settle() {
+    if (!account || !withdrawal) return setError("Connect the withdrawal holder wallet first.");
+    if (withdrawal.status !== "DISPATCHED" || !withdrawalChild) return setError("The successful payout child must be proven before settlement.");
+    setBusy(true);
+    setError("");
+    setPhase("Submitting withdrawal settlement");
+    try {
+      const hash = await settleWithdrawal(account, withdrawal.withdrawal_id);
+      setTx(hash);
+      await waitForFinalization(hash);
+      await load(account);
+      setPhase("Withdrawal settled successfully; the record cannot be replayed.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+      setPhase("");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function retry() {
+    if (!account || !withdrawal) return setError("Connect the withdrawal holder wallet first.");
+    if (withdrawal.status !== "FAILED_RECOVERABLE") return setError("Only a failed recoverable payout can be retried.");
+    setBusy(true);
+    setError("");
+    setPhase("Submitting the exact recoverable payout retry");
+    try {
+      const hash = await retryWithdrawal(account, withdrawal.withdrawal_id);
+      setTx(hash);
+      await waitForFinalization(hash);
+      await provePayout(hash);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+      setPhase("");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const known = statusState === "READY" && status !== null;
+  const validAmount = (() => {
+    try {
+      parseGenAmount(amount);
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+  const stateLabel = (paused: unknown) => !known ? "UNKNOWN / READ FAILED" : Boolean(paused) ? "PAUSED" : "OPEN";
+  const withdrawalStatus = withdrawal?.status || "—";
+
+  return (
+    <AppShell>
+      <PageIntro eyebrow="Consequential target" title="Protected Vault" copy="This demo target holds test GEN credits. There is deliberately no administrator pause button: emergency pause methods reject every caller except CapabilityGate." />
+      {error && <div className="notice bad">{error} <button className="btn-secondary" style={{ marginTop: 10 }} onClick={() => load(account || undefined)}>Retry reads</button></div>}
+      <div className="grid-3">
+        <div className="stat"><small>Withdrawals</small><strong><StatusPill value={stateLabel(status?.withdrawals_paused)} /></strong></div>
+        <div className="stat"><small>Deposits</small><strong><StatusPill value={stateLabel(status?.deposits_paused)} /></strong></div>
+        <div className="stat"><small>Your credit</small><strong>{known ? formatGenAmount(credit) : "—"} GEN</strong></div>
+      </div>
+      <div className="grid-2" style={{ marginTop: 14 }}>
+        <Panel eyebrow="Normal user path" title="Deposit test GEN">
+          <div className="panel-body stack">
+            <div className="field"><label>Amount in GEN</label><input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" /></div>
+            <div className="notice">The payable amount and GenLayer protocol fee are estimated separately. If deposits are paused by a finalized EXIGENT capability, this write reverts.</div>
+            <button className="btn" onClick={() => run("deposit")} disabled={busy || !known || !account || !validAmount}>Deposit</button>
+          </div>
+        </Panel>
+        <Panel eyebrow="Normal user path" title="Withdraw test GEN">
+          <div className="panel-body stack">
+            <div className="field"><label>Amount in GEN</label><input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" /></div>
+            <div className="notice">A withdrawal first reserves credit and emits a separate payout child. The record becomes settled only after that child is proven finalized and successful.</div>
+            <button className="btn-secondary" onClick={() => run("withdraw")} disabled={busy || !known || !account || !validAmount}>Withdraw</button>
+          </div>
+        </Panel>
+      </div>
+      {phase && <div className="notice good" style={{ marginTop: 14 }}>{phase}</div>}
+      {tx && <div style={{ marginTop: 14 }}><TxNotice hash={tx} /></div>}
+      {withdrawal && (
+        <Panel eyebrow="Payout state machine" title="Withdrawal settlement">
+          <div className="panel-body stack">
+            <div className="grid-3">
+              <div className="stat"><small>Status</small><strong><StatusPill value={withdrawalStatus} /></strong></div>
+              <div className="stat"><small>Amount</small><strong>{formatGenAmount(BigInt(withdrawal.amount))} GEN</strong></div>
+              <div className="stat"><small>Retries</small><strong>{withdrawal.retry_count}</strong></div>
+            </div>
+            <div className="notice">Withdrawal key: <span className="mono">{withdrawal.withdrawal_id}</span>. A failed payout is recoverable; a settled payout cannot be replayed.</div>
+            {withdrawalChild && <TxNotice hash={withdrawalChild} label="Payout child finalized" />}
+            {withdrawal.status === "DISPATCHED" && !withdrawalChild && <div className="notice">Settlement is disabled until the payout child transaction is discovered and proven successful.</div>}
+            <div className="form-actions">
+              {withdrawal.status === "DISPATCHED" && <button className="btn" onClick={settle} disabled={busy || !withdrawalChild}>Settle payout</button>}
+              {withdrawal.status === "FAILED_RECOVERABLE" && <button className="btn-secondary" onClick={retry} disabled={busy}>Retry exact payout</button>}
+            </div>
+          </div>
+        </Panel>
+      )}
+      <Panel eyebrow="Current protected state" title="Vault authority surface">
+        <div className="panel-body"><dl className="keyvals">
+          <div className="keyval"><dt>Gate</dt><dd className="digest">{known ? String(status?.gate_address || "Not configured") : "UNKNOWN / READ FAILED"}</dd></div>
+          <div className="keyval"><dt>Withdrawals paused until</dt><dd>{known ? fmt(Number(status?.withdrawals_paused_until || 0)) : "—"}</dd></div>
+          <div className="keyval"><dt>Deposits paused until</dt><dd>{known ? fmt(Number(status?.deposits_paused_until || 0)) : "—"}</dd></div>
+          <div className="keyval"><dt>Total credited wei</dt><dd className="mono">{known ? String(status?.total_credits || "0") : "—"}</dd></div>
+        </dl></div>
+      </Panel>
+    </AppShell>
+  );
 }

@@ -9,7 +9,7 @@ import Panel from "@/components/Panel";
 import StatusPill from "@/components/StatusPill";
 import TxNotice from "@/components/TxNotice";
 import { executeCapability, getCapability, reconcileCapability, type CapabilityRecord } from "@/lib/contracts";
-import { getTriggeredTransactionIds, waitForFinalization } from "@/lib/genlayer";
+import { waitForFinalization, waitForTriggeredChildren } from "@/lib/genlayer";
 
 function fmt(ts:number){return ts?new Date(ts*1000).toLocaleString():"—"}
 
@@ -18,7 +18,7 @@ export default function CapabilityDetail(){
   const[cap,setCap]=useState<CapabilityRecord|null>(null);const { address: account } = useWallet();const[error,setError]=useState("");const[loadState,setLoadState]=useState<"LOADING"|"FOUND"|"NOT_FOUND"|"READ_FAILED">("LOADING");const[tx,setTx]=useState("");const[busy,setBusy]=useState(false);const[phase,setPhase]=useState("");
   async function load(){setLoadState("LOADING");setError("");try{const record=await getCapability(key);setCap(record);setLoadState(record?"FOUND":"NOT_FOUND")}catch(e){setCap(null);setLoadState("READ_FAILED");setError(e instanceof Error?e.message:String(e))}}
   useEffect(()=>{load()},[key]);
-  async function execute(){if(!account)return setError("Connect the capability holder wallet first.");if(!cap)return;setBusy(true);setError("");setPhase("Submitting capability execution");try{const h=await executeCapability(account,cap);setTx(h);setPhase("Waiting for gate transaction to FINALIZE");await waitForFinalization(h);const children=await getTriggeredTransactionIds(h);if(children.length){setPhase(`Waiting for ${children.length} protected-vault child transaction${children.length===1?"":"s"} to FINALIZE`);for(const child of children){await waitForFinalization(child);setTx(child)}}setPhase("Gate and protected-vault child finalized; reconciling authoritative state.");await load()}catch(e){setError(e instanceof Error?e.message:String(e));setPhase("")}finally{setBusy(false)}}
+  async function execute(){if(!account)return setError("Connect the capability holder wallet first.");if(!cap)return;setBusy(true);setError("");setPhase("Submitting capability execution");try{const h=await executeCapability(account,cap);setTx(h);setPhase("Waiting for gate transaction to FINALIZE");await waitForFinalization(h);setPhase("Discovering the protected-vault child transaction");const children=await waitForTriggeredChildren(h);setTx(children[children.length-1]);setPhase("Gate and protected-vault child finalized; reconciling authoritative state.");await load()}catch(e){setError(e instanceof Error?e.message:String(e));setPhase("")}finally{setBusy(false)}}
   async function reconcile(){if(!account||!cap)return setError("Connect the capability holder wallet first.");setBusy(true);setError("");setPhase("Submitting child reconciliation");try{const h=await reconcileCapability(account,cap.capability_key);setTx(h);await waitForFinalization(h);setPhase("Capability reconciled from authoritative vault state.");await load()}catch(e){setError(e instanceof Error?e.message:String(e));setPhase("")}finally{setBusy(false)}}
   const expired=cap?Date.now()/1000>cap.expires_at:false;
   const lifecycle=cap?.dispatch_status || (cap?.consumed?"APPLIED":expired?"EXPIRED":"ISSUED");

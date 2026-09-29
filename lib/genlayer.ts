@@ -171,3 +171,27 @@ export async function getTriggeredTransactionIds(hash: `0x${string}`): Promise<`
   const ids = await (client as unknown as { getTriggeredTransactionIds(args: { hash: `0x${string}` }): Promise<string[]> }).getTriggeredTransactionIds({ hash });
   return (ids ?? []).filter((id): id is `0x${string}` => typeof id === "string" && id.startsWith("0x")) as `0x${string}`[];
 }
+
+export async function waitForTriggeredTransactionIds(
+  hash: `0x${string}`,
+  retries = 60,
+  interval = 2000,
+): Promise<`0x${string}`[]> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < retries; attempt += 1) {
+    try {
+      const ids = await getTriggeredTransactionIds(hash);
+      if (ids.length > 0) return ids;
+    } catch (error) {
+      lastError = error;
+    }
+    if (attempt < retries - 1) await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+  throw new Error(`No child transaction was discovered for finalized parent ${hash}.${lastError ? ` ${walletErrorMessage(lastError)}` : ""}`);
+}
+
+export async function waitForTriggeredChildren(hash: `0x${string}`): Promise<`0x${string}`[]> {
+  const children = await waitForTriggeredTransactionIds(hash);
+  for (const child of children) await waitForFinalization(child);
+  return children;
+}
