@@ -37,7 +37,8 @@ test.describe("public EXIGENT browser regression", () => {
       };
     }, { account });
     await page.goto("/vault", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("button", { name: /0x4a7d.*32f5/i })).toBeVisible();
+    await expect(page.getByText(/0x4a7d.*32f5/i).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /disconnect wallet/i })).toBeVisible();
     await expect(page.locator("body")).not.toContainText("[object Object]");
   });
 
