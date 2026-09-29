@@ -26,13 +26,13 @@ function deployedAddress(client: GenLayerClient<any>, receipt: any): string {
   return String(value);
 }
 
-async function deployOne(client: GenLayerClient<any>, file: string, args: unknown[]): Promise<string> {
+async function deployOne(client: GenLayerClient<any>, file: string, args: unknown[]): Promise<{ address: string; txId: string }> {
   const txId = await client.deployContract({ code: code(file), args: args as any[] });
   console.log(`[deploy] ${file}: ${txId}`);
   const receipt = await waitFinal(client, txId as TransactionHash);
   const address = deployedAddress(client, receipt);
   console.log(`[finalized] ${file}: ${address}`);
-  return address;
+  return { address, txId: String(txId) };
 }
 
 async function writeAndFinalize(client: GenLayerClient<any>, address: `0x${string}`, functionName: string, args: unknown[]) {
@@ -54,18 +54,18 @@ export default async function main(client: GenLayerClient<any>) {
 
   const registry = await deployOne(client, "charter_registry.py", []);
   const gate = await deployOne(client, "capability_gate.py", []);
-  const engine = await deployOne(client, "exigency_engine.py", [registry, gate]);
-  const bindEngineTx = await writeAndFinalize(client, gate as `0x${string}`, "bind_engine", [engine]);
-  const vault = await deployOne(client, "protected_vault.py", [gate]);
+  const engine = await deployOne(client, "exigency_engine.py", [registry.address, gate.address]);
+  const bindEngineTx = await writeAndFinalize(client, gate.address as `0x${string}`, "bind_engine", [engine.address]);
+  const vault = await deployOne(client, "protected_vault.py", [gate.address]);
 
   const env = [
     "NEXT_PUBLIC_GENLAYER_CHAIN_ID=61999",
     "NEXT_PUBLIC_GENLAYER_RPC_URL=https://studio.genlayer.com/api",
     "NEXT_PUBLIC_GENLAYER_EXPLORER=https://explorer-studio.genlayer.com",
-    `NEXT_PUBLIC_CHARTER_REGISTRY_ADDRESS=${registry}`,
-    `NEXT_PUBLIC_EXIGENCY_ENGINE_ADDRESS=${engine}`,
-    `NEXT_PUBLIC_CAPABILITY_GATE_ADDRESS=${gate}`,
-    `NEXT_PUBLIC_PROTECTED_VAULT_ADDRESS=${vault}`,
+    `NEXT_PUBLIC_CHARTER_REGISTRY_ADDRESS=${registry.address}`,
+    `NEXT_PUBLIC_EXIGENCY_ENGINE_ADDRESS=${engine.address}`,
+    `NEXT_PUBLIC_CAPABILITY_GATE_ADDRESS=${gate.address}`,
+    `NEXT_PUBLIC_PROTECTED_VAULT_ADDRESS=${vault.address}`,
     "",
   ].join("\n");
   writeFileSync(path.resolve(process.cwd(), ".env.generated"), env);
@@ -77,7 +77,13 @@ export default async function main(client: GenLayerClient<any>) {
     rpc: RPC,
     expectedLocalCli: "0.39.1",
     jsSdk: "1.1.8",
-    contracts: { charterRegistry: registry, exigencyEngine: engine, capabilityGate: gate, protectedVault: vault },
+    contracts: { charterRegistry: registry.address, exigencyEngine: engine.address, capabilityGate: gate.address, protectedVault: vault.address },
+    deploymentTransactions: {
+      charterRegistry: registry.txId,
+      capabilityGate: gate.txId,
+      exigencyEngine: engine.txId,
+      protectedVault: vault.txId,
+    },
     bindEngineTransaction: bindEngineTx,
     generatedAt: new Date().toISOString(),
     nextSteps: [

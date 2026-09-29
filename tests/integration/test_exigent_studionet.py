@@ -15,7 +15,7 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MANIFEST = ROOT / "deployment-manifest.generated.json"
+MANIFEST = ROOT / "deployment-manifest.public.json"
 CLI = ["node", str(ROOT / "node_modules" / "genlayer" / "dist" / "index.js")] if os.name == "nt" else ["npx", "--no-install", "genlayer"]
 
 

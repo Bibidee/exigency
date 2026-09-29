@@ -3,9 +3,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 
-const manifestPath = new URL("../deployment-manifest.generated.json", import.meta.url);
+const manifestPath = new URL("../deployment-manifest.public.json", import.meta.url);
 if (!existsSync(manifestPath)) {
-  throw new Error("deployment-manifest.generated.json is missing. Deploy EXIGENT first.");
+  throw new Error("deployment-manifest.public.json is missing. A committed public deployment manifest is required.");
 }
 
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));

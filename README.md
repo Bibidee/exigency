@@ -199,7 +199,7 @@ npm run deploy
 It writes:
 
 - `.env.generated`
-- `deployment-manifest.generated.json`
+- `deployment-manifest.public.json` (committed public contract source of truth)
 
 Then:
 

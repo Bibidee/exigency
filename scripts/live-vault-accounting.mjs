@@ -5,7 +5,7 @@ import { studionet } from "genlayer-js/chains";
 const key = process.env.EXIGENT_LIVE_PRIVATE_KEY;
 if (!key) throw new Error("EXIGENT_LIVE_PRIVATE_KEY is required for live payable accounting coverage");
 
-const manifest = JSON.parse(readFileSync(new URL("../deployment-manifest.generated.json", import.meta.url), "utf8"));
+const manifest = JSON.parse(readFileSync(new URL("../deployment-manifest.public.json", import.meta.url), "utf8"));
 if (Number(manifest.chainId) !== 61999) throw new Error("refusing a non-Studionet manifest");
 
 const account = createAccount(key);

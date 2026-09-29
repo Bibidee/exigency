@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main() -> int:
-    manifest_path = ROOT / "deployment-manifest.generated.json"
+    manifest_path = ROOT / "deployment-manifest.public.json"
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         assert manifest["network"] == "studionet"

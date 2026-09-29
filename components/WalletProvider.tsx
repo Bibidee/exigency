@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { connectWallet, walletErrorMessage } from "@/lib/genlayer";
+import { connectWallet, getInjectedProvider, walletErrorMessage } from "@/lib/genlayer";
 
 type Address = `0x${string}` | "";
 type WalletContextValue = {
@@ -27,7 +27,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const sync = useCallback(async () => {
-    const provider = window.ethereum;
+    if (window.sessionStorage.getItem("exigent.wallet.disconnected") === "1") return;
+    const provider = getInjectedProvider();
     if (!provider) return;
     try {
       const accounts = await provider.request({ method: "eth_accounts" }) as string[];
@@ -38,7 +39,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   }, [applyAddress]);
 
   useEffect(() => {
-    const provider = window.ethereum;
+    const provider = getInjectedProvider();
     if (!provider) return;
     void sync();
     const onAccountsChanged = (...args: unknown[]) => {
@@ -58,6 +59,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setError("");
     try {
       const wallet = await connectWallet();
+      window.sessionStorage.removeItem("exigent.wallet.disconnected");
       applyAddress(wallet.address);
     } catch (cause) {
       setError(walletErrorMessage(cause));
@@ -68,6 +70,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   const disconnect = useCallback(() => {
     setError("");
+    window.sessionStorage.setItem("exigent.wallet.disconnected", "1");
     applyAddress("");
   }, [applyAddress]);
 

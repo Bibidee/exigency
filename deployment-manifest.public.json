@@ -1,0 +1,28 @@
+{
+  "project": "EXIGENT",
+  "network": "studionet",
+  "chainId": 61999,
+  "rpc": "https://studio.genlayer.com/api",
+  "explorer": "https://explorer-studio.genlayer.com",
+  "contracts": {
+    "charterRegistry": "0x819E1bA4bf1315A8Cd3075C3AC4C7dEB65Ee2896",
+    "exigencyEngine": "0x3fBD057a4c0C4504ab90b40287c065C742ec7F07",
+    "capabilityGate": "0x91b807DC61e624055E9C0C98BDCf3b7E9bE943C3",
+    "protectedVault": "0xbc0aD59dd14aa45211Aae0B2224537DB443e4C67"
+  },
+  "bindEngineTransaction": "0x867d776c00a2a3392bffe2b10dc7969c5d17d6aa9e70313a52e151e2cd99e228",
+  "deploymentTransactions": {
+    "charterRegistry": "0xf55263d456efd2ef6e92262a54df2758685050410c395521e0cf63ec32b2f7f0",
+    "capabilityGate": "0xe780a1b0fa3d902981f559edc529fe7e4e509c705e96cef6523a59f9b33b3a8d",
+    "exigencyEngine": "0xa96c27280124d0f6c248c1a7ed04cfb75cbd237052ae487586e8bbfa513ca2f9",
+    "protectedVault": "0xb4c1300bd1332bb54fb473b9337aa5692baf4ef7727be4729396817612c9ea5e"
+  },
+  "deployedSourceSha256": {
+    "charterRegistry": "da355fcbe1848fdca9ea3818bd11d92710d5467b72d5a0b9d00008694f8b8636",
+    "exigencyEngine": "afa2f130d47a2c0200b32dac57cb44e037e6cc6043b01a7e541899b7d4da3319",
+    "capabilityGate": "bcb8bcd20f1942d2ff9e17451f60a47b55be56259dca3cc0fe0d060757552627",
+    "protectedVault": "c75563df5304a50b6802ed7eae9118194272c38f3fe41c26fae334353fe4a00c"
+  },
+  "sourceVerification": "verified-exact-byte-match",
+  "sourceCommit": "cff5315"
+}

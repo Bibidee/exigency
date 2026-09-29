@@ -31,6 +31,7 @@ class CharterRegistry(gl.Contract):
     charter_keys: DynArray[str]
     active_by_protocol: TreeMap[str, str]
     protocol_owners: TreeMap[str, str]
+    protocol_versions: TreeMap[str, u256]
 
     def __init__(self):
         pass
@@ -59,6 +60,19 @@ class CharterRegistry(gl.Contract):
         ):
             raise gl.vm.UserError("invalid evidence host")
         return value
+
+    def _normalise_scope(self, raw: str) -> tuple:
+        token = raw.strip()
+        parts = token.split("|", 1)
+        host = self._normalise_host(parts[0])
+        prefix = "/"
+        if len(parts) == 2:
+            prefix = parts[1].strip()
+            if not prefix.startswith("/") or "\\" in prefix or any(ord(c) < 0x21 or ord(c) == 0x7f for c in prefix) or len(prefix) > 240:
+                raise gl.vm.UserError("invalid evidence path prefix")
+            if "?" in prefix or "#" in prefix:
+                raise gl.vm.UserError("evidence path prefix must not contain query or fragment")
+        return host, prefix
 
     @gl.public.write
     def publish_charter(
@@ -106,12 +120,16 @@ class CharterRegistry(gl.Contract):
         protected_target_hex = _address_hex(protected_target)
 
         hosts = []
+        scopes = []
         for raw in evidence_hosts_csv.split(","):
             raw = raw.strip()
             if raw:
-                host = self._normalise_host(raw)
+                host, prefix = self._normalise_scope(raw)
                 if host not in hosts:
                     hosts.append(host)
+                scope = {"host": host, "path_prefix": prefix}
+                if scope not in scopes:
+                    scopes.append(scope)
         if len(hosts) < 1 or len(hosts) > 8:
             raise gl.vm.UserError("provide between 1 and 8 evidence hosts")
 
@@ -127,6 +145,8 @@ class CharterRegistry(gl.Contract):
             raise gl.vm.UserError("at least one emergency action is required")
 
         published_at = _now()
+        version = int(self.protocol_versions.get(protocol_key, u256(0))) + 1
+        self.protocol_versions[protocol_key] = u256(version)
         frozen = {
             "charter_key": charter_key,
             "protocol_key": protocol_key,
@@ -136,10 +156,12 @@ class CharterRegistry(gl.Contract):
             "trigger_policy": trigger_policy,
             "evidence_policy": evidence_policy,
             "evidence_hosts": hosts,
+            "evidence_scopes": scopes,
             "allowed_actions": actions,
             "max_pause_minutes": int(max_pause_minutes),
             "capability_ttl_minutes": int(capability_ttl_minutes),
             "published_at": published_at,
+            "version": version,
             "eligible_at": published_at + int(activation_delay_minutes) * 60,
             "activation_delay_minutes": int(activation_delay_minutes),
         }
@@ -168,7 +190,7 @@ class CharterRegistry(gl.Contract):
             if not active_raw:
                 raise gl.vm.UserError("active charter record is missing")
             active = json.loads(active_raw)
-            if int(charter.get("published_at", 0)) <= int(active.get("published_at", 0)):
+            if int(charter.get("version", 0)) <= int(active.get("version", 0)):
                 raise gl.vm.UserError("cannot roll back to an older charter version")
 
         self.active_by_protocol[protocol_key] = charter_key

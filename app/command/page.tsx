@@ -18,9 +18,15 @@ export default function CommandPage() {
 
   useEffect(() => {
     if (!isConfigured) return;
-    Promise.all([listCharterKeys(), listIncidentKeys(), listCapabilityKeys(), getVaultStatus()])
-      .then(([c, i, k, v]) => { setCharters(c); setIncidents(i); setCapabilities(k); setVault(v); })
-      .catch((e) => setError(e instanceof Error ? e.message : String(e)));
+    Promise.allSettled([listCharterKeys(), listIncidentKeys(), listCapabilityKeys(), getVaultStatus()])
+      .then(([c, i, k, v]) => {
+        if (c.status === "fulfilled") setCharters(c.value);
+        if (i.status === "fulfilled") setIncidents(i.value);
+        if (k.status === "fulfilled") setCapabilities(k.value);
+        if (v.status === "fulfilled") setVault(v.value);
+        const failed = [c, i, k, v].find((result) => result.status === "rejected");
+        if (failed?.status === "rejected") setError(failed.reason instanceof Error ? failed.reason.message : String(failed.reason));
+      });
   }, []);
 
   return (
@@ -56,7 +62,7 @@ export default function CommandPage() {
         </Panel>
         <Panel eyebrow="Protected target" title="Vault state">
           <div className="panel-body">
-            {vault ? <dl className="keyvals"><div className="keyval"><dt>Withdrawals paused</dt><dd>{String(vault.withdrawals_paused)}</dd></div><div className="keyval"><dt>Deposits paused</dt><dd>{String(vault.deposits_paused)}</dd></div><div className="keyval"><dt>Total credits</dt><dd className="mono">{String(vault.total_credits)}</dd></div></dl> : <div className="empty"><Vault size={22} style={{marginBottom:8}}/><br/>Vault state unavailable until deployment.</div>}
+            {vault ? <dl className="keyvals"><div className="keyval"><dt>Withdrawals paused</dt><dd>{String(vault.withdrawals_paused)}</dd></div><div className="keyval"><dt>Deposits paused</dt><dd>{String(vault.deposits_paused)}</dd></div><div className="keyval"><dt>Total credits</dt><dd className="mono">{String(vault.total_credits)}</dd></div></dl> : <div className="empty"><Vault size={22} style={{marginBottom:8}}/><br/>{isConfigured ? "Vault state could not be read from Studionet." : "Vault state unavailable until deployment."}</div>}
           </div>
         </Panel>
       </div>

@@ -2,7 +2,7 @@
 
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
-import { TransactionHashVariant } from "genlayer-js/types";
+import { ExecutionResult, TransactionHashVariant } from "genlayer-js/types";
 import { NETWORK } from "@/lib/config";
 
 type ProviderError = Error & { code?: number };
@@ -41,7 +41,7 @@ export function walletErrorMessage(error: unknown): string {
   return "The wallet connection failed.";
 }
 
-function injectedProvider() {
+export function getInjectedProvider() {
   const injected = window.ethereum;
   if (!injected) return undefined;
   const providers = injected.providers;
@@ -54,7 +54,7 @@ export function readClient() {
 }
 
 async function ensureStudionet() {
-  const provider = injectedProvider();
+  const provider = getInjectedProvider();
   if (!provider) throw new Error("No injected EIP-1193 wallet was detected.");
 
   const current = String(await provider.request({ method: "eth_chainId" })).toLowerCase();
@@ -89,7 +89,7 @@ async function ensureStudionet() {
 }
 
 export async function connectWallet(): Promise<WalletState> {
-  const provider = injectedProvider();
+  const provider = getInjectedProvider();
   if (!provider) throw new Error("No injected EIP-1193 wallet was detected.");
   const accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
   const address = accounts?.[0] as `0x${string}` | undefined;
@@ -99,7 +99,7 @@ export async function connectWallet(): Promise<WalletState> {
 }
 
 export function walletClient(address: `0x${string}`) {
-  const provider = injectedProvider();
+  const provider = getInjectedProvider();
   if (!provider) throw new Error("No injected wallet detected.");
   return createClient({ chain: studionet, account: address, provider: provider as never });
 }
@@ -148,14 +148,12 @@ export async function waitForFinalization(hash: `0x${string}`) {
     interval: 5000,
     fullTransaction: true,
   } as never);
-  const value = receipt as unknown as Record<string, unknown>;
-  const executionResult = String(value.txExecutionResultName ?? value.execution_result ?? "").toUpperCase();
-  const nested = JSON.stringify(value.leader_receipt ?? value.result ?? "").toLowerCase();
-  if (executionResult.includes("FAIL") || executionResult.includes("ERROR") || nested.includes('"status":"rollback"')) {
-    const payload = typeof value.leader_receipt === "object" && value.leader_receipt !== null
-      ? String((value.leader_receipt as Record<string, unknown>).payload ?? "")
-      : "";
-    throw new Error(payload || `Studionet finalized the transaction but the contract rolled it back (${hash}).`);
+  const executionResult = (receipt as { txExecutionResultName?: ExecutionResult }).txExecutionResultName;
+  if (executionResult === ExecutionResult.FINISHED_WITH_ERROR) {
+    throw new Error(`Studionet finalized the transaction with a contract execution error (${hash}).`);
+  }
+  if (executionResult !== ExecutionResult.FINISHED_WITH_RETURN) {
+    throw new Error(`Studionet finalized the transaction without a successful execution result (${hash}).`);
   }
   return receipt;
 }

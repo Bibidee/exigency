@@ -23,6 +23,13 @@ SOURCE_STATES = (
     "UNAVAILABLE",
 )
 
+MAX_SOURCE_BYTES = 64 * 1024
+MAX_TOTAL_SOURCE_BYTES = 256 * 1024
+MAX_PROMPT_EXCERPT = 6000
+MAX_FETCH_ERROR = 300
+MAX_ASSESSMENT_ATTEMPTS = 3
+INCIDENT_EXPIRY_SECONDS = 24 * 60 * 60
+
 
 def _now() -> int:
     return int(datetime.now(timezone.utc).timestamp())
@@ -146,8 +153,20 @@ class ExigencyEngine(gl.Contract):
             raise gl.vm.UserError("evidence URLs must use a canonical hostname without userinfo or port")
         return authority
 
-    def _host_allowed(self, host: str, allowed_hosts: list) -> bool:
-        for allowed in allowed_hosts:
+    def _scope_allowed(self, url: str, charter: dict) -> bool:
+        remainder = url[8:]
+        authority, _, path = remainder.partition("/")
+        host = authority.lower()
+        path = "/" + path
+        scopes = charter.get("evidence_scopes", [])
+        if scopes:
+            for scope in scopes:
+                allowed_host = str(scope.get("host", "")).lower()
+                prefix = str(scope.get("path_prefix", "/"))
+                if host == allowed_host and path.startswith(prefix):
+                    return True
+            return False
+        for allowed in charter.get("evidence_hosts", []):
             allowed = str(allowed).lower()
             if host == allowed or host.endswith("." + allowed):
                 return True
@@ -183,13 +202,20 @@ class ExigencyEngine(gl.Contract):
 
     def _fetch_sources(self, urls: list) -> list:
         fetched = []
+        total_bytes = 0
         for url in urls:
             try:
                 response = gl.nondet.web.get(url)
                 status = int(getattr(response, "status_code", getattr(response, "status", 0)))
                 raw_body = response.body
-                body = raw_body.decode("utf-8", errors="replace") if isinstance(raw_body, bytes) else str(raw_body)
-                excerpt = body if len(body) <= 6000 else body[:3000] + "\n[...middle omitted... ]\n" + body[-3000:]
+                body_bytes = raw_body if isinstance(raw_body, bytes) else str(raw_body).encode("utf-8")
+                source_bytes = len(body_bytes)
+                if source_bytes > MAX_SOURCE_BYTES or total_bytes + source_bytes > MAX_TOTAL_SOURCE_BYTES:
+                    fetched.append({"url": url, "status": status, "content": "", "content_digest": "", "error": "evidence source exceeds bounded retrieval limits"})
+                    continue
+                total_bytes += source_bytes
+                body = body_bytes.decode("utf-8", errors="replace")
+                excerpt = body if len(body) <= MAX_PROMPT_EXCERPT else body[:3000] + "\n[...middle omitted... ]\n" + body[-3000:]
                 fetched.append(
                     {
                         "url": url,
@@ -205,7 +231,7 @@ class ExigencyEngine(gl.Contract):
                         "status": 0,
                         "content": "",
                         "content_digest": "",
-                        "error": str(exc)[:300],
+                        "error": str(exc)[:MAX_FETCH_ERROR],
                     }
                 )
         return fetched
@@ -338,12 +364,11 @@ Decision rules:
             raise gl.vm.UserError("provide between 1 and 4 evidence URLs")
 
         canonical_urls = []
-        allowed_hosts = list(charter.get("evidence_hosts", []))
         for raw in evidence_urls:
             url = str(raw).strip()
             host = self._host(url)
-            if not self._host_allowed(host, allowed_hosts):
-                raise gl.vm.UserError("evidence URL host is not approved by the charter")
+            if not self._scope_allowed(url, charter):
+                raise gl.vm.UserError("evidence URL is outside the charter evidence scope")
             if url in canonical_urls:
                 raise gl.vm.UserError("duplicate evidence URL")
             canonical_urls.append(url)
@@ -364,6 +389,7 @@ Decision rules:
             "reason": reason,
             "evidence_urls": canonical_urls,
             "opened_at": _now(),
+            "expires_at": _now() + INCIDENT_EXPIRY_SECONDS,
         }
         record = dict(frozen)
         record["incident_digest"] = self._digest(frozen)
@@ -390,6 +416,8 @@ Decision rules:
 
         if gl.message.sender_address.as_hex != str(incident.get("requester", "")):
             raise gl.vm.UserError("only incident requester may ask for assessment")
+        if _now() > int(incident.get("expires_at", 0)):
+            raise gl.vm.UserError("incident assessment window has expired")
 
         previous_decision = ""
         if incident.get("assessment_json"):
@@ -397,6 +425,8 @@ Decision rules:
                 previous_decision = json.loads(str(incident["assessment_json"])).get("decision", "")
             except Exception:
                 previous_decision = ""
+        if int(incident.get("assessment_count", 0)) >= MAX_ASSESSMENT_ATTEMPTS:
+            raise gl.vm.UserError("incident assessment retry limit exhausted")
         if int(incident.get("assessment_count", 0)) > 0 and previous_decision not in (
             "INSUFFICIENT_EVIDENCE",
             "CONFLICTING_EVIDENCE",
@@ -502,7 +532,7 @@ Return only JSON: {{"equivalent": true}} or {{"equivalent": false}}.
                 int(charter.get("capability_ttl_minutes", 30)) * 60,
             )
         else:
-            incident["status"] = "ASSESSED_NO_AUTHORITY"
+            incident["status"] = "ASSESSMENT_RETRYABLE" if assessment["decision"] in ("INSUFFICIENT_EVIDENCE", "CONFLICTING_EVIDENCE") and incident["assessment_count"] < MAX_ASSESSMENT_ATTEMPTS else "ASSESSED_NO_AUTHORITY"
 
         self.incidents[incident_key] = json.dumps(incident, sort_keys=True)
         return assessment

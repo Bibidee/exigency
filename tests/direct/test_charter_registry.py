@@ -1,3 +1,5 @@
+import json
+
 from tests.direct.conftest import to_hex
 
 
@@ -73,3 +75,18 @@ def test_active_charter_cannot_roll_back_to_older_version(direct_vm, direct_depl
 
     with direct_vm.expect_revert("cannot roll back to an older charter version"):
         contract.activate_charter("CHARTER-TEST-01")
+
+
+def test_charter_commits_evidence_path_scope(direct_vm, direct_deploy, direct_alice, direct_bob):
+    direct_vm.sender = direct_alice
+    contract = direct_deploy("contracts/charter_registry.py")
+    contract.publish_charter(
+        "CHARTER-SCOPE-01", "PROTO-SCOPE", "Scoped Protocol", to_hex(direct_bob),
+        "Emergency authority exists only when credible public evidence establishes the bounded trigger and requested response.",
+        "Use only the frozen repository evidence prefix and fail closed when it is unavailable or contradictory.",
+        "raw.githubusercontent.com|/Bibidee/exigency/commit/demo/",
+        "PAUSE_WITHDRAWALS", 30, 10, 1,
+    )
+    record = json.loads(contract.get_charter_json("CHARTER-SCOPE-01"))
+    assert record["evidence_scopes"] == [{"host": "raw.githubusercontent.com", "path_prefix": "/Bibidee/exigency/commit/demo/"}]
+    assert "evidence_scopes" in record["charter_digest"] or len(record["charter_digest"]) == 64

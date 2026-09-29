@@ -12,7 +12,10 @@ venv/
 .python312/
 artifacts/
 *.tsbuildinfo
+deployment-manifest.generated.json
 python-install.log
 dist/
 coverage/
-deployment-manifest.generated.json
+test-results/
+
+.vercel

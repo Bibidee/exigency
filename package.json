@@ -11,6 +11,7 @@
     "test:unit": "pytest tests/unit -q",
     "test:direct": "pytest tests/direct -v",
     "test:e2e": "playwright test",
+    "test:e2e:production": "playwright test --config=playwright.production.config.ts",
     "test": "npm run test:unit",
     "contracts:compile": "python -m py_compile contracts/*.py",
     "contracts:check": "bash scripts/check-contracts.sh",
@@ -24,17 +25,16 @@
   "dependencies": {
     "genlayer-js": "1.1.8",
     "lucide-react": "0.468.0",
-    "next": "16.2.9",
+    "next": "16.3.7",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
   "devDependencies": {
-    "@playwright/test": "^1.52.0",
+    "@playwright/test": "1.63.0",
     "@types/node": "22.10.2",
     "@types/react": "19.0.3",
     "@types/react-dom": "19.0.2",
     "genlayer": "0.39.1",
-    "@playwright/test": "1.52.0",
     "typescript": "5.7.2"
   },
   "engines": {

@@ -33,6 +33,7 @@ class ProtectedVault(gl.Contract):
     deposits_paused_until: u256
     last_emergency_json: str
     emergency_history: DynArray[str]
+    applied_capabilities: TreeMap[str, str]
 
     def __init__(self, gate_address: str):
         self.gate_address = _address_hex(gate_address)
@@ -54,6 +55,8 @@ class ProtectedVault(gl.Contract):
         action_digest: str,
         until_ts: int,
     ) -> None:
+        if self.applied_capabilities.get(capability_key, ""):
+            return
         record = {
             "action_class": action_class,
             "duration_minutes": int(duration_minutes),
@@ -66,6 +69,7 @@ class ProtectedVault(gl.Contract):
         encoded = json.dumps(record, sort_keys=True)
         self.last_emergency_json = encoded
         self.emergency_history.append(encoded)
+        self.applied_capabilities[capability_key] = action_digest
 
     @gl.public.write.payable
     def deposit(self) -> u256:
@@ -171,6 +175,7 @@ class ProtectedVault(gl.Contract):
                 "deposits_paused": now < int(self.deposits_paused_until),
                 "deposits_paused_until": int(self.deposits_paused_until),
                 "last_emergency_json": self.last_emergency_json,
+                "applied_capability_count": len(self.emergency_history),
             },
             sort_keys=True,
         )
@@ -178,3 +183,7 @@ class ProtectedVault(gl.Contract):
     @gl.public.view
     def list_emergency_history(self) -> list:
         return [self.emergency_history[i] for i in range(len(self.emergency_history))]
+
+    @gl.public.view
+    def get_applied_capability_digest(self, capability_key: str) -> str:
+        return self.applied_capabilities.get(capability_key, "")

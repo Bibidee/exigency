@@ -42,6 +42,36 @@ test.describe("public EXIGENT browser regression", () => {
     await expect(page.locator("body")).not.toContainText("[object Object]");
   });
 
+  test("application disconnect survives reload until reconnect", async ({ page }) => {
+    const account = "0x4a7d0000000000000000000000000000000032f5";
+    await page.addInitScript(({ account }) => {
+      window.ethereum = {
+        request: async ({ method }: { method: string }) => method === "eth_accounts" ? [account] : "0xf22f",
+        on: () => undefined,
+        removeListener: () => undefined,
+      };
+    }, { account });
+    await page.goto("/vault", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("button", { name: /disconnect wallet/i })).toBeVisible();
+    await page.getByRole("button", { name: /disconnect wallet/i }).click({ force: true });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("button", { name: /connect wallet/i })).toBeVisible();
+  });
+
+  test("vault rejects malformed GEN amounts before any wallet write", async ({ page }) => {
+    const account = "0x4a7d0000000000000000000000000000000032f5";
+    await page.addInitScript(({ account }) => {
+      window.ethereum = {
+        request: async ({ method }: { method: string }) => method === "eth_accounts" ? [account] : "0xf22f",
+        on: () => undefined,
+        removeListener: () => undefined,
+      };
+    }, { account });
+    await page.goto("/vault", { waitUntil: "networkidle" });
+    await page.locator('input[inputmode="decimal"]').first().fill("-0.1");
+    await expect(page.getByRole("button", { name: "Deposit" })).toBeDisabled();
+  });
+
   test("missing or rolled-back incidents do not remain on an infinite loading state", async ({ page }) => {
     await page.goto("/incident/INC-PLAYWRIGHT-MISSING-20260929", { waitUntil: "domcontentloaded" });
     await expect(page.getByText(/was not found on Studionet|No incident record is available/i).first()).toBeVisible({ timeout: 20_000 });

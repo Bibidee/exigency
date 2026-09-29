@@ -57,7 +57,7 @@ Deployment order is deliberate:
 4. bind gate -> engine
 5. ProtectedVault(gate)
 
-The script writes `.env.generated` and `deployment-manifest.generated.json`.
+The deployment script writes local `.env.generated` and `deployment-manifest.generated.json`; copy verified public values into the committed `deployment-manifest.public.json` only after finality and source verification.
 
 ## 5. Frontend
 

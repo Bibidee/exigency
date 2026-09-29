@@ -87,6 +87,8 @@ class CapabilityGate(gl.Contract):
             "expires_at": issued_at + int(ttl_seconds),
             "consumed": False,
             "consumed_at": 0,
+            "dispatch_status": "ISSUED",
+            "dispatch_count": 0,
         }
         self.capabilities[capability_key] = json.dumps(record, sort_keys=True)
         self.capability_keys.append(capability_key)
@@ -107,8 +109,17 @@ class CapabilityGate(gl.Contract):
 
         if gl.message.sender_address.as_hex != str(record.get("holder", "")):
             raise gl.vm.UserError("only capability holder may execute")
-        if bool(record.get("consumed")):
-            raise gl.vm.UserError("capability already consumed")
+        if str(record.get("dispatch_status", "ISSUED")) == "APPLIED":
+            raise gl.vm.UserError("capability already applied")
+        if str(record.get("dispatch_status", "ISSUED")) == "DISPATCHED":
+            try:
+                protected = gl.get_contract_at(Address(str(record["target"])))
+                if str(protected.view().get_applied_capability_digest(capability_key)) == str(record.get("action_digest", "")):
+                    raise gl.vm.UserError("capability already applied")
+            except gl.vm.UserError:
+                raise
+            except Exception:
+                pass
         if _now() > int(record.get("expires_at", 0)):
             raise gl.vm.UserError("capability expired")
 
@@ -130,6 +141,8 @@ class CapabilityGate(gl.Contract):
         if self._digest(reconstructed) != str(record.get("action_digest", "")):
             raise gl.vm.UserError("action digest mismatch")
 
+        record["dispatch_status"] = "DISPATCHED"
+        record["dispatch_count"] = int(record.get("dispatch_count", 0)) + 1
         record["consumed"] = True
         record["consumed_at"] = _now()
         self.capabilities[capability_key] = json.dumps(record, sort_keys=True)
@@ -163,8 +176,24 @@ class CapabilityGate(gl.Contract):
 
     @gl.public.view
     def get_capability_json(self, capability_key: str) -> str:
-        return self.capabilities.get(capability_key, "")
+        raw = self.capabilities.get(capability_key, "")
+        if not raw:
+            return ""
+        record = json.loads(raw)
+        if record.get("dispatch_status") == "DISPATCHED":
+            try:
+                protected = gl.get_contract_at(Address(str(record["target"])))
+                applied = protected.view().get_applied_capability_digest(capability_key)
+                if str(applied) == str(record.get("action_digest", "")):
+                    record["dispatch_status"] = "APPLIED"
+            except Exception:
+                pass
+        return json.dumps(record, sort_keys=True)
 
     @gl.public.view
     def list_capability_keys(self) -> list:
         return [self.capability_keys[i] for i in range(len(self.capability_keys))]
+
+    @gl.public.view
+    def get_engine_address(self) -> str:
+        return self.engine_address
