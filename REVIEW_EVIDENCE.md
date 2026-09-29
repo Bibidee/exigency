@@ -1,5 +1,16 @@
 # EXIGENT Review Evidence
 
+## Authoritative current update — 2026-09-29 (latest)
+
+- Final source commit: `e8803dad778b59161ba52cfa516a7859d2a05539`.
+- GitHub Actions run [36629523688](https://github.com/Bibidee/exigency/actions/runs/36629523688) passed for that exact commit. All four jobs are green: frontend, contract validation, Python/unit/direct tests, and browser regression.
+- Local verification passed: unit **14/14**, Direct Mode **18/18**, frontend typecheck, and production build.
+- Production Playwright regression passed **8/8** with network access enabled. The walkthrough covered `/`, `/command`, and `/vault` on the public alias.
+- `npm run health:check` passed against public `https://exigency.vercel.app`, Studionet 61999, RPC `https://studio.genlayer.com/api/`, and the current four-contract manifest. `npm run source:verify` passed with exact byte matches for all four deployed sources: Registry `ea59f36b845897a247063e6664e6e5164af6ec53dbf4e7d85c489e2bebc99218`; Engine `0ad4fb5fdae59962d69c76eec9befc11b508ac43185ca69c0e0127514f885244`; Gate `0480c0a730a111ee9a2e7542a92668a5976ee0ce57086a562b15e9a43ba2fdfe`; Vault `e4be14348128b33f8fa3f3b05b42f136259cf8284cc51e9f9d7b83bedff0eb2b`.
+- Vercel deployment `dpl_BZmipxwcFzQYew8KQBu4VQE3iUNg` is READY, production-targeted, and aliased to `exigency.vercel.app` and `exigency-bibidees-projects.vercel.app`. The public walkthrough showed the bottom-left wallet control, current contract addresses, open vault state, and payout-child state-machine copy.
+- The latest frontend now proves triggered capability children before reporting success, and withdrawal settlement is fail-closed: payout children must be finalized and successful before settlement; recoverable failures can retry the exact payout and cannot be double-settled.
+- The remaining account-specific item is a fresh funded live deposit/withdrawal write run and the opt-in funded live lifecycle test. No new financial write was initiated during this remediation pass.
+
 ## Authoritative current update — 2026-09-29
 
 - Final source commit: `5ed405608ce9270e0ca8afedf3f7672048462751`.

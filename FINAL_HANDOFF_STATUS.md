@@ -1,5 +1,13 @@
 # EXIGENT Final Handoff Status
 
+## Authoritative current update — 2026-09-29 (latest)
+
+- Final source commit is `e8803dad778b59161ba52cfa516a7859d2a05539`; [GitHub Actions run 36629523688](https://github.com/Bibidee/exigency/actions/runs/36629523688) is green across all four jobs.
+- Local checks passed: unit **14/14**, Direct Mode **18/18**, frontend typecheck, and production build. Production Playwright passed **8/8** with network access enabled.
+- Public Vercel deployment `dpl_BZmipxwcFzQYew8KQBu4VQE3iUNg` is READY and aliased to `https://exigency.vercel.app`. Health checks and exact deployed-source verification both pass for Studionet 61999.
+- The new payout flow is fail-closed: the app discovers and proves the withdrawal payout child before settlement, exposes recoverable failure/retry state, and prevents duplicate settlement. Capability execution likewise proves triggered children before success.
+- The only unclaimed items are account-specific: a fresh funded live deposit/withdrawal write run and the opt-in funded live lifecycle automation. No new financial write was initiated during this remediation pass.
+
 ## Authoritative current update — 2026-09-29
 
 - Final source commit is `5ed405608ce9270e0ca8afedf3f7672048462751`; GitHub Actions run `36624668894` is green across Python/direct tests, contract validation, frontend build, and Playwright.
