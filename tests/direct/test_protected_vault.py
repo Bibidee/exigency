@@ -65,16 +65,18 @@ def test_duplicate_emergency_delivery_is_idempotent(direct_vm, direct_deploy, di
 
 
 def test_duplicate_pause_classes_do_not_extend_after_time_advance(direct_vm, direct_deploy, direct_alice):
-    for action, method in (
-        ("PAUSE_WITHDRAWALS", "emergency_pause_withdrawals"),
-        ("PAUSE_DEPOSITS", "emergency_pause_deposits"),
-        ("PAUSE_ALL", "emergency_pause_all"),
+    for index, (action, method) in enumerate(
+        (
+            ("PAUSE_WITHDRAWALS", "emergency_pause_withdrawals"),
+            ("PAUSE_DEPOSITS", "emergency_pause_deposits"),
+            ("PAUSE_ALL", "emergency_pause_all"),
+        )
     ):
-        direct_vm.warp("2026-09-27T20:00:00Z")
+        direct_vm.warp(f"2026-09-27T20:{index * 10:02d}:00Z")
         vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
         direct_vm.sender = direct_alice
         first = getattr(vault, method)(10, "INC-" + action, "EXC-" + action, "d" * 64)
-        direct_vm.warp("2026-09-27T20:05:00Z")
+        direct_vm.warp(f"2026-09-27T20:{index * 10 + 5:02d}:00Z")
         replay = getattr(vault, method)(10, "INC-" + action, "EXC-" + action, "d" * 64)
         assert replay == first
         assert len(vault.list_emergency_history()) == 1
