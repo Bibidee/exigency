@@ -18,15 +18,17 @@ export default function CommandPage() {
 
   useEffect(() => {
     if (!isConfigured) return;
-    Promise.allSettled([listCharterKeys(), listIncidentKeys(), listCapabilityKeys(), getVaultStatus()])
-      .then(([c, i, k, v]) => {
-        if (c.status === "fulfilled") setCharters(c.value);
-        if (i.status === "fulfilled") setIncidents(i.value);
-        if (k.status === "fulfilled") setCapabilities(k.value);
-        if (v.status === "fulfilled") setVault(v.value);
-        const failed = [c, i, k, v].find((result) => result.status === "rejected");
-        if (failed?.status === "rejected") setError(failed.reason instanceof Error ? failed.reason.message : String(failed.reason));
-      });
+    let cancelled = false;
+    const load = async () => {
+      const failures: string[] = [];
+      try { const value = await listCharterKeys(); if (!cancelled) setCharters(value); } catch (e) { failures.push(`charters: ${e instanceof Error ? e.message : String(e)}`); }
+      try { const value = await listIncidentKeys(); if (!cancelled) setIncidents(value); } catch (e) { failures.push(`incidents: ${e instanceof Error ? e.message : String(e)}`); }
+      try { const value = await listCapabilityKeys(); if (!cancelled) setCapabilities(value); } catch (e) { failures.push(`capabilities: ${e instanceof Error ? e.message : String(e)}`); }
+      try { const value = await getVaultStatus(); if (!cancelled) setVault(value); } catch (e) { failures.push(`vault: ${e instanceof Error ? e.message : String(e)}`); }
+      if (!cancelled && failures.length) setError(failures.join("\n"));
+    };
+    void load();
+    return () => { cancelled = true; };
   }, []);
 
   return (
