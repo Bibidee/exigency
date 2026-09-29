@@ -15,18 +15,7 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - name: Check hosted routes
-        run: |
-          set -euo pipefail
-          for url in https://exigency.vercel.app/ https://exigency.vercel.app/command https://exigency.vercel.app/vault; do
-            curl --fail --silent --show-error --location --max-time 20 "$url" >/dev/null
-          done
-      - name: Check Studionet RPC
-        run: |
-          set -euo pipefail
-          curl --fail --silent --show-error --location --max-time 20 \
-            -H 'content-type: application/json' \
-            --data '{"jsonrpc":"2.0","id":1,"method":"gen_getChainId","params":[]}' \
-            https://studio.genlayer.com/api >/dev/null
+      - name: Check hosted routes, RPC, and contract wiring
+        run: npm run health:check
       - name: Verify deployed contract sources
         run: npm run source:verify

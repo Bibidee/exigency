@@ -18,7 +18,8 @@
     "deploy": "npx --no-install genlayer deploy",
     "deploy:studionet": "npx --no-install genlayer deploy",
     "cli:version": "npx --no-install genlayer --version",
-    "source:verify": "node scripts/verify-deployed-source.mjs"
+    "source:verify": "node scripts/verify-deployed-source.mjs",
+    "health:check": "node scripts/check-deployment-health.mjs"
   },
   "dependencies": {
     "genlayer-js": "1.1.8",

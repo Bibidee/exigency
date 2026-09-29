@@ -40,4 +40,11 @@ test.describe("public EXIGENT browser regression", () => {
     await expect(page.getByRole("button", { name: /0x4a7d.*32f5/i })).toBeVisible();
     await expect(page.locator("body")).not.toContainText("[object Object]");
   });
+
+  test("missing or rolled-back incidents do not remain on an infinite loading state", async ({ page }) => {
+    await page.goto("/incident/INC-PLAYWRIGHT-MISSING-20260929", { waitUntil: "domcontentloaded" });
+    await expect(page.getByText(/was not found on Studionet|No incident record is available/i)).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("Loading incident from Studionet…", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Open Incident/i })).toBeVisible();
+  });
 });

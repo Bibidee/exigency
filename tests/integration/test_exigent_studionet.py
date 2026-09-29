@@ -138,7 +138,9 @@ def test_live_studionet_vault_deposit_withdraw_accounting():
     payload = json.loads(result.stdout.strip().splitlines()[-1])
     assert payload["depositHash"].startswith("0x")
     assert payload["withdrawHash"].startswith("0x")
-    assert int(payload["finalCredit"]) >= 0
+    assert int(payload["depositedCredit"]) == int(payload["beforeCredit"]) + int(payload["depositAmount"])
+    assert int(payload["finalCredit"]) == int(payload["beforeCredit"]) + int(payload["depositAmount"]) - int(payload["withdrawalAmount"])
+    assert int(payload["finalTotal"]) == int(payload["beforeTotal"]) + int(payload["depositAmount"]) - int(payload["withdrawalAmount"])
 
 
 @pytest.mark.skipif(

@@ -141,13 +141,23 @@ export async function submitWrite(
 
 export async function waitForFinalization(hash: `0x${string}`) {
   const client = readClient();
-  return client.waitForTransactionReceipt({
+  const receipt = await client.waitForTransactionReceipt({
     hash: hash as never,
     status: "FINALIZED",
     retries: 360,
     interval: 5000,
     fullTransaction: true,
   } as never);
+  const value = receipt as unknown as Record<string, unknown>;
+  const executionResult = String(value.txExecutionResultName ?? value.execution_result ?? "").toUpperCase();
+  const nested = JSON.stringify(value.leader_receipt ?? value.result ?? "").toLowerCase();
+  if (executionResult.includes("FAIL") || executionResult.includes("ERROR") || nested.includes('"status":"rollback"')) {
+    const payload = typeof value.leader_receipt === "object" && value.leader_receipt !== null
+      ? String((value.leader_receipt as Record<string, unknown>).payload ?? "")
+      : "";
+    throw new Error(payload || `Studionet finalized the transaction but the contract rolled it back (${hash}).`);
+  }
+  return receipt;
 }
 
 export async function getTransaction(hash: `0x${string}`) {

@@ -23,6 +23,9 @@ const finalized = async (hash) => {
 
 const before = await readStatus();
 const beforeCredit = await readCredit();
+if (before.withdrawals_paused || before.deposits_paused) {
+  throw new Error(`vault must be open for accounting coverage: withdrawals_paused=${before.withdrawals_paused}, deposits_paused=${before.deposits_paused}`);
+}
 const depositHash = await client.writeContract({ address: vault, functionName: "deposit", args: [], value: amount });
 await finalized(depositHash);
 const afterDeposit = await readStatus();
@@ -38,4 +41,6 @@ const finalCredit = await readCredit();
 if (finalCredit !== beforeCredit + amount - withdrawalAmount) throw new Error("withdraw credit mismatch");
 if (BigInt(afterWithdraw.total_credits) !== BigInt(before.total_credits) + amount - withdrawalAmount) throw new Error("withdraw total mismatch");
 
-console.log(JSON.stringify({ account: account.address, depositHash, withdrawHash, beforeCredit: String(beforeCredit), depositedCredit: String(depositedCredit), finalCredit: String(finalCredit), finalTotal: afterWithdraw.total_credits }));
+if (finalCredit !== beforeCredit + amount - withdrawalAmount) throw new Error("final credit mismatch after withdrawal");
+if (BigInt(afterWithdraw.total_credits) !== BigInt(before.total_credits) + amount - withdrawalAmount) throw new Error("final total mismatch after withdrawal");
+console.log(JSON.stringify({ account: account.address, depositHash, withdrawHash, depositAmount: String(amount), withdrawalAmount: String(withdrawalAmount), beforeCredit: String(beforeCredit), depositedCredit: String(depositedCredit), finalCredit: String(finalCredit), beforeTotal: String(before.total_credits), finalTotal: String(afterWithdraw.total_credits) }));
