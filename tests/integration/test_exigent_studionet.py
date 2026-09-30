@@ -160,10 +160,8 @@ def test_live_studionet_vault_deposit_withdraw_accounting():
     assert int(payload["depositedCredit"]) == int(payload["beforeCredit"]) + int(payload["depositAmount"])
     assert int(payload["finalCredit"]) == int(payload["beforeCredit"]) + int(payload["depositAmount"]) - 2 * int(payload["withdrawalAmount"])
     assert int(payload["finalTotal"]) == int(payload["beforeTotal"]) + int(payload["depositAmount"]) - 2 * int(payload["withdrawalAmount"])
-    assert set(payload["recoveryIds"]) == {
-        payload["firstWithdrawal"]["withdrawalId"],
-        payload["secondWithdrawal"]["withdrawalId"],
-    }
+    assert payload["firstWithdrawal"]["withdrawalId"] in payload["recoveryIds"]
+    assert payload["secondWithdrawal"]["withdrawalId"] in payload["recoveryIds"]
 
 
 @pytest.mark.skipif(

@@ -44,17 +44,22 @@ and is aliased to [exigency.vercel.app](https://exigency.vercel.app).
 
 The fresh opt-in live fixture completed against the current deployment:
 
-- charter: `CI-LIVE-1790727716`;
-- incident: `CI-INC-1790727717`, with `TRIGGER_CONFIRMED` in its assessment;
+- charter: `CI-LIVE-1790774289`;
+- incident: `CI-INC-1790774289`, with `TRIGGER_CONFIRMED` in its assessment;
+- publish / activate / open incident:
+  `0xbe4390cafc6e1c628fd1c0fc7d4fa302e832c815f671860c691cb7549fd77628` /
+  `0x5754bdce1f915d9b35a207b5a62e60f18a3be47da7d0f0bc16f55941077ace93` /
+  `0x91eb575bacdf4cf9b2f17dcecffa7d7d2f281de440dfdd7088e3822de25b09ae`;
 - assessment parent / issuance child:
-  `0x718c2d54752259da4d5acc2032fb79f241858ef2cbb4a7ed3e55b7813e661d74` /
-  `0xb1e5c375433b34949084c005c50cccfebedf95bf2d18ac9339047459bf7ed5ef`;
-- capability: `EXC-CI-INC-1790727717`, `APPLIED`, `consumed: true`,
+  `0xdee27572e2815362d67233c431d1f160978fdaba8485ee232a75fee4aea9225d` /
+  `0x585a924b779c554a8c3074cd1cbc34c5a92aadbbb4865c03d9d3b589ccb52554`;
+- capability: `EXC-CI-INC-1790774289`, `APPLIED`, `consumed: true`,
   `dispatch_count: 1`;
-- protected-vault child:
-  `0xdfdc5ebc41fe1e8566ca7fcd00b7489da5d1ae397cf99a2918518660413bb66d`;
+- execution parent / protected-vault child:
+  `0x543350552ba18298bd9394bebca4a772a9bba57277537c00adf9eb796feda27d` /
+  `0x75428d6d7f4df5efb77bbabed42e21858bd9178322da3d6a28d1ec1be8858afb`;
 - reconcile:
-  `0xc7bbdaffb2ef4402e2360443bf89ab84ca1b38cc791a54ca320587fc5c5425f1`;
+  `0x598b74005c8b0808e0571d8806a3da881d41eb4bdc06044ae14c7d1aeabeeaca`;
 - Vault: withdrawals paused for the requested duration.
 
 The fixture uses immutable, real evidence files:
@@ -98,6 +103,9 @@ Both URLs returned HTTP 200 before this update.
 - The full live authority write fixture remains opt-in because it creates fresh
   consensus records; it was executed successfully for the current deployment
   during this final audit.
+- A real live payout failure was not fabricated: this deployment pays the
+  holder EOA directly, so a failed child cannot be induced safely from the UI.
+  The failure/recovery matrix remains covered in Direct Mode.
 
 ## HISTORICAL EVIDENCE
 
