@@ -71,8 +71,14 @@ acknowledgement marks the record `ACKNOWLEDGED`, releases the holder lock and
 retains a holder recovery candidate; a late failure callback can still move
 that exact record to `FAILED_RECOVERABLE` and restore the amount. Acknowledged
 records cannot be retried or paid a second time. Recovery matching is
-deterministic: the callback's preserved origin and exact value select the oldest
-matching `DISPATCHED`/`ACKNOWLEDGED` record in immutable creation order.
+deterministic without pretending that an amount is a child identifier: the
+callback first requires the current holder-scoped `DISPATCHED` record and exact
+value, then considers holder-scoped `ACKNOWLEDGED` candidates only when there
+is no active dispatch. Multiple acknowledged candidates with the same amount
+fail closed as ambiguous rather than selecting an older or newer record.
+Acknowledged recovery candidates are capped at 32 per holder; new
+acknowledgements are rejected at the cap because the contract cannot safely
+prune a candidate without a contract-verifiable successful-child callback.
 
 Accounting states:
 

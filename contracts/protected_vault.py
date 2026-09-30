@@ -25,6 +25,9 @@ def _address_hex(value: str) -> str:
     return Address(raw).as_hex.lower()
 
 
+MAX_ACKNOWLEDGED_RECOVERY_CANDIDATES = 32
+
+
 class ProtectedVault(gl.Contract):
     gate_address: str
     credits: TreeMap[str, u256]
@@ -70,6 +73,10 @@ class ProtectedVault(gl.Contract):
     def _add_recovery_candidate(self, holder: str, withdrawal_id: str) -> None:
         ids = self._recovery_ids(holder)
         if withdrawal_id not in ids:
+            if len(ids) >= MAX_ACKNOWLEDGED_RECOVERY_CANDIDATES:
+                raise gl.vm.UserError(
+                    "too many unresolved acknowledged payouts for holder; recovery would be ambiguous"
+                )
             ids.append(withdrawal_id)
         self._save_recovery_ids(holder, ids)
 
@@ -77,26 +84,50 @@ class ProtectedVault(gl.Contract):
         ids = [item for item in self._recovery_ids(holder) if item != withdrawal_id]
         self._save_recovery_ids(holder, ids)
 
-    def _find_recovery_candidate(self, holder: str, amount: u256) -> str:
-        # The protocol exposes origin and value, but no child identifier in the
-        # errored-message context. Scan the immutable creation order so a late
-        # refund is assigned deterministically to the oldest matching record.
-        # A finalized successful external message cannot later emit a failure;
-        # the candidate list therefore covers only an early holder acknowledgement
-        # racing an unresolved child.
-        for index in range(len(self.withdrawal_keys)):
-            withdrawal_id = self.withdrawal_keys[index]
+    def _find_active_recovery_candidate(self, holder: str, amount: u256) -> str:
+        withdrawal_id = self.active_withdrawal_by_holder.get(holder, "")
+        if not withdrawal_id:
+            return ""
+        raw = self.withdrawal_records.get(withdrawal_id, "")
+        if not raw:
+            raise gl.vm.UserError("active payout record is missing")
+        record = json.loads(raw)
+        if str(record.get("holder", "")) != holder:
+            raise gl.vm.UserError("active payout holder does not match origin")
+        if str(record.get("status", "")) != "DISPATCHED":
+            return ""
+        if u256(int(record.get("amount", "0"))) != amount:
+            raise gl.vm.UserError("errored payout value does not match active withdrawal")
+        return withdrawal_id
+
+    def _find_acknowledged_recovery_candidate(self, holder: str, amount: u256) -> str:
+        matches = []
+        for withdrawal_id in self._recovery_ids(holder):
             raw = self.withdrawal_records.get(withdrawal_id, "")
             if not raw:
                 continue
             record = json.loads(raw)
             if str(record.get("holder", "")) != holder:
                 continue
-            if str(record.get("status", "")) not in {"DISPATCHED", "ACKNOWLEDGED"}:
+            if str(record.get("status", "")) != "ACKNOWLEDGED":
                 continue
             if u256(int(record.get("amount", "0"))) == amount:
-                return withdrawal_id
-        return ""
+                matches.append(withdrawal_id)
+        if len(matches) > 1:
+            raise gl.vm.UserError("ambiguous acknowledged payout recovery")
+        return matches[0] if matches else ""
+
+    def _find_recovery_candidate(self, holder: str, amount: u256) -> str:
+        # The errored-message context exposes the preserved origin and refunded
+        # value, but no child/message identifier. Prefer the holder's current
+        # DISPATCHED record because it is the only deterministic in-flight
+        # correlation. Only when there is no active dispatch do we inspect the
+        # bounded acknowledged recovery set. Multiple acknowledged matches fail
+        # closed rather than attributing the refund to an arbitrary record.
+        active_id = self._find_active_recovery_candidate(holder, amount)
+        if active_id:
+            return active_id
+        return self._find_acknowledged_recovery_candidate(holder, amount)
 
     def _record_emergency(
         self,

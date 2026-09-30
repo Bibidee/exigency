@@ -26,13 +26,34 @@ The current platform guarantees used by `ProtectedVault` are:
 
 Consequences for the vault:
 
-1. The contract correlates failure by preserved origin plus one active record
-   per holder, never by a global lock or an untrusted amount-only match.
-2. A holder acknowledgement does not clear the recovery pointer. If the child
-   later errors, the callback can still restore exactly once.
-3. The frontend proves finality, parent, recipient, exact amount and
+1. The contract correlates failure by preserved origin plus the holder-scoped
+   recovery state. It never uses a global lock or immutable creation order as
+   the child identifier.
+2. The current `DISPATCHED` record is checked first. If the holder's active
+   record is dispatched and its amount equals the refunded value, that exact
+   record is recovered. An amount mismatch fails closed.
+3. If there is no active dispatched record, the contract checks only the
+   holder's bounded `ACKNOWLEDGED` recovery candidates. One exact match is
+   recoverable; more than one exact match raises an explicit ambiguity error
+   and changes no accounting state.
+4. A holder acknowledgement releases the active holder lock but retains a
+   recovery candidate because the contract has no successful-child callback.
+   A failure callback can still restore the exact acknowledged record when it
+   is uniquely identifiable. `FAILED_RECOVERABLE` records are removed from
+   the candidate set and cannot be restored twice.
+5. The frontend proves finality, parent, recipient, exact amount and
    `value_credited` before acknowledging a successful payout. This is a
    read/reconciliation boundary, not the source of refund safety.
+
+The acknowledged candidate list is holder-scoped and capped at 32 entries.
+The contract rejects a new acknowledgement that would exceed that cap rather
+than allowing unbounded storage or silently creating ambiguous recovery. There
+is no arbitrary timeout cleanup: because the contract cannot observe the
+successful-child receipt, it cannot safely delete a candidate merely because a
+client claims that the child succeeded. A production caller must therefore
+avoid accumulating more than the cap of unresolved acknowledgements for one
+holder; a finalized external child is not expected to invoke the error hook
+later, but that client-side observation is not a contract-side proof.
 
 Primary references:
 

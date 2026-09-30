@@ -285,12 +285,171 @@ def test_late_failure_after_acknowledgement_restores_exact_record_and_allows_nex
     second_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
     assert second_id != first_id
 
-    # The first child can still fail after an early acknowledgement; creation
-    # order selects the first matching candidate and restores exactly once.
+    # The active second payout must win over the older acknowledged candidate.
+    direct_vm.value = amount
+    vault.__on_errored_message__()
+    direct_vm.value = 0
+    assert json.loads(vault.get_withdrawal_json(first_id))["status"] == "ACKNOWLEDGED"
+    assert json.loads(vault.get_withdrawal_json(second_id))["status"] == "FAILED_RECOVERABLE"
+    assert int(vault.get_credit(to_hex(direct_alice))) == amount
+    assert int(json.loads(vault.get_status_json())["total_credits"]) == amount
+
+    # The older acknowledged child can still fail later and now has a unique
+    # remaining recovery candidate.
     direct_vm.value = amount
     vault.__on_errored_message__()
     direct_vm.value = 0
     assert json.loads(vault.get_withdrawal_json(first_id))["status"] == "FAILED_RECOVERABLE"
-    assert json.loads(vault.get_withdrawal_json(second_id))["status"] == "DISPATCHED"
+    assert int(vault.get_credit(to_hex(direct_alice))) == 2 * amount
+    assert int(json.loads(vault.get_status_json())["total_credits"]) == 2 * amount
+
+
+def test_different_amount_failure_recovers_active_record_not_acknowledged_record(
+    direct_vm, direct_deploy, direct_alice
+):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    first_amount = 5 * 10**15
+    second_amount = 7 * 10**15
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = first_amount + second_amount
+    vault.deposit()
+    direct_vm.value = 0
+
+    vault.withdraw(first_amount)
+    first_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+    vault.settle_withdrawal(first_id)
+    vault.withdraw(second_amount)
+    second_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+
+    direct_vm.value = second_amount
+    vault.__on_errored_message__()
+    direct_vm.value = 0
+
+    assert json.loads(vault.get_withdrawal_json(first_id))["status"] == "ACKNOWLEDGED"
+    assert json.loads(vault.get_withdrawal_json(second_id))["status"] == "FAILED_RECOVERABLE"
+    assert int(vault.get_credit(to_hex(direct_alice))) == second_amount
+    assert vault.get_active_withdrawal_key(to_hex(direct_alice)) == ""
+
+
+def test_ambiguous_acknowledged_same_amount_failure_fails_closed(
+    direct_vm, direct_deploy, direct_alice
+):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 5 * 10**15
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = 2 * amount
+    vault.deposit()
+    direct_vm.value = 0
+
+    vault.withdraw(amount)
+    first_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+    vault.settle_withdrawal(first_id)
+    vault.withdraw(amount)
+    second_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+    vault.settle_withdrawal(second_id)
+
+    direct_vm.value = amount
+    with direct_vm.expect_revert("ambiguous acknowledged payout recovery"):
+        vault.__on_errored_message__()
+    direct_vm.value = 0
+
+    assert json.loads(vault.get_withdrawal_json(first_id))["status"] == "ACKNOWLEDGED"
+    assert json.loads(vault.get_withdrawal_json(second_id))["status"] == "ACKNOWLEDGED"
+    assert int(vault.get_credit(to_hex(direct_alice))) == 0
+    assert int(json.loads(vault.get_status_json())["total_credits"]) == 0
+    assert vault.get_recovery_withdrawal_keys(to_hex(direct_alice)) == [first_id, second_id]
+
+
+def test_acknowledged_recovery_candidates_are_bounded(
+    direct_vm, direct_deploy, direct_alice
+):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 10**12
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = 33 * amount
+    vault.deposit()
+    direct_vm.value = 0
+
+    for _ in range(32):
+        vault.withdraw(amount)
+        withdrawal_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+        assert vault.settle_withdrawal(withdrawal_id) == "ACKNOWLEDGED"
+
+    vault.withdraw(amount)
+    withdrawal_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+    with direct_vm.expect_revert("too many unresolved acknowledged payouts"):
+        vault.settle_withdrawal(withdrawal_id)
+    assert len(vault.get_recovery_withdrawal_keys(to_hex(direct_alice))) == 32
+
+
+def test_retry_failure_restores_same_record_exactly_once(
+    direct_vm, direct_deploy, direct_alice
+):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 5 * 10**15
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = amount
+    vault.deposit()
+    direct_vm.value = 0
+    vault.withdraw(amount)
+    withdrawal_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+
+    direct_vm.value = amount
+    vault.__on_errored_message__()
+    direct_vm.value = 0
+    assert vault.retry_withdrawal(withdrawal_id) == "DISPATCHED"
+
+    direct_vm.value = amount
+    vault.__on_errored_message__()
+    direct_vm.value = 0
+    failed = json.loads(vault.get_withdrawal_json(withdrawal_id))
+    assert failed["status"] == "FAILED_RECOVERABLE"
+    assert failed["retry_count"] == 1
+    assert vault.get_active_withdrawal_key(to_hex(direct_alice)) == ""
+    assert vault.get_recovery_withdrawal_keys(to_hex(direct_alice)) == []
     assert int(vault.get_credit(to_hex(direct_alice))) == amount
     assert int(json.loads(vault.get_status_json())["total_credits"]) == amount
+
+    direct_vm.value = amount
+    with direct_vm.expect_revert("errored payout has no active holder withdrawal"):
+        vault.__on_errored_message__()
+    direct_vm.value = 0
+    assert int(vault.get_credit(to_hex(direct_alice))) == amount
+
+
+def test_second_same_amount_failure_does_not_corrupt_first_acknowledged_withdrawal(
+    direct_vm, direct_deploy, direct_alice
+):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 5 * 10**15
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = 3 * amount
+    vault.deposit()
+    direct_vm.value = 0
+
+    vault.withdraw(amount)
+    first_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+    assert vault.settle_withdrawal(first_id) == "ACKNOWLEDGED"
+
+    vault.withdraw(amount)
+    second_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+    assert second_id != first_id
+
+    direct_vm.value = amount
+    vault.__on_errored_message__()
+    direct_vm.value = 0
+
+    assert json.loads(vault.get_withdrawal_json(first_id))["status"] == "ACKNOWLEDGED"
+    assert json.loads(vault.get_withdrawal_json(second_id))["status"] == "FAILED_RECOVERABLE"
+    assert int(vault.get_credit(to_hex(direct_alice))) == 2 * amount
+    assert int(json.loads(vault.get_status_json())["total_credits"]) == 2 * amount
+    assert vault.get_active_withdrawal_key(to_hex(direct_alice)) == ""
+
+    assert vault.retry_withdrawal(second_id) == "DISPATCHED"
+    with direct_vm.expect_revert("withdrawal is not recoverable"):
+        vault.retry_withdrawal(first_id)

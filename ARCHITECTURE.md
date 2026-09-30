@@ -88,6 +88,12 @@ contract-side successful-child callback or child identifier in the error context
 for a transfer to an EOA. The holder acknowledgement is consequently
 non-destructive: it is accepted only after the application proves the child
 externally, changes the record to `ACKNOWLEDGED`, releases the holder lock, and
-retains a recovery candidate. A failure callback can still move the matching
-record to `FAILED_RECOVERABLE` and restore the exact amount. The acknowledgement
-never enables retry, and a duplicate failure callback cannot restore twice.
+retains a bounded recovery candidate. A failure callback first resolves the
+holder's current `DISPATCHED` record when the refunded value matches. Only when
+there is no active dispatch does it inspect acknowledged candidates; one exact
+match is recoverable, while multiple exact matches fail closed. The callback
+then moves the selected record to `FAILED_RECOVERABLE`, restores the exact
+amount, removes its candidate, and cannot restore it twice. The bounded list is
+limited to 32 acknowledged candidates per holder because the contract cannot
+verify a client-provided child receipt well enough to safely prune candidates
+automatically.
