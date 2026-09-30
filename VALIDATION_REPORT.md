@@ -1,6 +1,6 @@
 # Validation Report
 
-Current validated state: repository HEAD `3e23aee5e209c8fc2a5ba7ab5f916c309f82461f`;
+Current validated application source: `7ab85526e3562f10679fe7f9637ce2ed98486aae`;
 contract source commit `2d69aa122adbb122759db43527266f4fcc5427da` remains
 deployed to Studionet 61999. The public source-of-truth manifest is
 `deployment-manifest.public.json`; all four deployed contract byte hashes
@@ -61,10 +61,11 @@ Deployment transaction hashes and SHA-256 values are recorded in
 ## Hosted application and health
 
 - Production: [https://exigency.vercel.app](https://exigency.vercel.app).
-- Vercel deployment `dpl_52VBpXhjVtM6UQ6cYrBr2syva3bE` reached READY on
-  `2026-09-30T19:30:58Z` and was aliased to production. Vercel did not expose
+- Vercel deployment `dpl_7KHhNwBPSs4CdSxPt8Ko77AoY6cJ` reached READY on
+  `2026-09-30T21:56:01Z` and was aliased to production. Vercel did not expose
   an independent Git SHA binding; the deployment was created from a clean
-  tracked-files snapshot of final HEAD.
+  tracked-files snapshot of the frontend source commit above. Evidence-only
+  documentation commits may follow without changing the deployed frontend.
 - Production Playwright completed **10** passing browser tests.
 - Browser E2E mocks are test-only and unavailable in production code paths. Every
   runtime mock hook is gated by `process.env.NODE_ENV !== "production"`; the
@@ -75,10 +76,10 @@ Deployment transaction hashes and SHA-256 values are recorded in
   Studionet RPC reachability and runs exact source verification in the
   workflow.
 - The final exact-head CI is [run
-  36769419729](https://github.com/Bibidee/exigency/actions/runs/36769419729),
+  36782459920](https://github.com/Bibidee/exigency/actions/runs/36782459920),
   and deployment-health is [run
-  36769806061](https://github.com/Bibidee/exigency/actions/runs/36769806061),
-  both on `3e23aee5e209c8fc2a5ba7ab5f916c309f82461f`. The workflow
+  36783529434](https://github.com/Bibidee/exigency/actions/runs/36783529434),
+  both on frontend source commit `7ab85526e3562f10679fe7f9637ce2ed98486aae`. The workflow
   covers contract validation, Python/unit/direct tests, frontend typecheck/build,
   10 browser tests, hosted routes, Studionet RPC, contract wiring and source
   verification. Deployment-health is also scheduled every six hours.
