@@ -258,8 +258,9 @@ def test_three_successful_withdrawals_same_holder_are_reusable(direct_vm, direct
         assert withdrawal_id and withdrawal_id not in withdrawal_ids
         withdrawal_ids.append(withdrawal_id)
         assert vault.settle_withdrawal(withdrawal_id) == "ACKNOWLEDGED"
+        assert vault.close_successful_withdrawal(withdrawal_id) == "SUCCESS_CLOSED"
         assert vault.get_active_withdrawal_key(to_hex(direct_alice)) == ""
-        assert json.loads(vault.get_withdrawal_json(withdrawal_id))["status"] == "ACKNOWLEDGED"
+        assert json.loads(vault.get_withdrawal_json(withdrawal_id))["status"] == "SUCCESS_CLOSED"
 
     assert len(set(withdrawal_ids)) == 3
     assert int(vault.get_credit(to_hex(direct_alice))) == 0
@@ -383,6 +384,106 @@ def test_acknowledged_recovery_candidates_are_bounded(
     with direct_vm.expect_revert("too many unresolved acknowledged payouts"):
         vault.settle_withdrawal(withdrawal_id)
     assert len(vault.get_recovery_withdrawal_keys(to_hex(direct_alice))) == 32
+
+
+def test_thirty_third_successful_withdrawal_is_not_blocked_after_success_closure(
+    direct_vm, direct_deploy, direct_alice
+):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 10**12
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = 33 * amount
+    vault.deposit()
+    direct_vm.value = 0
+
+    withdrawal_ids = []
+    for _ in range(33):
+        vault.withdraw(amount)
+        withdrawal_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+        assert withdrawal_id
+        withdrawal_ids.append(withdrawal_id)
+        assert vault.settle_withdrawal(withdrawal_id) == "ACKNOWLEDGED"
+        assert vault.close_successful_withdrawal(withdrawal_id) == "SUCCESS_CLOSED"
+        assert vault.get_recovery_withdrawal_keys(to_hex(direct_alice)) == []
+        assert vault.get_active_withdrawal_key(to_hex(direct_alice)) == ""
+
+    assert len(set(withdrawal_ids)) == 33
+    assert len(vault.list_withdrawal_keys()) == 33
+    assert int(vault.get_credit(to_hex(direct_alice))) == 0
+    assert int(json.loads(vault.get_status_json())["total_credits"]) == 0
+
+
+def test_forty_successful_withdrawals_remain_reusable_after_success_closure(
+    direct_vm, direct_deploy, direct_alice
+):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 10**12
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = 40 * amount
+    vault.deposit()
+    direct_vm.value = 0
+
+    for _ in range(40):
+        vault.withdraw(amount)
+        withdrawal_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+        assert vault.settle_withdrawal(withdrawal_id) == "ACKNOWLEDGED"
+        assert vault.close_successful_withdrawal(withdrawal_id) == "SUCCESS_CLOSED"
+
+    assert vault.get_recovery_withdrawal_keys(to_hex(direct_alice)) == []
+    assert vault.get_active_withdrawal_key(to_hex(direct_alice)) == ""
+    assert len(vault.list_withdrawal_keys()) == 40
+
+
+def test_success_close_is_holder_only_and_not_replayable(direct_vm, direct_deploy, direct_alice, direct_bob):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 10**15
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = amount
+    vault.deposit()
+    direct_vm.value = 0
+    vault.withdraw(amount)
+    withdrawal_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+    vault.settle_withdrawal(withdrawal_id)
+
+    direct_vm.sender = direct_bob
+    direct_vm.origin = direct_bob
+    with direct_vm.expect_revert("only withdrawal holder may close"):
+        vault.close_successful_withdrawal(withdrawal_id)
+
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    assert vault.close_successful_withdrawal(withdrawal_id) == "SUCCESS_CLOSED"
+    with direct_vm.expect_revert("withdrawal is already success-closed"):
+        vault.close_successful_withdrawal(withdrawal_id)
+    assert vault.get_recovery_withdrawal_keys(to_hex(direct_alice)) == []
+
+
+def test_success_closed_withdrawal_cannot_be_recovered_or_retried(direct_vm, direct_deploy, direct_alice):
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 10**15
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = amount
+    vault.deposit()
+    direct_vm.value = 0
+    vault.withdraw(amount)
+    withdrawal_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+    vault.settle_withdrawal(withdrawal_id)
+    vault.close_successful_withdrawal(withdrawal_id)
+
+    with direct_vm.expect_revert("withdrawal is not recoverable"):
+        vault.retry_withdrawal(withdrawal_id)
+    direct_vm.value = amount
+    with direct_vm.expect_revert("errored payout has no active holder withdrawal"):
+        vault.__on_errored_message__()
+    direct_vm.value = 0
+    record = json.loads(vault.get_withdrawal_json(withdrawal_id))
+    assert record["status"] == "SUCCESS_CLOSED"
+    assert int(vault.get_credit(to_hex(direct_alice))) == 0
+    assert int(json.loads(vault.get_status_json())["total_credits"]) == 0
 
 
 def test_retry_failure_restores_same_record_exactly_once(

@@ -93,7 +93,13 @@ holder's current `DISPATCHED` record when the refunded value matches. Only when
 there is no active dispatch does it inspect acknowledged candidates; one exact
 match is recoverable, while multiple exact matches fail closed. The callback
 then moves the selected record to `FAILED_RECOVERABLE`, restores the exact
-amount, removes its candidate, and cannot restore it twice. The bounded list is
-limited to 32 acknowledged candidates per holder because the contract cannot
-verify a client-provided child receipt well enough to safely prune candidates
-automatically.
+amount, removes its candidate, and cannot restore it twice.
+
+After the application has proven the finalized payout child, the holder calls
+`close_successful_withdrawal`. This changes the record to `SUCCESS_CLOSED` and
+removes only its recovery metadata; it does not change credit accounting. The
+frontend performs this close immediately after checking the parent finality,
+child linkage, destination, amount and `value_credited`. If the holder never
+closes the acknowledgement, the candidate remains subject to the explicit
+32-entry per-holder ambiguity bound. That is a fail-closed liveness limit for
+unresolved acknowledgements, not a limit on successfully closed withdrawals.

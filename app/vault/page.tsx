@@ -14,6 +14,7 @@ import {
   getActiveWithdrawalKey,
   getWithdrawal,
   listHolderWithdrawalKeys,
+  closeSuccessfulWithdrawal,
   retryWithdrawal,
   settleWithdrawal,
   withdrawFromVault,
@@ -78,7 +79,7 @@ export default function VaultPage() {
     const child = await waitForTriggeredValueTransfer(parentHash, expectedRecipient, expectedAmount);
     setWithdrawalChild(child);
     await load(account || undefined);
-    setPhase("Payout child finalized successfully. Acknowledge the payout to release the holder for another withdrawal.");
+    setPhase("Payout child finalized successfully. Acknowledge it, then close the proven success to retire recovery metadata.");
   }
 
   async function proveExistingPayout() {
@@ -152,8 +153,34 @@ export default function VaultPage() {
       setTx(hash);
       await waitForFinalization(hash);
       await load(account);
+      setPhase("Payout acknowledged. Retiring the recovery candidate after the proven successful child.");
+      const closeHash = await closeSuccessfulWithdrawal(account, withdrawal.withdrawal_id);
+      setTx(closeHash);
+      await waitForFinalization(closeHash);
+      await load(account);
       window.sessionStorage.removeItem("exigent.withdrawal.parent");
-      setPhase("Payout acknowledged; the holder is available for another withdrawal and the exact recovery candidate is retained.");
+      setPhase("Payout acknowledged and success-closed; the holder is available and recovery metadata was retired.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+      setPhase("");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function closeSuccessful() {
+    if (!account || !withdrawal) return setError("Connect the withdrawal holder wallet first.");
+    if (withdrawal.status !== "ACKNOWLEDGED" || !withdrawalChild) return setError("Prove the successful payout child before closing this acknowledgement.");
+    setBusy(true);
+    setError("");
+    setPhase("Retiring the recovery candidate for the proven successful payout");
+    try {
+      const hash = await closeSuccessfulWithdrawal(account, withdrawal.withdrawal_id);
+      setTx(hash);
+      await waitForFinalization(hash);
+      await load(account);
+      window.sessionStorage.removeItem("exigent.withdrawal.parent");
+      setPhase("Payout success-closed; the holder is available and recovery metadata was retired.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
       setPhase("");
@@ -230,12 +257,13 @@ export default function VaultPage() {
               <div className="stat"><small>Amount</small><strong>{formatGenAmount(BigInt(withdrawal.amount))} GEN</strong></div>
               <div className="stat"><small>Retries</small><strong>{withdrawal.retry_count}</strong></div>
             </div>
-            <div className="notice">Withdrawal key: <span className="mono">{withdrawal.withdrawal_id}</span>. A failed payout is recoverable exactly once; an acknowledged payout is non-blocking and cannot be replayed.</div>
+            <div className="notice">Withdrawal key: <span className="mono">{withdrawal.withdrawal_id}</span>. A proven success is closed to retire recovery metadata; an early acknowledgement remains recoverable until it is closed.</div>
             {withdrawalChild && <TxNotice hash={withdrawalChild} label="Payout child finalized" />}
             {withdrawal.status === "DISPATCHED" && !withdrawalChild && <div className="notice">Acknowledgement is disabled until the payout child transaction is discovered and proven successful.</div>}
             <div className="form-actions">
               {withdrawal.status === "DISPATCHED" && !withdrawalChild && <button className="btn-secondary" onClick={() => void proveExistingPayout()} disabled={busy || !withdrawalParent}>Prove payout child</button>}
-              {withdrawal.status === "DISPATCHED" && <button className="btn" onClick={() => void settle()} disabled={busy || !withdrawalChild}>Acknowledge payout</button>}
+              {withdrawal.status === "DISPATCHED" && <button className="btn" onClick={() => void settle()} disabled={busy || !withdrawalChild}>Acknowledge and close payout</button>}
+              {withdrawal.status === "ACKNOWLEDGED" && <button className="btn" onClick={() => void closeSuccessful()} disabled={busy || !withdrawalChild}>Close successful payout</button>}
               {withdrawal.status === "FAILED_RECOVERABLE" && <button className="btn-secondary" onClick={retry} disabled={busy}>Retry exact payout</button>}
             </div>
           </div>

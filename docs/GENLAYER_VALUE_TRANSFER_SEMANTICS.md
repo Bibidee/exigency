@@ -38,22 +38,26 @@ Consequences for the vault:
    and changes no accounting state.
 4. A holder acknowledgement releases the active holder lock but retains a
    recovery candidate because the contract has no successful-child callback.
-   A failure callback can still restore the exact acknowledged record when it
-   is uniquely identifiable. `FAILED_RECOVERABLE` records are removed from
-   the candidate set and cannot be restored twice.
+   After the frontend proves the finalized child, the holder calls
+   `close_successful_withdrawal`, changing the record to `SUCCESS_CLOSED` and
+   removing its candidate without changing credit. Until that close, a failure
+   callback can still restore the exact acknowledged record when it is uniquely
+   identifiable. `FAILED_RECOVERABLE` records are removed from the candidate
+   set and cannot be restored twice.
 5. The frontend proves finality, parent, recipient, exact amount and
    `value_credited` before acknowledging a successful payout. This is a
    read/reconciliation boundary, not the source of refund safety.
 
 The acknowledged candidate list is holder-scoped and capped at 32 entries.
 The contract rejects a new acknowledgement that would exceed that cap rather
-than allowing unbounded storage or silently creating ambiguous recovery. There
-is no arbitrary timeout cleanup: because the contract cannot observe the
-successful-child receipt, it cannot safely delete a candidate merely because a
-client claims that the child succeeded. A production caller must therefore
-avoid accumulating more than the cap of unresolved acknowledgements for one
-holder; a finalized external child is not expected to invoke the error hook
-later, but that client-side observation is not a contract-side proof.
+than allowing unbounded storage or silently creating ambiguous recovery. The
+normal application path closes each candidate after independently proving
+finality, parent linkage, recipient, exact amount and `value_credited`, so
+successful withdrawals do not accumulate indefinitely. There is no arbitrary
+timeout cleanup: if the holder does not perform the explicit close, the
+candidate remains recoverable and counts toward the bound. A finalized external
+child is not expected to invoke the error hook later, but that client-side
+observation is not a contract-side proof.
 
 Primary references:
 

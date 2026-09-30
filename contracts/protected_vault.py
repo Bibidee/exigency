@@ -26,6 +26,7 @@ def _address_hex(value: str) -> str:
 
 
 MAX_ACKNOWLEDGED_RECOVERY_CANDIDATES = 32
+SUCCESS_CLOSED = "SUCCESS_CLOSED"
 
 
 class ProtectedVault(gl.Contract):
@@ -247,6 +248,37 @@ class ProtectedVault(gl.Contract):
         self._add_recovery_candidate(holder, withdrawal_id)
         self.active_withdrawal_by_holder[holder] = ""
         return "ACKNOWLEDGED"
+
+    @gl.public.write
+    def close_successful_withdrawal(self, withdrawal_id: str) -> str:
+        """Retire recovery metadata after the holder proves the payout child succeeded.
+
+        The contract cannot inspect a child receipt itself.  The frontend or another
+        trusted caller must therefore establish finality, recipient, amount, parent,
+        and value-credit evidence before asking the holder to close this provisional
+        acknowledgement.  Closing never changes credit accounting; it only removes
+        a no-longer-needed early-failure recovery candidate.
+        """
+        raw = self.withdrawal_records.get(withdrawal_id, "")
+        if not raw:
+            raise gl.vm.UserError("withdrawal not found")
+        record = json.loads(raw)
+        holder = self._require_direct_user()
+        if holder != str(record.get("holder", "")):
+            raise gl.vm.UserError("only withdrawal holder may close")
+        status = str(record.get("status", ""))
+        if status == SUCCESS_CLOSED:
+            raise gl.vm.UserError("withdrawal is already success-closed")
+        if status != "ACKNOWLEDGED":
+            raise gl.vm.UserError("withdrawal is not awaiting successful closure")
+        record["status"] = SUCCESS_CLOSED
+        record["closed_at"] = _now()
+        record["recovery_pending"] = False
+        self.withdrawal_records[withdrawal_id] = json.dumps(record, sort_keys=True)
+        self._remove_recovery_candidate(holder, withdrawal_id)
+        if self.active_withdrawal_by_holder.get(holder, "") == withdrawal_id:
+            self.active_withdrawal_by_holder[holder] = ""
+        return SUCCESS_CLOSED
 
     @gl.public.write
     def retry_withdrawal(self, withdrawal_id: str) -> str:

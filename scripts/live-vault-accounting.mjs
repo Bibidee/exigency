@@ -108,11 +108,15 @@ const executeAndAcknowledge = async (label) => {
 
   const acknowledgeHash = await client.writeContract({ address: vault, functionName: "settle_withdrawal", args: [withdrawalId], value: 0n });
   await finalized(acknowledgeHash);
-  const finalRecord = JSON.parse(await client.readContract({ address: vault, functionName: "get_withdrawal_json", args: [withdrawalId] }));
+  const acknowledgedRecord = JSON.parse(await client.readContract({ address: vault, functionName: "get_withdrawal_json", args: [withdrawalId] }));
   const activeAfterAcknowledgement = String(await client.readContract({ address: vault, functionName: "get_active_withdrawal_key", args: [account.address] }));
-  if (finalRecord.status !== "ACKNOWLEDGED") throw new Error(`${label} withdrawal was not acknowledged: ${finalRecord.status}`);
+  if (acknowledgedRecord.status !== "ACKNOWLEDGED") throw new Error(`${label} withdrawal was not acknowledged: ${acknowledgedRecord.status}`);
   if (activeAfterAcknowledgement) throw new Error(`${label} acknowledgement did not release the holder lock`);
-  return { parentHash, payoutChildren, acknowledgeHash, withdrawalId, finalRecord, beforeWithdrawalBalance, afterPayoutBalance, payoutBalanceDelta };
+  const closeHash = await client.writeContract({ address: vault, functionName: "close_successful_withdrawal", args: [withdrawalId], value: 0n });
+  await finalized(closeHash);
+  const finalRecord = JSON.parse(await client.readContract({ address: vault, functionName: "get_withdrawal_json", args: [withdrawalId] }));
+  if (finalRecord.status !== "SUCCESS_CLOSED") throw new Error(`${label} withdrawal was not success-closed: ${finalRecord.status}`);
+  return { parentHash, payoutChildren, acknowledgeHash, closeHash, withdrawalId, finalRecord, beforeWithdrawalBalance, afterPayoutBalance, payoutBalanceDelta };
 };
 
 const first = await executeAndAcknowledge("first");
@@ -126,8 +130,8 @@ const expectedFinalCredit = beforeCredit + amount - withdrawalAmount - withdrawa
 const expectedFinalTotal = BigInt(before.total_credits) + amount - withdrawalAmount - withdrawalAmount;
 if (finalCredit !== expectedFinalCredit) throw new Error("final credit mismatch after two acknowledged withdrawals");
 if (BigInt(finalStatus.total_credits) !== expectedFinalTotal) throw new Error("final total mismatch after two acknowledged withdrawals");
-if (!recoveryIds.includes(first.withdrawalId) || !recoveryIds.includes(second.withdrawalId)) {
-  throw new Error("acknowledged withdrawals did not retain both recovery candidates");
+if (recoveryIds.includes(first.withdrawalId) || recoveryIds.includes(second.withdrawalId)) {
+  throw new Error("success-closed withdrawals retained stale recovery candidates");
 }
 
 console.log(JSON.stringify({
@@ -137,6 +141,7 @@ console.log(JSON.stringify({
     parentHash: first.parentHash,
     payoutChildren: first.payoutChildren,
     acknowledgeHash: first.acknowledgeHash,
+    closeHash: first.closeHash,
     withdrawalId: first.withdrawalId,
     status: first.finalRecord.status,
     beforeBalance: String(first.beforeWithdrawalBalance),
@@ -147,6 +152,7 @@ console.log(JSON.stringify({
     parentHash: second.parentHash,
     payoutChildren: second.payoutChildren,
     acknowledgeHash: second.acknowledgeHash,
+    closeHash: second.closeHash,
     withdrawalId: second.withdrawalId,
     status: second.finalRecord.status,
     beforeBalance: String(second.beforeWithdrawalBalance),

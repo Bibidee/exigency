@@ -151,17 +151,17 @@ def test_live_studionet_vault_deposit_withdraw_accounting():
     assert payload["firstWithdrawal"]["parentHash"].startswith("0x")
     assert payload["firstWithdrawal"]["payoutChildren"]
     assert payload["firstWithdrawal"]["acknowledgeHash"].startswith("0x")
-    assert payload["firstWithdrawal"]["status"] == "ACKNOWLEDGED"
+    assert payload["firstWithdrawal"]["status"] == "SUCCESS_CLOSED"
     assert payload["secondWithdrawal"]["parentHash"].startswith("0x")
     assert payload["secondWithdrawal"]["payoutChildren"]
     assert payload["secondWithdrawal"]["acknowledgeHash"].startswith("0x")
-    assert payload["secondWithdrawal"]["status"] == "ACKNOWLEDGED"
+    assert payload["secondWithdrawal"]["status"] == "SUCCESS_CLOSED"
     assert payload["firstWithdrawal"]["withdrawalId"] != payload["secondWithdrawal"]["withdrawalId"]
     assert int(payload["depositedCredit"]) == int(payload["beforeCredit"]) + int(payload["depositAmount"])
     assert int(payload["finalCredit"]) == int(payload["beforeCredit"]) + int(payload["depositAmount"]) - 2 * int(payload["withdrawalAmount"])
     assert int(payload["finalTotal"]) == int(payload["beforeTotal"]) + int(payload["depositAmount"]) - 2 * int(payload["withdrawalAmount"])
-    assert payload["firstWithdrawal"]["withdrawalId"] in payload["recoveryIds"]
-    assert payload["secondWithdrawal"]["withdrawalId"] in payload["recoveryIds"]
+    assert payload["firstWithdrawal"]["withdrawalId"] not in payload["recoveryIds"]
+    assert payload["secondWithdrawal"]["withdrawalId"] not in payload["recoveryIds"]
 
 
 @pytest.mark.skipif(

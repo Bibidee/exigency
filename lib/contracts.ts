@@ -66,7 +66,7 @@ export type WithdrawalRecord = {
   holder: string;
   destination: string;
   amount: string;
-  status: "DISPATCHED" | "ACKNOWLEDGED" | "FAILED_RECOVERABLE" | string;
+  status: "DISPATCHED" | "ACKNOWLEDGED" | "SUCCESS_CLOSED" | "FAILED_RECOVERABLE" | string;
   requested_at: number;
   acknowledged_at?: number;
   recovery_pending?: boolean;
@@ -163,6 +163,10 @@ export async function listHolderWithdrawalKeys(account: string) {
 
 export async function settleWithdrawal(account: `0x${string}`, withdrawalKey: string) {
   return submitWrite(account, ADDRESSES.protectedVault, "settle_withdrawal", [withdrawalKey]);
+}
+
+export async function closeSuccessfulWithdrawal(account: `0x${string}`, withdrawalKey: string) {
+  return submitWrite(account, ADDRESSES.protectedVault, "close_successful_withdrawal", [withdrawalKey]);
 }
 
 export async function retryWithdrawal(account: `0x${string}`, withdrawalKey: string) {

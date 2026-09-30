@@ -16,7 +16,7 @@
 12. **No charter rollback.** A newly active charter cannot be replaced by an older published version.
 13. **No mutable-source hand-wave.** Final assessment records include code-derived HTTP status and SHA-256 content digests for every fetched source plus an aggregate evidence commitment.
 14. **No internal holder impersonation.** Vault credit flows require the immediate sender and original transaction origin to be the same EOA.
-15. **No stale holder lock.** A proven payout acknowledgement releases only that holder's lock; its exact recovery candidate remains available for a possible late failure.
+15. **No stale holder lock.** A proven payout acknowledgement releases only that holder's lock. The application then calls the holder-only success-closure write, which retires the exact recovery candidate after the finalized child has been proven.
 
 ## Prompt injection
 
@@ -69,16 +69,22 @@ The frontend therefore proves the finalized child, parent, recipient, amount
 and `value_credited` before submitting the holder acknowledgement. The
 acknowledgement marks the record `ACKNOWLEDGED`, releases the holder lock and
 retains a holder recovery candidate; a late failure callback can still move
-that exact record to `FAILED_RECOVERABLE` and restore the amount. Acknowledged
-records cannot be retried or paid a second time. Recovery matching is
-deterministic without pretending that an amount is a child identifier: the
-callback first requires the current holder-scoped `DISPATCHED` record and exact
-value, then considers holder-scoped `ACKNOWLEDGED` candidates only when there
-is no active dispatch. Multiple acknowledged candidates with the same amount
-fail closed as ambiguous rather than selecting an older or newer record.
-Acknowledged recovery candidates are capped at 32 per holder; new
-acknowledgements are rejected at the cap because the contract cannot safely
-prune a candidate without a contract-verifiable successful-child callback.
+that exact record to `FAILED_RECOVERABLE` and restore the amount. Once that
+proof is complete, the same holder submits `close_successful_withdrawal`,
+which changes the record to `SUCCESS_CLOSED` and removes its recovery
+candidate without changing credit. A closed record cannot be retried or
+recovered.
+
+Recovery matching is deterministic without pretending that an amount is a
+child identifier: the callback first requires the current holder-scoped
+`DISPATCHED` record and exact value, then considers holder-scoped
+`ACKNOWLEDGED` candidates only when there is no active dispatch. Multiple
+acknowledged candidates with the same amount fail closed as ambiguous rather
+than selecting an older or newer record. Acknowledged recovery candidates are
+capped at 32 per holder; the frontend's success-closure step removes proven
+successful candidates so normal successful withdrawals do not accumulate
+forever. An acknowledgement that is not closed remains intentionally bounded
+and recoverable.
 
 Accounting states:
 
@@ -86,6 +92,7 @@ Accounting states:
 | --- | --- | --- | --- | --- |
 | `DISPATCHED` | debited | debited | no | exact origin/value callback |
 | `ACKNOWLEDGED` | debited | debited | no | yes, if a failure callback arrives |
+| `SUCCESS_CLOSED` | debited | debited | no | no; recovery metadata retired |
 | `FAILED_RECOVERABLE` | restored | restored | exact record only | no second restore |
 
 Studio simulates balances; live proof must still verify the recipient wallet
