@@ -99,9 +99,15 @@ owner-authorization check; its incident attempt correctly rolled back with
 - rejected non-owner incident tx: `0x3826bd77ea585bef296e8629afb77f211acdeefc72f74d7694fa35761a4fbb0d`;
 - owner incident tx: `0xc642057c7acfa2922b42d156f464346fcf5a46f0869cd821011d42dd3298042f`;
 - assessment tx: `0x5962a28b9939074178741d5883a42549c305594fb8929dcb7aea09db0f7de7a4`;
-- capability: `EXC-CU-INCIDENT-20260930-01`; issuance child: **NOT RECORDED**;
+- capability: `EXC-CU-INCIDENT-20260930-01`; issuance child:
+  `0x757aeff0bd874a7315fc67d23355ff44d1fc39095be341113d47d4ecad7364da`,
+  triggered by assessment `0x5962a28b9939074178741d5883a42549c305594fb8929dcb7aea09db0f7de7a4`;
 - capability execute tx: `0x8f06019efebc7b6d15d114748d789e10e9ce67085486d46493b5e39ab911fb00`;
-- protected-Vault child / reconcile tx: **NOT RECORDED**;
+- protected-Vault child:
+  `0xfd48b00ae1b5de0a7849c5364f44d4163209498860475f12a8fa9208a40624b9`,
+  triggered by capability execute
+  `0x8f06019efebc7b6d15d114748d789e10e9ce67085486d46493b5e39ab911fb00`;
+- reconcile tx: **NOT RECORDED**;
 - latest deposit `0.010 GEN`: `0x0c2268e8fbc43dcd73c40616cc9daac109b7d57d06dc16c8b6e406fcdab0d523`;
 - latest withdrawal parent / payout child: `0xd4df78b62aa572029b4da8c516551c5b6f3e07670f35beb1031f113716fe27c` /
   `0xe76369bacac9ed3ece9dbda86865010540330645681a3d4c442888b370d72ab8`;
