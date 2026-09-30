@@ -29,7 +29,7 @@ Do **not** substitute Studio Dev / chain 61997. The repository-local `genlayer@0
 
 ## Current submission state
 
-- Repository HEAD: `f15da235433e91ae27ac3604db397b03966fd629`.
+- Repository HEAD: `3e23aee5e209c8fc2a5ba7ab5f916c309f82461f` — `docs: refresh final deployment evidence`.
 - Production: [https://exigency.vercel.app](https://exigency.vercel.app).
 - READY Vercel deployment: `dpl_52VBpXhjVtM6UQ6cYrBr2syva3bE`, created
   `2026-09-30T19:30:58Z` and aliased to production.

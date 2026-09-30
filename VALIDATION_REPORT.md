@@ -1,6 +1,6 @@
 # Validation Report
 
-Current validated state: repository HEAD `f15da235433e91ae27ac3604db397b03966fd629`;
+Current validated state: repository HEAD `3e23aee5e209c8fc2a5ba7ab5f916c309f82461f`;
 contract source commit `2d69aa122adbb122759db43527266f4fcc5427da` remains
 deployed to Studionet 61999. The public source-of-truth manifest is
 `deployment-manifest.public.json`; all four deployed contract byte hashes
@@ -75,10 +75,10 @@ Deployment transaction hashes and SHA-256 values are recorded in
   Studionet RPC reachability and runs exact source verification in the
   workflow.
 - The final exact-head CI is [run
-  36761914945](https://github.com/Bibidee/exigency/actions/runs/36761914945),
+  36769419729](https://github.com/Bibidee/exigency/actions/runs/36769419729),
   and deployment-health is [run
-  36762442429](https://github.com/Bibidee/exigency/actions/runs/36762442429),
-  both on `f15da235433e91ae27ac3604db397b03966fd629`. The workflow
+  36769806061](https://github.com/Bibidee/exigency/actions/runs/36769806061),
+  both on `3e23aee5e209c8fc2a5ba7ab5f916c309f82461f`. The workflow
   covers contract validation, Python/unit/direct tests, frontend typecheck/build,
   10 browser tests, hosted routes, Studionet RPC, contract wiring and source
   verification. Deployment-health is also scheduled every six hours.

@@ -2,7 +2,7 @@
 
 ## CURRENT CANONICAL DEPLOYMENT
 
-- Repository HEAD: `f15da235433e91ae27ac3604db397b03966fd629` — `Harden payout closure recovery and regression coverage`.
+- Repository HEAD: `3e23aee5e209c8fc2a5ba7ab5f916c309f82461f` — `docs: refresh final deployment evidence`.
 - Source commit deployed: `2d69aa122adbb122759db43527266f4fcc5427da`.
 - Production: [https://exigency.vercel.app](https://exigency.vercel.app).
 - Vercel deployment: `dpl_52VBpXhjVtM6UQ6cYrBr2syva3bE`, READY,
@@ -22,9 +22,9 @@ address and transaction values.
 ## CURRENT CI
 
 The final exact-head CI is [run
-36761914945](https://github.com/Bibidee/exigency/actions/runs/36761914945),
+36769419729](https://github.com/Bibidee/exigency/actions/runs/36769419729),
 and deployment-health is [run
-36762442429](https://github.com/Bibidee/exigency/actions/runs/36762442429),
+36769806061](https://github.com/Bibidee/exigency/actions/runs/36769806061),
 both on repository HEAD above. CI covers contract validation,
 Python/unit/direct tests, frontend typecheck/build, and 10 browser regression
 tests.

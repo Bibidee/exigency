@@ -4,7 +4,7 @@
 
 - Hardened source commit: `2d69aa122adbb122759db43527266f4fcc5427da` — `Retire successful payout recovery state`.
 - Branch: `main`; repository: [Bibidee/exigency](https://github.com/Bibidee/exigency).
-- Final repository HEAD: `f15da235433e91ae27ac3604db397b03966fd629` — `Harden payout closure recovery and regression coverage`.
+- Final repository HEAD: `3e23aee5e209c8fc2a5ba7ab5f916c309f82461f` — `docs: refresh final deployment evidence`.
 - Network: Studionet 61999; RPC: `https://studio.genlayer.com/api`.
 - Production frontend: [https://exigency.vercel.app](https://exigency.vercel.app).
 - Vercel deployment `dpl_52VBpXhjVtM6UQ6cYrBr2syva3bE` reached READY on
@@ -74,9 +74,9 @@ byte matches for all four contracts.
 ## HEALTH
 
 `npm run health:check` passed locally. The final exact-head CI is [run
-36761914945](https://github.com/Bibidee/exigency/actions/runs/36761914945),
+36769419729](https://github.com/Bibidee/exigency/actions/runs/36769419729),
 and deployment-health is [run
-36762442429](https://github.com/Bibidee/exigency/actions/runs/36762442429),
+36769806061](https://github.com/Bibidee/exigency/actions/runs/36769806061),
 both on final HEAD. Health checks `/`,
 `/command`, `/vault`, Studionet RPC reachability, the manifest chain and all
 four contract reads, plus Vault → Gate and Gate → Engine wiring. The
