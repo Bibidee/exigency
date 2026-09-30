@@ -76,15 +76,18 @@ Charter policy is immutable. New policy requires a new `charter_key`. The first 
 ## Withdrawal architecture
 
 `ProtectedVault` debits a holder and records a unique `DISPATCHED` withdrawal
-before emitting the finalized native-value child. In-flight correlation is
-stored in `active_withdrawal_by_holder`, and GenLayer's preserved
-`origin_address` identifies the holder inside `__on_errored_message__`. An
-unfinished payout therefore blocks only its own holder.
+before emitting the native-value child. In-flight correlation is stored in
+`active_withdrawal_by_holder`, and GenLayer's preserved `origin_address`
+identifies the holder inside `__on_errored_message__`. Deposit, withdrawal,
+acknowledgement and retry are restricted to direct EOA calls where
+`sender_address == origin_address`; an internal contract cannot impersonate a
+holder. An unfinished payout therefore blocks only its own holder.
 
 The platform exposes an errored-message hook for failed value transfers, but no
-contract-side successful-child callback for a transfer to an EOA. The holder
-acknowledgement is consequently non-destructive: it is accepted only after the
-application proves the child externally, while the recovery pointer remains.
-A failure callback can still move the record to `FAILED_RECOVERABLE` and
-restore the exact amount. The acknowledgement never enables retry, and a
-duplicate failure callback cannot restore twice.
+contract-side successful-child callback or child identifier in the error context
+for a transfer to an EOA. The holder acknowledgement is consequently
+non-destructive: it is accepted only after the application proves the child
+externally, changes the record to `ACKNOWLEDGED`, releases the holder lock, and
+retains a recovery candidate. A failure callback can still move the matching
+record to `FAILED_RECOVERABLE` and restore the exact amount. The acknowledgement
+never enables retry, and a duplicate failure callback cannot restore twice.

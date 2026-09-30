@@ -64,7 +64,7 @@ export default function LandingPage() {
           <article className="feature-card"><Fingerprint size={25} /><h3>Exact action binding</h3><p>The capability binds incident, charter, target, action class and duration. Any modified execution parameters produce a different digest and fail.</p></article>
           <article className="feature-card"><AlarmClock size={25} /><h3>Expiring authority</h3><p>Capability expiry starts when the finalized child issuance executes, not when the assessment was merely accepted, avoiding already-expired permissions.</p></article>
           <article className="feature-card"><ShieldCheck size={25} /><h3>Protected target</h3><p>The demo vault has no direct administrator pause. Emergency pause methods accept calls only from CapabilityGate, making the consensus path operationally necessary.</p></article>
-          <article className="feature-card"><Zap size={25} /><h3>One-shot execution</h3><p>A valid capability stays bound to its exact dispatched action until the protected child is reconciled as applied. Exact retries cannot change the target, action or duration, and replay after settlement fails.</p></article>
+          <article className="feature-card"><Zap size={25} /><h3>One-shot execution</h3><p>A valid capability stays bound to its exact dispatched action until the protected child is reconciled as applied. Exact retries cannot change the target, action or duration, and replay after acknowledgement fails.</p></article>
         </div>
       </section>
 

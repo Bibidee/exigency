@@ -15,6 +15,8 @@
 11. **No protocol-key takeover after claim.** Once a protocol key is claimed, another wallet cannot publish a replacement charter under that identity.
 12. **No charter rollback.** A newly active charter cannot be replaced by an older published version.
 13. **No mutable-source hand-wave.** Final assessment records include code-derived HTTP status and SHA-256 content digests for every fetched source plus an aggregate evidence commitment.
+14. **No internal holder impersonation.** Vault credit flows require the immediate sender and original transaction origin to be the same EOA.
+15. **No stale holder lock.** A proven payout acknowledgement releases only that holder's lock; its exact recovery candidate remains available for a possible late failure.
 
 ## Prompt injection
 
@@ -47,7 +49,12 @@ upstream network transfer was interrupted early.
 
 Vault withdrawals debit accounting at dispatch and create a unique withdrawal
 record. In-flight correlation is stored per holder, not in one global lock, so
-one unresolved payout cannot freeze unrelated users.
+one unresolved payout cannot freeze unrelated users. A holder can perform
+another withdrawal after an `ACKNOWLEDGED` payout; each record remains distinct.
+
+Deposit, withdrawal, acknowledgement and retry require a direct EOA call
+(`sender_address == origin_address`). This prevents an internal contract call
+from writing credit under the original transaction origin's identity.
 
 GenLayer preserves `origin_address` through child message chains. A failed
 value-transfer child invokes the vault's errored-message handler, which uses
@@ -56,20 +63,23 @@ exactly once, then marks the record `FAILED_RECOVERABLE`. A duplicate callback
 cannot double-credit. Retry reuses the same withdrawal id, amount and
 destination.
 
-GenLayer currently exposes no contract-side successful-child callback for an
-external EOA value transfer. The frontend therefore proves the finalized child,
-parent, recipient, amount and `value_credited` before submitting the holder
-acknowledgement. The acknowledgement marks the record `SETTLED` but retains the
-recovery pointer; a late failure callback can still invalidate that provisional
-settlement and restore the exact amount. Settlement never destroys recovery
-state, and a settled record cannot be retried or paid a second time.
+GenLayer currently exposes no contract-side successful-child callback or child
+identifier in the errored-message context for an external EOA value transfer.
+The frontend therefore proves the finalized child, parent, recipient, amount
+and `value_credited` before submitting the holder acknowledgement. The
+acknowledgement marks the record `ACKNOWLEDGED`, releases the holder lock and
+retains a holder recovery candidate; a late failure callback can still move
+that exact record to `FAILED_RECOVERABLE` and restore the amount. Acknowledged
+records cannot be retried or paid a second time. Recovery matching is
+deterministic: the callback's preserved origin and exact value select the oldest
+matching `DISPATCHED`/`ACKNOWLEDGED` record in immutable creation order.
 
 Accounting states:
 
 | State | Holder credit | Total credit | Retry | Restore |
 | --- | --- | --- | --- | --- |
 | `DISPATCHED` | debited | debited | no | exact origin/value callback |
-| `SETTLED` | debited | debited | no | yes, if a failure callback arrives |
+| `ACKNOWLEDGED` | debited | debited | no | yes, if a failure callback arrives |
 | `FAILED_RECOVERABLE` | restored | restored | exact record only | no second restore |
 
 Studio simulates balances; live proof must still verify the recipient wallet

@@ -143,15 +143,27 @@ def test_live_studionet_manifest_and_contract_reads():
     reason="set EXIGENT_RUN_LIVE_ACCOUNTING=1 with EXIGENT_LIVE_PRIVATE_KEY for payable coverage",
 )
 def test_live_studionet_vault_deposit_withdraw_accounting():
-    """Exercise real payable value and credit accounting with a funded test key."""
+    """Exercise real payable value and repeated same-holder accounting with a funded test key."""
     command = ["node", str(ROOT / "scripts" / "live-vault-accounting.mjs")]
     result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=True)
     payload = json.loads(result.stdout.strip().splitlines()[-1])
     assert payload["depositHash"].startswith("0x")
-    assert payload["withdrawHash"].startswith("0x")
+    assert payload["firstWithdrawal"]["parentHash"].startswith("0x")
+    assert payload["firstWithdrawal"]["payoutChildren"]
+    assert payload["firstWithdrawal"]["acknowledgeHash"].startswith("0x")
+    assert payload["firstWithdrawal"]["status"] == "ACKNOWLEDGED"
+    assert payload["secondWithdrawal"]["parentHash"].startswith("0x")
+    assert payload["secondWithdrawal"]["payoutChildren"]
+    assert payload["secondWithdrawal"]["acknowledgeHash"].startswith("0x")
+    assert payload["secondWithdrawal"]["status"] == "ACKNOWLEDGED"
+    assert payload["firstWithdrawal"]["withdrawalId"] != payload["secondWithdrawal"]["withdrawalId"]
     assert int(payload["depositedCredit"]) == int(payload["beforeCredit"]) + int(payload["depositAmount"])
-    assert int(payload["finalCredit"]) == int(payload["beforeCredit"]) + int(payload["depositAmount"]) - int(payload["withdrawalAmount"])
-    assert int(payload["finalTotal"]) == int(payload["beforeTotal"]) + int(payload["depositAmount"]) - int(payload["withdrawalAmount"])
+    assert int(payload["finalCredit"]) == int(payload["beforeCredit"]) + int(payload["depositAmount"]) - 2 * int(payload["withdrawalAmount"])
+    assert int(payload["finalTotal"]) == int(payload["beforeTotal"]) + int(payload["depositAmount"]) - 2 * int(payload["withdrawalAmount"])
+    assert set(payload["recoveryIds"]) == {
+        payload["firstWithdrawal"]["withdrawalId"],
+        payload["secondWithdrawal"]["withdrawalId"],
+    }
 
 
 @pytest.mark.skipif(

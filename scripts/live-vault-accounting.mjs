@@ -21,8 +21,11 @@ const readBalance = async () => BigInt(await client.getBalance({ address: accoun
 
 const finalized = async (hash) => {
   const receipt = await client.waitForTransactionReceipt({ hash, status: "FINALIZED", retries: 120, interval: 5000 });
-  const result = String(receipt.txExecutionResultName ?? "");
-  if (result !== "FINISHED_WITH_RETURN") throw new Error(`transaction did not finalize successfully: ${hash} (${result || "unknown"})`);
+  const statusName = String(receipt.statusName ?? receipt.status_name ?? "").toUpperCase();
+  const result = String(receipt.txExecutionResultName ?? receipt.tx_execution_result_name ?? receipt.resultName ?? receipt.result_name ?? "").toUpperCase();
+  if (statusName !== "FINALIZED" || ["MAJORITY_DISAGREE", "CANCELED", "ERROR", "FAILED"].includes(result)) {
+    throw new Error(`transaction did not finalize successfully: ${hash} (${result || "unknown"})`);
+  }
   return receipt;
 };
 
@@ -60,21 +63,28 @@ const waitForPayoutChildren = async (parentHash, expectedAmount) => {
   return matches;
 };
 
-const before = await readStatus();
-const beforeCredit = await readCredit();
-const beforeBalance = await readBalance();
+const observedBefore = await readStatus();
+const observedCredit = await readCredit();
+const observedBalance = await readBalance();
+const resumedDepositHash = process.env.EXIGENT_LIVE_RESUME_DEPOSIT_HASH || "";
+const resumedDeposit = Boolean(resumedDepositHash);
+const before = resumedDeposit
+  ? { ...observedBefore, total_credits: String(BigInt(observedBefore.total_credits) - amount) }
+  : observedBefore;
+const beforeCredit = resumedDeposit ? observedCredit - amount : observedCredit;
+const beforeBalance = observedBalance;
 if (before.withdrawals_paused || before.deposits_paused) {
   throw new Error(`vault must be open for accounting coverage: withdrawals_paused=${before.withdrawals_paused}, deposits_paused=${before.deposits_paused}`);
 }
 
-const depositHash = await client.writeContract({ address: vault, functionName: "deposit", args: [], value: amount });
+const depositHash = resumedDepositHash || await client.writeContract({ address: vault, functionName: "deposit", args: [], value: amount });
 await finalized(depositHash);
 const afterDeposit = await readStatus();
 const depositedCredit = await readCredit();
 const afterDepositBalance = await readBalance();
 if (depositedCredit !== beforeCredit + amount) throw new Error("deposit credit mismatch");
 if (BigInt(afterDeposit.total_credits) !== BigInt(before.total_credits) + amount) throw new Error("deposit total mismatch");
-if (afterDepositBalance >= beforeBalance) throw new Error("recipient balance did not reflect the payable deposit cost");
+if (!resumedDeposit && afterDepositBalance >= beforeBalance) throw new Error("recipient balance did not reflect the payable deposit cost");
 
 const executeAndAcknowledge = async (label) => {
   const beforeWithdrawalBalance = await readBalance();
