@@ -38,7 +38,7 @@
 ## TEST RESULTS
 
 - Unit: **14 passed**.
-- Direct Mode: **34 passed**.
+- Direct Mode: **43 passed**.
 - Contract `genvm-lint check`: PASS for all four contracts.
 - Contract `genvm-lint validate`: PASS for all four contracts.
 - Typecheck: PASS.
@@ -71,6 +71,23 @@ deployment-health workflow is scheduled every six hours and is manually
 dispatched for the final deployment.
 
 ## LIVE VAULT ACCOUNTING PROOF
+
+### Latest Brave session
+
+- Owner wallet: `0x4a7d…32f5` — completed the valid lifecycle and accounting.
+- Second wallet: `0xff20…9b54` — negative owner-authorization test only; the
+  attempted incident rolled back as required.
+- Latest deposit `0.010 GEN`: `0x0c2268e8fbc43dcd73c40616cc9daac109b7d57d06dc16c8b6e406fcdab0d523`.
+- Withdrawal parent / payout child: `0xd4df78b62aa572029b4da8c516551c5b6f3e07670f35beb1031f113716fe27c` /
+  `0xe76369bacac9ed3ece9dbda86865010540330645681a3d4c442888b370d72ab8`.
+- Acknowledgement / success close: `0xd242a03df3742318437208985c6b3f2c32375e9a6fdcf7a750fc7a6638172f27` /
+  `0xfcb6366f3fbdec9faadd5cd3e3a52c7880b39999974b62a509c2e40627f689a1`.
+- Current observed holder credit: `0.005 GEN`; total credited: `0.010 GEN`; latest withdrawal is
+  `SUCCESS_CLOSED`; recovery metadata is retired; both pause states are OPEN.
+
+The acknowledged-reload browser recovery path is covered by Playwright. The
+frontend persists only public id/hash metadata, re-proves the child after
+reload, and keeps close disabled until proof succeeds.
 
 - Account: `0x865e118a3be4FA0760775565fCd31be156e1e3d7`.
 - Deposit: `0.015 GEN`, tx `0x74c69aed38622ab930ad7369a9ddd241ff726861ba25b4f6879878d0478ca548`.

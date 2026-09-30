@@ -149,6 +149,16 @@ Routes are product-specific to EXIGENT:
 
 The frontend uses an injected EIP-1193 wallet only. It does not use Privy, WalletConnect, a centralized decision backend, Firebase, Supabase or mock contract results.
 
+### Vault payout recovery boundary
+
+The browser stores only public withdrawal reconciliation metadata: the
+withdrawal id, parent transaction hash and proven payout-child hash. If a
+browser reload occurs after acknowledgement, the record remains visibly
+`ACKNOWLEDGED`; the user must re-prove the finalized child before the
+`SUCCESS_CLOSED` action becomes available. A rejected close can be retried.
+`SUCCESS_CLOSED` is holder-confirmed recovery-metadata retirement after
+client-side proof, not a receipt proof performed by the contract itself.
+
 ## Local setup
 
 ### Node / frontend / CLI

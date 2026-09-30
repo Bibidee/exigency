@@ -23,8 +23,24 @@ import {
 import { waitForFinalization, waitForTriggeredValueTransfer } from "@/lib/genlayer";
 import { formatGenAmount, parseGenAmount } from "@/lib/amount";
 
+const WITHDRAWAL_PARENT_KEY = "exigent.withdrawal.parent";
+const WITHDRAWAL_ID_KEY = "exigent.withdrawal.id";
+const WITHDRAWAL_CHILD_KEY = "exigent.withdrawal.child";
+
 function fmt(ts: number) {
   return ts ? new Date(ts * 1000).toLocaleString() : "—";
+}
+
+function clearWithdrawalProof() {
+  window.sessionStorage.removeItem(WITHDRAWAL_PARENT_KEY);
+  window.sessionStorage.removeItem(WITHDRAWAL_ID_KEY);
+  window.sessionStorage.removeItem(WITHDRAWAL_CHILD_KEY);
+}
+
+function saveWithdrawalProof(withdrawalId: string, parent: string, child = "") {
+  window.sessionStorage.setItem(WITHDRAWAL_ID_KEY, withdrawalId);
+  window.sessionStorage.setItem(WITHDRAWAL_PARENT_KEY, parent);
+  if (child) window.sessionStorage.setItem(WITHDRAWAL_CHILD_KEY, child);
 }
 
 export default function VaultPage() {
@@ -43,7 +59,7 @@ export default function VaultPage() {
 
   useEffect(() => {
     const queryParent = new URLSearchParams(window.location.search).get("withdrawalParent");
-    const savedParent = window.sessionStorage.getItem("exigent.withdrawal.parent") || "";
+    const savedParent = window.sessionStorage.getItem(WITHDRAWAL_PARENT_KEY) || "";
     setWithdrawalParent(queryParent || savedParent);
   }, []);
 
@@ -56,11 +72,32 @@ export default function VaultPage() {
       const keys = addr ? await listHolderWithdrawalKeys(addr) : [];
       const lastKey = activeKey || keys.at(-1) || "";
       const nextWithdrawal = lastKey ? await getWithdrawal(lastKey) : null;
+      const savedId = window.sessionStorage.getItem(WITHDRAWAL_ID_KEY) || "";
+      const savedParent = window.sessionStorage.getItem(WITHDRAWAL_PARENT_KEY) || "";
+      const savedChild = window.sessionStorage.getItem(WITHDRAWAL_CHILD_KEY) || "";
+      let resolvedParent = "";
+      let resolvedChild = "";
+
+      if (nextWithdrawal?.status === "SUCCESS_CLOSED") {
+        clearWithdrawalProof();
+      } else if (nextWithdrawal && savedId === nextWithdrawal.withdrawal_id) {
+        resolvedParent = savedParent;
+        resolvedChild = savedChild;
+      } else if (nextWithdrawal?.status === "DISPATCHED" && !savedId && savedParent) {
+        // A parent hash created by the current active withdrawal can be
+        // associated once the record is read. ACKNOWLEDGED recovery requires
+        // the persisted ID as well, so an unrelated stale hash cannot close it.
+        saveWithdrawalProof(nextWithdrawal.withdrawal_id, savedParent);
+        resolvedParent = savedParent;
+      }
       setStatus(next);
       setCredit(nextCredit);
       setWithdrawal(nextWithdrawal);
+      setWithdrawalParent(resolvedParent);
+      setWithdrawalChild(resolvedChild);
       setError("");
       setStatusState("READY");
+      return nextWithdrawal;
     } catch (cause) {
       setStatus(null);
       setCredit(0n);
@@ -74,23 +111,24 @@ export default function VaultPage() {
     void load(account || undefined);
   }, [account, load]);
 
-  async function provePayout(parentHash: `0x${string}`, expectedAmount: bigint, expectedRecipient: string) {
+  async function provePayout(parentHash: `0x${string}`, expectedAmount: bigint, expectedRecipient: string, withdrawalId: string) {
     setPhase("Discovering the withdrawal payout child transaction");
     const child = await waitForTriggeredValueTransfer(parentHash, expectedRecipient, expectedAmount);
+    saveWithdrawalProof(withdrawalId, parentHash, child);
     setWithdrawalChild(child);
     await load(account || undefined);
     setPhase("Payout child finalized successfully. Acknowledge it, then close the proven success to retire recovery metadata.");
   }
 
   async function proveExistingPayout() {
-    if (!account || !withdrawal || !withdrawalParent) {
-      setError("The finalized withdrawal parent hash is required to reconcile this payout.");
+    if (!account || !withdrawal || !withdrawalParent || !window.sessionStorage.getItem(WITHDRAWAL_ID_KEY)) {
+      setError("This acknowledged withdrawal needs its matching finalized parent hash before it can be success-closed.");
       return;
     }
     setBusy(true);
     setError("");
     try {
-      await provePayout(withdrawalParent as `0x${string}`, BigInt(withdrawal.amount), withdrawal.destination);
+      await provePayout(withdrawalParent as `0x${string}`, BigInt(withdrawal.amount), withdrawal.destination, withdrawal.withdrawal_id);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
       setPhase("Withdrawal parent is finalized, but the payout child is not yet proven.");
@@ -116,15 +154,17 @@ export default function VaultPage() {
         ? await depositToVault(account, value)
         : await withdrawFromVault(account, value);
       setTx(hash);
-      if (kind === "withdraw") {
-        window.sessionStorage.setItem("exigent.withdrawal.parent", hash);
-        setWithdrawalParent(hash);
-      }
       setPhase("Waiting for FINALIZED and successful execution");
       await waitForFinalization(hash);
       parentFinalized = true;
       if (kind === "withdraw") {
-        await provePayout(hash, value, account);
+        const currentWithdrawal = await load(account);
+        if (!currentWithdrawal || currentWithdrawal.status !== "DISPATCHED" || BigInt(currentWithdrawal.amount) !== value) {
+          throw new Error("The finalized withdrawal record did not match the submitted payout amount.");
+        }
+        saveWithdrawalProof(currentWithdrawal.withdrawal_id, hash);
+        setWithdrawalParent(hash);
+        await provePayout(hash, value, account, currentWithdrawal.withdrawal_id);
       } else {
         await load(account);
         setPhase("Deposit finalized successfully and state refreshed");
@@ -158,7 +198,9 @@ export default function VaultPage() {
       setTx(closeHash);
       await waitForFinalization(closeHash);
       await load(account);
-      window.sessionStorage.removeItem("exigent.withdrawal.parent");
+      clearWithdrawalProof();
+      setWithdrawalParent("");
+      setWithdrawalChild("");
       setPhase("Payout acknowledged and success-closed; the holder is available and recovery metadata was retired.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -170,7 +212,7 @@ export default function VaultPage() {
 
   async function closeSuccessful() {
     if (!account || !withdrawal) return setError("Connect the withdrawal holder wallet first.");
-    if (withdrawal.status !== "ACKNOWLEDGED" || !withdrawalChild) return setError("Prove the successful payout child before closing this acknowledgement.");
+    if (withdrawal.status !== "ACKNOWLEDGED" || !withdrawalChild || !withdrawalParent) return setError("Prove the successful payout child before closing this acknowledgement.");
     setBusy(true);
     setError("");
     setPhase("Retiring the recovery candidate for the proven successful payout");
@@ -179,7 +221,9 @@ export default function VaultPage() {
       setTx(hash);
       await waitForFinalization(hash);
       await load(account);
-      window.sessionStorage.removeItem("exigent.withdrawal.parent");
+      clearWithdrawalProof();
+      setWithdrawalParent("");
+      setWithdrawalChild("");
       setPhase("Payout success-closed; the holder is available and recovery metadata was retired.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -199,9 +243,9 @@ export default function VaultPage() {
       const hash = await retryWithdrawal(account, withdrawal.withdrawal_id);
       setTx(hash);
       await waitForFinalization(hash);
-      window.sessionStorage.setItem("exigent.withdrawal.parent", hash);
+      saveWithdrawalProof(withdrawal.withdrawal_id, hash);
       setWithdrawalParent(hash);
-      await provePayout(hash, BigInt(withdrawal.amount), withdrawal.destination);
+      await provePayout(hash, BigInt(withdrawal.amount), withdrawal.destination, withdrawal.withdrawal_id);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
       setPhase("");
@@ -243,7 +287,8 @@ export default function VaultPage() {
           <div className="panel-body stack">
             <div className="field"><label>Amount in GEN</label><input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" /></div>
             <div className="notice">A withdrawal debits credit and emits a separate payout child. After that child is proven finalized and successful, acknowledge the payout; acknowledgement releases this holder for another withdrawal while retaining exact recovery state for an early child failure.</div>
-            <button className="btn-secondary" onClick={() => run("withdraw")} disabled={busy || !known || !account || !validAmount}>Withdraw</button>
+            {withdrawal?.status === "ACKNOWLEDGED" && <div className="notice">This withdrawal is acknowledged but not success-closed. Re-prove the finalized payout and complete success closure before starting another withdrawal.</div>}
+            <button className="btn-secondary" onClick={() => run("withdraw")} disabled={busy || !known || !account || !validAmount || withdrawal?.status === "ACKNOWLEDGED"}>Withdraw</button>
           </div>
         </Panel>
       </div>
@@ -260,9 +305,12 @@ export default function VaultPage() {
             <div className="notice">Withdrawal key: <span className="mono">{withdrawal.withdrawal_id}</span>. A proven success is closed to retire recovery metadata; an early acknowledgement remains recoverable until it is closed.</div>
             {withdrawalChild && <TxNotice hash={withdrawalChild} label="Payout child finalized" />}
             {withdrawal.status === "DISPATCHED" && !withdrawalChild && <div className="notice">Acknowledgement is disabled until the payout child transaction is discovered and proven successful.</div>}
+            {withdrawal.status === "ACKNOWLEDGED" && !withdrawalChild && withdrawalParent && <div className="notice">This browser no longer has the payout child proof. Re-prove the finalized child from the stored parent transaction before closing this acknowledgement.</div>}
+            {withdrawal.status === "ACKNOWLEDGED" && !withdrawalChild && !withdrawalParent && <div className="notice bad">This withdrawal is acknowledged, but its parent transaction proof was not retained. Re-provide or rediscover that public parent hash before success closure.</div>}
             <div className="form-actions">
               {withdrawal.status === "DISPATCHED" && !withdrawalChild && <button className="btn-secondary" onClick={() => void proveExistingPayout()} disabled={busy || !withdrawalParent}>Prove payout child</button>}
               {withdrawal.status === "DISPATCHED" && <button className="btn" onClick={() => void settle()} disabled={busy || !withdrawalChild}>Acknowledge and close payout</button>}
+              {withdrawal.status === "ACKNOWLEDGED" && !withdrawalChild && withdrawalParent && <button className="btn-secondary" onClick={() => void proveExistingPayout()} disabled={busy}>Re-prove successful payout</button>}
               {withdrawal.status === "ACKNOWLEDGED" && <button className="btn" onClick={() => void closeSuccessful()} disabled={busy || !withdrawalChild}>Close successful payout</button>}
               {withdrawal.status === "FAILED_RECOVERABLE" && <button className="btn-secondary" onClick={retry} disabled={busy}>Retry exact payout</button>}
             </div>

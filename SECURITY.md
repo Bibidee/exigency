@@ -17,6 +17,7 @@
 13. **No mutable-source hand-wave.** Final assessment records include code-derived HTTP status and SHA-256 content digests for every fetched source plus an aggregate evidence commitment.
 14. **No internal holder impersonation.** Vault credit flows require the immediate sender and original transaction origin to be the same EOA.
 15. **No stale holder lock.** A proven payout acknowledgement releases only that holder's lock. The application then calls the holder-only success-closure write, which retires the exact recovery candidate after the finalized child has been proven.
+16. **No false success closure.** `SUCCESS_CLOSED` is a holder-confirmed retirement of recovery metadata after the client proves the finalized payout child; the contract itself cannot inspect that child receipt. A browser interruption leaves the record `ACKNOWLEDGED`, and the frontend re-proves the stored parent/child relationship before enabling closure.
 
 ## Prompt injection
 
@@ -33,6 +34,17 @@ The v1 capability gate routes only the three supported pause actions. It does no
 ## GEN transfer note
 
 `ProtectedVault.withdraw` uses the current GenLayer external-message value-transfer pattern. Accounting is debited at dispatch, and GenLayer's errored-message refund handler restores the exact amount when the payout child fails. Studio simulates balances; live proof must still verify the recipient wallet balance before and after the finalized payout.
+
+## Success-close trust boundary
+
+The contract proves the holder, withdrawal id, state transition and recovery-metadata retirement. It does not prove a child receipt because no contract-side successful-child callback or receipt introspection is available for an external EOA payout. The application proves parent finality, child linkage, recipient, amount and `value_credited`; the holder then authorizes `close_successful_withdrawal`. Closing prematurely is irreversible for that record: a later error callback cannot restore a `SUCCESS_CLOSED` withdrawal. The direct-mode regression `test_holder_success_close_irreversibly_retires_failure_recovery` preserves this intentional limitation.
+
+For incident assessments, consensus binds the bounded decision, source states
+and material findings. Per-validator `http_status` and `content_digest` values
+remain fetch provenance and are not treated as a byte-for-byte equality proof
+across all validators.
+
+The browser persists only the public withdrawal id, parent hash and proven child hash in session storage. After reload it validates the id against the current holder record, re-proves the child, and keeps the close action disabled until proof succeeds. If the parent hash is unavailable, the UI shows an explicit recoverability warning rather than presenting the record as complete.
 # Evidence transport and payout settlement boundaries
 
 Evidence URL paths are canonicalized before they are frozen in an incident. Dot

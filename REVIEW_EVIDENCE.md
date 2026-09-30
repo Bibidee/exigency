@@ -64,6 +64,23 @@ Both URLs returned HTTP 200 before this update.
 
 ## CURRENT VAULT ACCOUNTING
 
+The latest Brave session is the current observed accounting state. The valid
+lifecycle used owner wallet `0x4a7d…32f5`; wallet `0xff20…9b54` was only the
+negative non-owner authorization test. Latest deposit, withdrawal, payout,
+acknowledgement and close evidence:
+
+- deposit `0.010 GEN`: `0x0c2268e8fbc43dcd73c40616cc9daac109b7d57d06dc16c8b6e406fcdab0d523`;
+- withdrawal parent / child: `0xd4df78b62aa572029b4da8c516551c5b6f3e07670f35beb1031f113716fe27c` /
+  `0xe76369bacac9ed3ece9dbda86865010540330645681a3d4c442888b370d72ab8`;
+- acknowledgement: `0xd242a03df3742318437208985c6b3f2c32375e9a6fdcf7a750fc7a6638172f27`;
+- success close: `0xfcb6366f3fbdec9faadd5cd3e3a52c7880b39999974b62a509c2e40627f689a1`;
+- final observed holder credit: `0.005 GEN`; total credited: `0.010 GEN`; pause state OPEN; recovery
+  candidate retired.
+
+The browser now persists public withdrawal reconciliation metadata and offers
+safe acknowledged-reload recovery. A rejected close leaves `ACKNOWLEDGED`, not
+false success.
+
 - Account: `0x865e118a3be4FA0760775565fCd31be156e1e3d7`.
 - Deposit `0.015 GEN`: `0x74c69aed38622ab930ad7369a9ddd241ff726861ba25b4f6879878d0478ca548`.
 - First withdrawal parent / child: `0xb7dcbf7688307d35514395754da61135e6f8468561a3348e394d9ae84dd1315d` /

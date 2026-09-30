@@ -49,6 +49,31 @@ def _open(engine, key, evidence):
     )
 
 
+def _assessment(decision, state="UNAVAILABLE"):
+    return {
+        "decision": decision,
+        "summary": "Direct-mode adversarial assessment fixture.",
+        "trigger_clauses": ["bounded trigger clause"],
+        "material_findings": ["bounded source finding"],
+        "source_states": [
+            {
+                "url": "https://example.com/evidence/primary",
+                "state": state,
+                "finding": "fixture source state",
+            }
+        ],
+    }
+
+
+def _prepare_assessment(direct_vm, direct_deploy, direct_alice, key, assessment):
+    direct_vm.sender = direct_alice
+    engine = _deploy_engine(direct_vm, direct_deploy, direct_alice)
+    direct_vm.mock_web("example.com", {"method": "GET", "status": 200, "body": "approved evidence"})
+    direct_vm.mock_llm("Return ONLY a JSON object", json.dumps(assessment))
+    _open(engine, key, ["https://example.com/evidence/primary"])
+    return engine
+
+
 def test_incident_is_frozen_to_active_charter_and_owner(direct_vm, direct_deploy, direct_alice, direct_bob):
     direct_vm.sender = direct_alice
     engine = _deploy_engine(direct_vm, direct_deploy, direct_alice)
@@ -90,3 +115,93 @@ def test_duplicate_frozen_evidence_is_rejected(direct_vm, direct_deploy, direct_
             "INC-ENGINE-05",
             ["https://example.com/evidence/primary", "https://example.com/evidence/primary"],
         )
+
+
+def test_validator_rejects_malicious_leader_decision(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-ENGINE-HOSTILE-01",
+        _assessment("INSUFFICIENT_EVIDENCE"),
+    )
+    direct_vm.sender = direct_alice
+    engine.assess_incident("INC-ENGINE-HOSTILE-01")
+    malicious = _assessment("TRIGGER_CONFIRMED", "SUPPORTS_TRIGGER")
+    assert direct_vm.run_validator(leader_result=malicious) is False
+
+
+def test_validator_rejects_source_classification_disagreement(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-ENGINE-HOSTILE-02",
+        _assessment("INSUFFICIENT_EVIDENCE"),
+    )
+    direct_vm.sender = direct_alice
+    engine.assess_incident("INC-ENGINE-HOSTILE-02")
+    disagreement = _assessment("INSUFFICIENT_EVIDENCE", "CONTRADICTS_TRIGGER")
+    assert direct_vm.run_validator(leader_result=disagreement) is False
+
+
+def test_missing_support_cannot_create_trigger_authority(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-ENGINE-HOSTILE-03",
+        _assessment("TRIGGER_CONFIRMED", "UNAVAILABLE"),
+    )
+    direct_vm.sender = direct_alice
+    result = engine.assess_incident("INC-ENGINE-HOSTILE-03")
+    assert result["decision"] == "INSUFFICIENT_EVIDENCE"
+    record = json.loads(engine.get_incident_json("INC-ENGINE-HOSTILE-03"))
+    assert record["capability_key"] == ""
+    assert record["status"] == "ASSESSMENT_RETRYABLE"
+
+
+def test_conclusive_assessment_cannot_be_reassessed(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-ENGINE-CONCLUSIVE-01",
+        _assessment("TRIGGER_NOT_CONFIRMED"),
+    )
+    direct_vm.sender = direct_alice
+    engine.assess_incident("INC-ENGINE-CONCLUSIVE-01")
+    with direct_vm.expect_revert("incident already has a conclusive assessment"):
+        engine.assess_incident("INC-ENGINE-CONCLUSIVE-01")
+
+
+def test_retryable_assessment_stops_at_exact_max_attempts(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-ENGINE-RETRY-01",
+        _assessment("INSUFFICIENT_EVIDENCE"),
+    )
+    direct_vm.sender = direct_alice
+    for attempt in range(3):
+        result = engine.assess_incident("INC-ENGINE-RETRY-01")
+        assert result["decision"] == "INSUFFICIENT_EVIDENCE"
+        record = json.loads(engine.get_incident_json("INC-ENGINE-RETRY-01"))
+        assert record["assessment_count"] == attempt + 1
+    with direct_vm.expect_revert("incident assessment retry limit exhausted"):
+        engine.assess_incident("INC-ENGINE-RETRY-01")
+
+
+def test_expired_incident_cannot_be_assessed(direct_vm, direct_deploy, direct_alice):
+    direct_vm.warp("2026-09-27T20:00:00Z")
+    engine = _prepare_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-ENGINE-EXPIRY-01",
+        _assessment("INSUFFICIENT_EVIDENCE"),
+    )
+    direct_vm.warp("2026-09-28T20:00:01Z")
+    with direct_vm.expect_revert("incident assessment window has expired"):
+        engine.assess_incident("INC-ENGINE-EXPIRY-01")

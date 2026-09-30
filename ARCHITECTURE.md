@@ -56,6 +56,12 @@ For each validator:
 
 A missing contradiction or omitted material source is disagreement, not harmless wording drift. After the model returns, code overwrites provenance fields with the HTTP status and SHA-256 digest computed from the bytes actually fetched by that validator. The finalized leader assessment therefore carries evidence commitments that the LLM cannot invent.
 
+The consensus equality check binds the bounded decision, source states and
+material findings. It does not require every validator to return identical
+`http_status` or `content_digest` metadata, so those fields are audit
+provenance for the validator's fetch rather than an independent claim that
+all validators observed byte-identical responses.
+
 ## Finality design
 
 Two irreversible transitions use `on="finalized"`:
@@ -98,8 +104,13 @@ amount, removes its candidate, and cannot restore it twice.
 After the application has proven the finalized payout child, the holder calls
 `close_successful_withdrawal`. This changes the record to `SUCCESS_CLOSED` and
 removes only its recovery metadata; it does not change credit accounting. The
-frontend performs this close immediately after checking the parent finality,
-child linkage, destination, amount and `value_credited`. If the holder never
-closes the acknowledgement, the candidate remains subject to the explicit
-32-entry per-holder ambiguity bound. That is a fail-closed liveness limit for
+frontend performs this close only after checking the parent finality, child
+linkage, destination, amount and `value_credited`. This is a holder-attested
+trust boundary, not a contract-native receipt proof. The frontend persists the
+public withdrawal id, parent hash and child hash in session storage; after a
+reload it validates the id against the current holder record and offers
+`Re-prove successful payout` before enabling close. A rejected close leaves the
+record `ACKNOWLEDGED` and retryable. If the holder never closes the
+acknowledgement, the candidate remains subject to the explicit 32-entry
+per-holder ambiguity bound. That is a fail-closed liveness limit for
 unresolved acknowledgements, not a limit on successfully closed withdrawals.

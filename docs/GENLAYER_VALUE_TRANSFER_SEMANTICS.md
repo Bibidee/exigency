@@ -48,6 +48,16 @@ Consequences for the vault:
    `value_credited` before acknowledging a successful payout. This is a
    read/reconciliation boundary, not the source of refund safety.
 
+The success-close boundary is intentional: `SUCCESS_CLOSED` means that the
+holder submitted a holder-only retirement after the application proved the
+finalized child. It does not mean that `ProtectedVault` inspected the child
+receipt. A premature close forfeits late contract-level failure recovery for
+that withdrawal. The browser stores only public reconciliation metadata
+(withdrawal id, parent hash and child hash), validates the id against the
+current holder record after reload, and requires a fresh child proof before
+enabling close. If the parent hash is missing, it displays an explicit
+recoverability limitation instead of silently selecting a historical record.
+
 The acknowledged candidate list is holder-scoped and capped at 32 entries.
 The contract rejects a new acknowledgement that would exceed that cap rather
 than allowing unbounded storage or silently creating ambiguous recovery. The

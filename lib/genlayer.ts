@@ -16,9 +16,18 @@ type InjectedProvider = {
   providers?: InjectedProvider[];
 };
 
+type BrowserE2eMock = {
+  readContract?: (address: string, functionName: string, args: unknown[]) => unknown | Promise<unknown>;
+  submitWrite?: (account: string, address: string, functionName: string, args: unknown[], value: bigint) => `0x${string}` | Promise<`0x${string}`>;
+  waitForFinalization?: (hash: `0x${string}`) => unknown | Promise<unknown>;
+  waitForTriggeredValueTransfer?: (parentHash: `0x${string}`, expectedRecipient: string, expectedAmount: bigint) => `0x${string}` | Promise<`0x${string}`>;
+  getTransaction?: (hash: `0x${string}`) => unknown | Promise<unknown>;
+};
+
 declare global {
   interface Window {
     ethereum?: InjectedProvider;
+    __EXIGENT_E2E_MOCK__?: BrowserE2eMock;
   }
 }
 
@@ -106,6 +115,9 @@ export function walletClient(address: `0x${string}`) {
 
 export async function readContract<T>(address: string, functionName: string, args: unknown[] = []) {
   if (!address) throw new Error("Contract address is not configured.");
+  if (process.env.NODE_ENV !== "production" && typeof window !== "undefined" && window.__EXIGENT_E2E_MOCK__?.readContract) {
+    return await window.__EXIGENT_E2E_MOCK__.readContract(address, functionName, args) as T;
+  }
   const client = readClient();
   let lastError: unknown;
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -132,6 +144,9 @@ export async function submitWrite(
   value: bigint = 0n,
 ) {
   if (!address) throw new Error("Contract address is not configured.");
+  if (process.env.NODE_ENV !== "production" && typeof window !== "undefined" && window.__EXIGENT_E2E_MOCK__?.submitWrite) {
+    return await window.__EXIGENT_E2E_MOCK__.submitWrite(account, address, functionName, args, value);
+  }
   await ensureStudionet();
   const client = walletClient(account);
   const call = { address: address as `0x${string}`, functionName, args, value };
@@ -153,6 +168,9 @@ export async function waitForFinalization(
   hash: `0x${string}`,
   options: { allowValueTransfer?: boolean } = {},
 ) {
+  if (process.env.NODE_ENV !== "production" && typeof window !== "undefined" && window.__EXIGENT_E2E_MOCK__?.waitForFinalization) {
+    return await window.__EXIGENT_E2E_MOCK__.waitForFinalization(hash);
+  }
   const client = readClient();
   const receipt = await client.waitForTransactionReceipt({
     hash: hash as never,
@@ -208,6 +226,9 @@ export async function waitForValueTransferFinalization(
 }
 
 export async function getTransaction(hash: `0x${string}`) {
+  if (process.env.NODE_ENV !== "production" && typeof window !== "undefined" && window.__EXIGENT_E2E_MOCK__?.getTransaction) {
+    return await window.__EXIGENT_E2E_MOCK__.getTransaction(hash);
+  }
   return readClient().getTransaction({ hash: hash as never });
 }
 
@@ -246,6 +267,9 @@ export async function waitForTriggeredValueTransfer(
   expectedRecipient: string,
   expectedAmount: bigint,
 ): Promise<`0x${string}`> {
+  if (process.env.NODE_ENV !== "production" && typeof window !== "undefined" && window.__EXIGENT_E2E_MOCK__?.waitForTriggeredValueTransfer) {
+    return await window.__EXIGENT_E2E_MOCK__.waitForTriggeredValueTransfer(parentHash, expectedRecipient, expectedAmount);
+  }
   const children = await waitForTriggeredTransactionIds(parentHash);
   const matches: `0x${string}`[] = [];
   for (const child of children) {

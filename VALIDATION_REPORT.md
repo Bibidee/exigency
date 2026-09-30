@@ -9,7 +9,8 @@ match the repository exactly.
 
 - `python -m py_compile contracts/*.py` — PASS, all four contracts.
 - `pytest tests/unit -q` — **14 passed**.
-- `pytest tests/direct -q` — **34 passed**.
+- `pytest tests/direct -q` — **43 passed** (including adversarial Engine/Gate
+  envelope coverage and the premature success-close trust-boundary test).
 - `genvm-lint check` — PASS for all four contracts.
 - `genvm-lint validate` — PASS for all four contracts.
 - `npm run toolchain:check` — PASS.
@@ -74,6 +75,35 @@ Deployment transaction hashes and SHA-256 values are recorded in
   verification. Deployment-health is also scheduled every six hours.
 
 ## Fresh live accounting proof
+
+### Latest Brave session (current observed state)
+
+The latest manual Brave proof used owner wallet `0x4a7d…32f5` for the valid
+lifecycle. A second wallet `0xff20…9b54` was used only for the negative
+owner-authorization check; its incident attempt correctly rolled back with
+`only charter owner may request emergency authority`.
+
+- charter: `CU-CHARTER-20260930-01`;
+- charter publish tx: `0x88bae13d97d958de33666e47664f1fb3ad3447f690fc5ffc1ab8b37f1341eb6a`;
+- charter activation tx: **NOT RECORDED**; active-charter read returned the new key;
+- incident: `CU-INCIDENT-20260930-01`;
+- rejected non-owner incident tx: `0x3826bd77ea585bef296e8629afb77f211acdeefc72f74d7694fa35761a4fbb0d`;
+- owner incident tx: `0xc642057c7acfa2922b42d156f464346fcf5a46f0869cd821011d42dd3298042f`;
+- assessment tx: `0x5962a28b9939074178741d5883a42549c305594fb8929dcb7aea09db0f7de7a4`;
+- capability: `EXC-CU-INCIDENT-20260930-01`; issuance child: **NOT RECORDED**;
+- capability execute tx: `0x8f06019efebc7b6d15d114748d789e10e9ce67085486d46493b5e39ab911fb00`;
+- protected-Vault child / reconcile tx: **NOT RECORDED**;
+- latest deposit `0.010 GEN`: `0x0c2268e8fbc43dcd73c40616cc9daac109b7d57d06dc16c8b6e406fcdab0d523`;
+- latest withdrawal parent / payout child: `0xd4df78b62aa572029b4da8c516551c5b6f3e07670f35beb1031f113716fe27c` /
+  `0xe76369bacac9ed3ece9dbda86865010540330645681a3d4c442888b370d72ab8`;
+- acknowledgement tx: `0xd242a03df3742318437208985c6b3f2c32375e9a6fdcf7a750fc7a6638172f27`;
+- success-close tx: `0xfcb6366f3fbdec9faadd5cd3e3a52c7880b39999974b62a509c2e40627f689a1`;
+- current observed holder credit: `0.005 GEN`; total credited: `0.010 GEN`;
+- pause state: withdrawals OPEN, deposits OPEN; active withdrawal empty; latest
+  record `SUCCESS_CLOSED`; recovery metadata retired.
+
+This manual proof is separate from the older CLI run below and supersedes its
+`0.005 GEN` current-state wording.
 
 The unlocked-CLI Studionet proof completed successfully against the fresh vault.
 It used one deposit and two same-holder withdrawals:

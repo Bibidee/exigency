@@ -486,6 +486,38 @@ def test_success_closed_withdrawal_cannot_be_recovered_or_retried(direct_vm, dir
     assert int(json.loads(vault.get_status_json())["total_credits"]) == 0
 
 
+def test_holder_success_close_irreversibly_retires_failure_recovery(
+    direct_vm, direct_deploy, direct_alice
+):
+    """Document the intentional trust boundary around holder-confirmed closure."""
+    vault = direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
+    amount = 10**15
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm.value = amount
+    vault.deposit()
+    direct_vm.value = 0
+    vault.withdraw(amount)
+    withdrawal_id = vault.get_active_withdrawal_key(to_hex(direct_alice))
+
+    # The holder can acknowledge before the child failure is known, then
+    # intentionally retire the recovery candidate after client-side proof.
+    assert vault.settle_withdrawal(withdrawal_id) == "ACKNOWLEDGED"
+    assert vault.close_successful_withdrawal(withdrawal_id) == "SUCCESS_CLOSED"
+
+    # A later callback cannot restore a record whose recovery metadata was
+    # explicitly retired. This is the documented holder-attestation boundary.
+    direct_vm.value = amount
+    with direct_vm.expect_revert("errored payout has no active holder withdrawal"):
+        vault.__on_errored_message__()
+    direct_vm.value = 0
+    record = json.loads(vault.get_withdrawal_json(withdrawal_id))
+    assert record["status"] == "SUCCESS_CLOSED"
+    assert vault.get_recovery_withdrawal_keys(to_hex(direct_alice)) == []
+    assert int(vault.get_credit(to_hex(direct_alice))) == 0
+    assert int(json.loads(vault.get_status_json())["total_credits"]) == 0
+
+
 def test_retry_failure_restores_same_record_exactly_once(
     direct_vm, direct_deploy, direct_alice
 ):
