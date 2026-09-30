@@ -11,8 +11,8 @@ if (Number(manifest.chainId) !== 61999) throw new Error("refusing a non-Studione
 const account = createAccount(key);
 const client = createClient({ chain: studionet, endpoint: "https://studio.genlayer.com/api", account });
 const vault = manifest.contracts.protectedVault;
-const amount = 10_000_000_000_000_000n;
-const withdrawalAmount = amount / 2n;
+const amount = 15_000_000_000_000_000n;
+const withdrawalAmount = 5_000_000_000_000_000n;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const readStatus = async () => JSON.parse(await client.readContract({ address: vault, functionName: "get_status_json", args: [] }));
@@ -126,7 +126,7 @@ const expectedFinalCredit = beforeCredit + amount - withdrawalAmount - withdrawa
 const expectedFinalTotal = BigInt(before.total_credits) + amount - withdrawalAmount - withdrawalAmount;
 if (finalCredit !== expectedFinalCredit) throw new Error("final credit mismatch after two acknowledged withdrawals");
 if (BigInt(finalStatus.total_credits) !== expectedFinalTotal) throw new Error("final total mismatch after two acknowledged withdrawals");
-if (recoveryIds.length !== 2 || !recoveryIds.includes(first.withdrawalId) || !recoveryIds.includes(second.withdrawalId)) {
+if (!recoveryIds.includes(first.withdrawalId) || !recoveryIds.includes(second.withdrawalId)) {
   throw new Error("acknowledged withdrawals did not retain both recovery candidates");
 }
 

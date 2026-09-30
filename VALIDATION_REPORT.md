@@ -1,6 +1,6 @@
 # Validation Report
 
-Current validated state: source commit `d26135cbdd72053dd49d6047457ba84764acbd4b`
+Current validated state: source commit `ff0fa440dd4fdc6171918a0498d60efc69334573`
 deployed to a fresh Studionet 61999 stack. The public source-of-truth manifest is
 `deployment-manifest.public.json`; all four deployed contract byte hashes
 match the repository exactly.
@@ -9,7 +9,7 @@ match the repository exactly.
 
 - `python -m py_compile contracts/*.py` — PASS, all four contracts.
 - `pytest tests/unit -q` — **14 passed**.
-- `pytest tests/direct -q` — **25 passed**.
+- `pytest tests/direct -q` — **30 passed**.
 - `genvm-lint check` — PASS for all four contracts.
 - `genvm-lint validate` — PASS for all four contracts.
 - `npm run toolchain:check` — PASS.
@@ -27,6 +27,12 @@ match the repository exactly.
 - `origin_address` and exact refunded value correlate failure recovery.
 - Acknowledgement releases the holder lock while retaining a keyed recovery
   candidate for a possible late child failure.
+- Recovery first selects the current exact-value `DISPATCHED` record; historical
+  acknowledged matches are considered only when there is no active dispatch,
+  and ambiguous acknowledged matches fail closed.
+- Acknowledged recovery candidates are holder-scoped and capped at 32 entries;
+  the contract rejects further acknowledgements rather than growing state
+  without bound.
 - Duplicate failure delivery is idempotent; retry reuses one exact record.
 - Direct Mode covers direct-EOA identity, acknowledgement-before-resolution,
   repeated same-holder withdrawals, multi-user isolation, retry conservation
@@ -36,14 +42,14 @@ match the repository exactly.
 
 - Network: Studionet, chain **61999**.
 - RPC: `https://studio.genlayer.com/api`.
-- Registry: `0x3d341D3Bc034a895d14aAc92a594999057017566`.
-- Engine: `0x1dA0e885887623C27B96a9caa6058982F77dD4e3`.
-- Gate: `0x8bccA48A34B2324C33097Ef3e913603e9D1e1649`.
-- Vault: `0x7f78AD4BEe7Fb91562e5633e06958CC743c027eE`.
+- Registry: `0xF90B40Ee10CD75c8EEed86c02DA1Baf0CeA53ac3`.
+- Engine: `0x2e0051F7Dcad06c6715c8E995e5afe095B5d8c23`.
+- Gate: `0x4834294DE7C8CBEa2ad0A25F7C8B5e93f233E263`.
+- Vault: `0x78C968f8409694575F828d015ce210a282de6530`.
 - Engine binding transaction:
-  `0x95c5815d6266c9c447fc1de4d823e7bfe5ec9cf5d67292fd98287014c39370f7`.
+  `0xd3b1c458da0767c201e3e46fb37c6df5fe4765fc7d51bb8fb0a86d6d83d0c5d3`.
 - Source commit for the deployed contract bytes:
-  `d26135cbdd72053dd49d6047457ba84764acbd4b`.
+  `ff0fa440dd4fdc6171918a0498d60efc69334573`.
 - Exact source verification: PASS for Registry, Engine, Gate and Vault.
 
 Deployment transaction hashes and SHA-256 values are recorded in
@@ -52,18 +58,18 @@ Deployment transaction hashes and SHA-256 values are recorded in
 ## Hosted application and health
 
 - Production: [https://exigency.vercel.app](https://exigency.vercel.app).
-- Vercel deployment `dpl_H7fyxUo48Sp29TFZ2HfF47rfGSYy` reached READY and was
+- Vercel deployment `dpl_4W1ZgoqduQuDN4yEBjSjg2p6dcvU` reached READY and was
   aliased to production.
 - The browser walkthrough verified `/`, `/command` and `/vault`.
 - The health check reads the Registry, Engine, Gate and Vault, verifies vault
   gate wiring and gate engine wiring, checks all three hosted routes, confirms
   Studionet RPC reachability and runs exact source verification in the
   workflow.
-- The exact-head [CI run](https://github.com/Bibidee/exigency/actions/runs/36684359707)
-  for commit `775af51bbbeca78f55883ac74154b3c1b962fff2` passed, including 8 browser tests.
-  The exact-head [deployment-health run](https://github.com/Bibidee/exigency/actions/runs/36684624430)
-  also passed. Deployment-health is manually dispatched after each final deployment and is
-  also scheduled every six hours.
+- The final CI and deployment-health runs for the handoff commit are dispatched
+  after this evidence update and recorded in the final report. The workflow
+  covers contract validation, Python/unit/direct tests, frontend typecheck/build,
+  8 browser tests, hosted routes, Studionet RPC, contract wiring and source
+  verification. Deployment-health is also scheduled every six hours.
 
 ## Fresh live accounting proof
 
@@ -71,18 +77,19 @@ The unlocked-CLI Studionet proof completed successfully against the fresh vault.
 It used one deposit and two same-holder withdrawals:
 
 - account: `0x865e118a3be4FA0760775565fCd31be156e1e3d7`;
-- deposit `0.01 GEN`: `0x7a4b4beac31cd713a0ebf60ade12f4ceab3fdd4602dc5b4f4f2f1e302e4287b1`;
-- first withdrawal parent: `0x6c84f97796c992cca3e407acf0658c5cb60d8f561fff7f9603ec530fc282fa97`;
-- first payout child: `0xc7cbb1327e76ee0d03bfedba36194d39b836aeaaeb6fe82b31182255b734e3de`;
-- first acknowledgement: `0xf079e8819337bd7c871599634d90240d2aab46730fafe2470628902adc18465a`;
-- second withdrawal parent: `0x992fa342d6f3a78753ed812e4e68e979fd9c6f51efdab8539e25ecabc0c58d31`;
-- second payout child: `0xb38ed47e0770afd791dab0835114584d88d89fcaee50aa32ca03e859400a4e19`;
-- second acknowledgement: `0x2c4460bbb58a0a773d0f193c87355ed920408ad352f23bb5ae64e4052f190a81`;
+- deposit `0.015 GEN`: `0xe66c0b4f04ba02ad3c4a6891e100a74204daa8377429d4d2da5c3db888d7ab2b`;
+- first withdrawal parent: `0x6bda4b9cd6b2b2db3715ec8959cc726f9b78379fe85f458b0f5f0d6669fac14a`;
+- first payout child: `0xbd059c0fa38e7b26cb07dbb6a6da383413a7327cb3bc764ae74321044e1d51b2`;
+- first acknowledgement: `0xb13538c328c670eb01e94eea7185d5e08a7fcedc92d49e3946a1b7aec0ec9c64`;
+- second withdrawal parent: `0xc994be8a4e4535cc6f9d85d91f80e01256774c32d9661883a1f66cf5af98d937`;
+- second payout child: `0xf92655c8b2cb8d85e6c6f72b73040d23af2ffdc4636904df6cefc998bd31a239`;
+- second acknowledgement: `0x633d1d2d9372cceece6d446285b2ded7eaef75987f6b5dafe12c70d191609396`;
 - each payout recipient matched the account, amount was `5000000000000000` wei,
   and `value_credited` was true;
-- final holder credit and total credited: `0` wei;
+- final holder credit and total credited: `5000000000000000` wei (`0.005 GEN`);
 - both withdrawal records were distinct `ACKNOWLEDGED` records and both
-  remained in the recovery candidate list.
+  remained in the recovery candidate list. This is the expected result for
+  `0.015 - 0.005 - 0.005 GEN`.
 
 The live accounting script remains opt-in. The temporary CLI export was removed
 after the run; no private key was committed.

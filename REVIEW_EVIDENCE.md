@@ -2,12 +2,12 @@
 
 ## CURRENT CANONICAL DEPLOYMENT
 
-- Source commit deployed: `d26135cbdd72053dd49d6047457ba84764acbd4b`.
+- Source commit deployed: `ff0fa440dd4fdc6171918a0498d60efc69334573`.
 - Network: Studionet 61999; RPC `https://studio.genlayer.com/api`.
-- Registry: `0x3d341D3Bc034a895d14aAc92a594999057017566`.
-- Engine: `0x1dA0e885887623C27B96a9caa6058982F77dD4e3`.
-- Gate: `0x8bccA48A34B2324C33097Ef3e913603e9D1e1649`.
-- Vault: `0x7f78AD4BEe7Fb91562e5633e06958CC743c027eE`.
+- Registry: `0xF90B40Ee10CD75c8EEed86c02DA1Baf0CeA53ac3`.
+- Engine: `0x2e0051F7Dcad06c6715c8E995e5afe095B5d8c23`.
+- Gate: `0x4834294DE7C8CBEa2ad0A25F7C8B5e93f233E263`.
+- Vault: `0x78C968f8409694575F828d015ce210a282de6530`.
 
 The Gate address above is authoritative from the deployment manifest and the
 Vault wiring read; the public manifest contains the exact case-preserving
@@ -15,8 +15,8 @@ address and transaction values.
 
 ## CURRENT CI
 
-The exact-head [CI run](https://github.com/Bibidee/exigency/actions/runs/36684359707)
-for commit `775af51bbbeca78f55883ac74154b3c1b962fff2` passed. It covers contract
+The final exact-head CI and deployment-health runs are dispatched after this
+evidence update and recorded in the final report. CI covers contract
 validation, Python/unit/direct tests, frontend typecheck/build, and 8 browser
 regression tests.
 
@@ -29,16 +29,15 @@ regression tests.
 | CharterRegistry | `ea59f36b845897a247063e6664e6e5164af6ec53dbf4e7d85c489e2bebc99218` |
 | ExigencyEngine | `0ad4fb5fdae59962d69c76eec9befc11b508ac43185ca69c0e0127514f885244` |
 | CapabilityGate | `0480c0a730a111ee9a2e7542a92668a5976ee0ce57086a562b15e9a43ba2fdfe` |
-| ProtectedVault | `bc8532339eedc367a17f43db4a53fcf1a852a1b5ac6cf5d813fde34c9969b293` |
+| ProtectedVault | `99b4a7bb174c0f81e31b0b011b8dcdaeaa0228f678d4387be6017f09abcb504b` |
 
 ## CURRENT HEALTH
 
-The exact-head [deployment-health run](https://github.com/Bibidee/exigency/actions/runs/36684624430)
-passed against the production alias. The check verifies all three hosted routes,
-RPC reachability, chain 61999, Registry/Engine/Gate/Vault reads, Vault → Gate
-wiring, Gate → Engine wiring and source verification in the workflow.
+The deployment-health workflow verifies all three hosted routes, RPC
+reachability, chain 61999, Registry/Engine/Gate/Vault reads, Vault → Gate
+wiring, Gate → Engine wiring and source verification.
 
-Production Vercel deployment `dpl_H7fyxUo48Sp29TFZ2HfF47rfGSYy` reached READY
+Production Vercel deployment `dpl_4W1ZgoqduQuDN4yEBjSjg2p6dcvU` reached READY
 and is aliased to [exigency.vercel.app](https://exigency.vercel.app).
 
 ## CURRENT AUTHORITY LIFECYCLE
@@ -68,20 +67,21 @@ Both URLs returned HTTP 200 before this update.
 ## CURRENT VAULT ACCOUNTING
 
 - Account: `0x865e118a3be4FA0760775565fCd31be156e1e3d7`.
-- Deposit `0.01 GEN`: `0x7a4b4beac31cd713a0ebf60ade12f4ceab3fdd4602dc5b4f4f2f1e302e4287b1`.
-- First withdrawal parent / child: `0x6c84f97796c992cca3e407acf0658c5cb60d8f561fff7f9603ec530fc282fa97` /
-  `0xc7cbb1327e76ee0d03bfedba36194d39b836aeaaeb6fe82b31182255b734e3de`.
-- First acknowledgement: `0xf079e8819337bd7c871599634d90240d2aab46730fafe2470628902adc18465a`.
-- Second withdrawal parent / child: `0x992fa342d6f3a78753ed812e4e68e979fd9c6f51efdab8539e25ecabc0c58d31` /
-  `0xb38ed47e0770afd791dab0835114584d88d89fcaee50aa32ca03e859400a4e19`.
-- Second acknowledgement: `0x2c4460bbb58a0a773d0f193c87355ed920408ad352f23bb5ae64e4052f190a81`.
+- Deposit `0.015 GEN`: `0xe66c0b4f04ba02ad3c4a6891e100a74204daa8377429d4d2da5c3db888d7ab2b`.
+- First withdrawal parent / child: `0x6bda4b9cd6b2b2db3715ec8959cc726f9b78379fe85f458b0f5f0d6669fac14a` /
+  `0xbd059c0fa38e7b26cb07dbb6a6da383413a7327cb3bc764ae74321044e1d51b2`.
+- First acknowledgement: `0xb13538c328c670eb01e94eea7185d5e08a7fcedc92d49e3946a1b7aec0ec9c64`.
+- Second withdrawal parent / child: `0xc994be8a4e4535cc6f9d85d91f80e01256774c32d9661883a1f66cf5af98d937` /
+  `0xf92655c8b2cb8d85e6c6f72b73040d23af2ffdc4636904df6cefc998bd31a239`.
+- Second acknowledgement: `0x633d1d2d9372cceece6d446285b2ded7eaef75987f6b5dafe12c70d191609396`.
 - Both children paid the account exactly `5000000000000000` wei with
-  `value_credited: true`; final credit and total were `0` wei.
+  `value_credited: true`; final credit and total were `5000000000000000` wei.
 
 ## CURRENT SECURITY TESTS
 
 - Unit: 14 passed.
-- Direct Mode: 25 passed, including acknowledgement-before-resolution recovery,
+- Direct Mode: 30 passed, including active-dispatch priority,
+  acknowledgement-before-resolution recovery,
   duplicate failure delivery, multi-holder isolation and retry conservation.
 - Contract lint and validation: PASS for all four contracts.
 - Dependency audit: 5 moderate, 0 high, 0 critical.
@@ -92,8 +92,9 @@ Both URLs returned HTTP 200 before this update.
   unlocked-CLI funded proof is recorded above.
 - GenLayer has no documented contract-side successful-child callback or child
   identifier in the error context for an external EOA value transfer. The
-  contract retains a deterministic recovery candidate across acknowledgement,
-  while the frontend proves the child before sending that acknowledgement.
+  contract prioritizes the current exact-value `DISPATCHED` record, fails closed
+  on ambiguous acknowledged matches, and caps acknowledged recovery candidates
+  at 32 per holder.
 - The full live authority write fixture remains opt-in because it creates fresh
   consensus records; it was executed successfully for the current deployment
   during this final audit.

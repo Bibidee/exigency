@@ -5,24 +5,24 @@
   "rpc": "https://studio.genlayer.com/api",
   "explorer": "https://explorer-studio.genlayer.com",
   "contracts": {
-    "charterRegistry": "0x3d341D3Bc034a895d14aAc92a594999057017566",
-    "exigencyEngine": "0x1dA0e885887623C27B96a9caa6058982F77dD4e3",
-    "capabilityGate": "0x8bccA48A34B2324C33097Ef3e913603e9D1e1649",
-    "protectedVault": "0x7f78AD4BEe7Fb91562e5633e06958CC743c027eE"
+    "charterRegistry": "0xF90B40Ee10CD75c8EEed86c02DA1Baf0CeA53ac3",
+    "exigencyEngine": "0x2e0051F7Dcad06c6715c8E995e5afe095B5d8c23",
+    "capabilityGate": "0x4834294DE7C8CBEa2ad0A25F7C8B5e93f233E263",
+    "protectedVault": "0x78C968f8409694575F828d015ce210a282de6530"
   },
-  "bindEngineTransaction": "0x14c17b3ca1e6ba5ac8d429d2174be0ca5e59ca7ba534d245a2a81c2165365361",
+  "bindEngineTransaction": "0xd3b1c458da0767c201e3e46fb37c6df5fe4765fc7d51bb8fb0a86d6d83d0c5d3",
   "deploymentTransactions": {
-    "charterRegistry": "0xa5499405b258b043630af994fa3bf433e2a51890fc97562d62f62992ee0fa36e",
-    "capabilityGate": "0xf21e43e9ba47e525f2a38f44588897b13d4e4ea4929ad3bb37bcd70e94fcc3c4",
-    "exigencyEngine": "0x7e68dc0d35d31f9b589baf0a7018b89c15ead78ba6ad35e364172a6388744d6f",
-    "protectedVault": "0x3e6da8f33d3a0e3e9472e164344c006e901f1c0555fc655345066ae5f2a71d0a"
+    "charterRegistry": "0x2c534eeb65ea140e80e8ebfdb64b69f542a42f03ab17aacf5b538587d3df4f69",
+    "capabilityGate": "0xba594ab946703860bba65c3d5bb6e05f896ea40f999ab1e0c6bb149023cbbd99",
+    "exigencyEngine": "0x10c6b7e86b0ac8827b5f13335d94f954ee7fe2668221478d95b1293f65fee750",
+    "protectedVault": "0x7a61135e9e892769047e077e98146252f5c54372bee734d568831cc9b7e99312"
   },
   "deployedSourceSha256": {
     "charterRegistry": "ea59f36b845897a247063e6664e6e5164af6ec53dbf4e7d85c489e2bebc99218",
     "exigencyEngine": "0ad4fb5fdae59962d69c76eec9befc11b508ac43185ca69c0e0127514f885244",
     "capabilityGate": "0480c0a730a111ee9a2e7542a92668a5976ee0ce57086a562b15e9a43ba2fdfe",
-    "protectedVault": "bc8532339eedc367a17f43db4a53fcf1a852a1b5ac6cf5d813fde34c9969b293"
+    "protectedVault": "99b4a7bb174c0f81e31b0b011b8dcdaeaa0228f678d4387be6017f09abcb504b"
   },
   "sourceVerification": "verified-exact-byte-match",
-  "sourceCommit": "d26135cbdd72053dd49d6047457ba84764acbd4b"
+  "sourceCommit": "ff0fa440dd4fdc6171918a0498d60efc69334573"
 }
