@@ -1,18 +1,18 @@
 # EXIGENT Final Handoff Status
 
-## CURRENT CANONICAL STATE — 2026-09-30
+## CURRENT CANONICAL STATE — 2026-10-01
 
 - Hardened source commit: `2d69aa122adbb122759db43527266f4fcc5427da` — `Retire successful payout recovery state`.
 - Branch: `main`; repository: [Bibidee/exigency](https://github.com/Bibidee/exigency).
-- Frontend source commit deployed: `7ab85526e3562f10679fe7f9637ce2ed98486aae` — `fix: use canonical Studionet RPC endpoint`.
+- Frontend source commit deployed: `360b3e6a21565cea14dbc02c8153b9b50fabb799` — `fix: expose frontend provenance at runtime`.
 - Evidence-only documentation may be updated after this deployment; use `main` for the current repository HEAD.
 - Network: Studionet 61999; RPC: `https://studio.genlayer.com/api`.
 - Production frontend: [https://exigency.vercel.app](https://exigency.vercel.app).
-- Vercel deployment `dpl_7KHhNwBPSs4CdSxPt8Ko77AoY6cJ` reached READY on
-  2026-09-30T21:56:01Z and is aliased to the production domain.
-- Vercel's deployment export does not expose a Git SHA binding. The deployment
-  was created from a clean tracked-files snapshot of the frontend source commit above; exact
-  deployment-to-Git-SHA metadata is not independently exported by Vercel.
+- Vercel deployment `dpl_7TPrqNhQqmZcVeGcVioHn9posYuQ` is READY and is aliased
+  to the production domain.
+- Production `/api/build-info` reports deployment
+  `dpl_7TPrqNhQqmZcVeGcVioHn9posYuQ` and frontend SHA
+  `360b3e6a21565cea14dbc02c8153b9b50fabb799`.
 - The final Playwright suite passed all **10 browser checks**.
 - Browser E2E mocks are test-only and unavailable in production code paths;
   runtime mock hooks are gated by `process.env.NODE_ENV !== "production"`.
@@ -78,7 +78,7 @@ byte matches for all four contracts.
 36782459920](https://github.com/Bibidee/exigency/actions/runs/36782459920),
 and deployment-health is [run
 36783529434](https://github.com/Bibidee/exigency/actions/runs/36783529434),
-both on frontend source commit `7ab85526e3562f10679fe7f9637ce2ed98486aae`. Health checks `/`,
+both on frontend source commit `360b3e6a21565cea14dbc02c8153b9b50fabb799`. Health checks `/`,
 `/command`, `/vault`, Studionet RPC reachability, the manifest chain and all
 four contract reads, plus Vault → Gate and Gate → Engine wiring. The
 deployment-health workflow is scheduled every six hours and is manually

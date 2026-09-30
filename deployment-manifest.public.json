@@ -24,5 +24,13 @@
     "protectedVault": "83d25a3f8303ff99213b9b23f40480c969c71ab2076b81b9b1d6e17ffcb8c940"
   },
   "sourceVerification": "verified-exact-byte-match",
-  "sourceCommit": "2d69aa122adbb122759db43527266f4fcc5427da"
+  "sourceCommit": "2d69aa122adbb122759db43527266f4fcc5427da",
+  "frontend": {
+    "productionUrl": "https://exigency.vercel.app/",
+    "vercelDeploymentId": "dpl_7TPrqNhQqmZcVeGcVioHn9posYuQ",
+    "deploymentUrl": "https://exigency-2ofdequqm-bibidees-projects.vercel.app",
+    "readyState": "READY",
+    "sourceCommit": "360b3e6a21565cea14dbc02c8153b9b50fabb799",
+    "provenancePath": "/api/build-info"
+  }
 }

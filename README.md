@@ -29,13 +29,13 @@ Do **not** substitute Studio Dev / chain 61997. The repository-local `genlayer@0
 
 ## Current submission state
 
-- Frontend source commit deployed: `7ab85526e3562f10679fe7f9637ce2ed98486aae` — `fix: use canonical Studionet RPC endpoint`.
+- Frontend source commit deployed: `360b3e6a21565cea14dbc02c8153b9b50fabb799` — `fix: expose frontend provenance at runtime`.
 - Subsequent evidence-only commits may update this handoff; consult `main` for the current repository HEAD.
 - Production: [https://exigency.vercel.app](https://exigency.vercel.app).
-- READY Vercel deployment: `dpl_7KHhNwBPSs4CdSxPt8Ko77AoY6cJ`, created
-  `2026-09-30T21:56:01Z` and aliased to production.
-- Vercel does not independently export the Git SHA for this deployment; it was
-  created from a clean tracked-files snapshot of the frontend source commit above.
+- READY Vercel deployment: `dpl_7TPrqNhQqmZcVeGcVioHn9posYuQ`, aliased to
+  production.
+- The public `/api/build-info` endpoint reports this deployment ID and the exact
+  frontend source SHA above.
 - Final checks: 14 unit, 43 Direct Mode and 10 browser tests passed; all four
   deployed contract sources still match exactly.
 - Browser E2E mocks are test-only and unavailable in production code paths;
