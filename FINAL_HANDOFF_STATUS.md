@@ -6,8 +6,9 @@
 - Branch: `main`; repository: [Bibidee/exigency](https://github.com/Bibidee/exigency).
 - Network: Studionet 61999; RPC: `https://studio.genlayer.com/api`.
 - Production frontend: [https://exigency.vercel.app](https://exigency.vercel.app).
-- The production alias served the rebuilt frontend; the final production
-  Playwright suite passed all 8 browser checks.
+- Vercel deployment `dpl_Dv4vuEoYL3Gyo218SsNoqHVhMxto` reached READY and was
+  aliased to the production domain; the final production Playwright suite
+  passed all 8 browser checks.
 
 ## SECURITY FIXES
 
@@ -91,24 +92,15 @@ the run and no secret was committed.
 
 ## IMMUTABLE LIFECYCLE EVIDENCE
 
-The opt-in live authority fixture completed successfully against the current
-fresh full-stack deployment:
-
-- charter: `CI-LIVE-1790774289`;
-- incident: `CI-INC-1790774289`, assessment decision `TRIGGER_CONFIRMED`;
-- publish / activate / open incident:
-  `0xbe4390cafc6e1c628fd1c0fc7d4fa302e832c815f671860c691cb7549fd77628` /
-  `0x5754bdce1f915d9b35a207b5a62e60f18a3be47da7d0f0bc16f55941077ace93` /
-  `0x91eb575bacdf4cf9b2f17dcecffa7d7d2f281de440dfdd7088e3822de25b09ae`;
-- assessment parent: `0xdee27572e2815362d67233c431d1f160978fdaba8485ee232a75fee4aea9225d`;
-- finalized issuance child: `0x585a924b779c554a8c3074cd1cbc34c5a92aadbbb4865c03d9d3b589ccb52554`;
-- capability: `EXC-CI-INC-1790774289`, `dispatch_status: APPLIED`,
-  `dispatch_count: 1`;
-- execution parent / protected-vault child:
-  `0x543350552ba18298bd9394bebca4a772a9bba57277537c00adf9eb796feda27d` /
-  `0x75428d6d7f4df5efb77bbabed42e21858bd9178322da3d6a28d1ec1be8858afb`;
-- reconcile: `0x598b74005c8b0808e0571d8806a3da881d41eb4bdc06044ae14c7d1aeabeeaca`;
-- current ProtectedVault: withdrawals paused for the requested duration.
+The fresh opt-in live authority fixture completed successfully against the new
+full-stack deployment. It created charter `CI-LIVE-1790777878`, incident
+`CI-INC-1790777878`, and capability `EXC-CI-INC-1790777878`; the finalized
+assessment was `TRIGGER_CONFIRMED`, execution dispatched once, the protected
+Vault child finalized, and reconciliation reached `APPLIED` with
+`consumed: true`. The fixture verified the resulting Vault pause and later
+health confirmed both pause windows had expired. This run generated fresh
+records on the current addresses above; the harness does not emit a durable
+transaction manifest for this lifecycle, so no unrecorded hash is presented.
 
 The fixture uses commit-pinned evidence URLs at
 `84de2b15e428497bc6dec64aedf54d1ee1c06761`; both files returned HTTP 200 and

@@ -59,8 +59,9 @@ Deployment transaction hashes and SHA-256 values are recorded in
 ## Hosted application and health
 
 - Production: [https://exigency.vercel.app](https://exigency.vercel.app).
-- The production alias served the rebuilt frontend; production Playwright
-  completed 8 passing browser tests.
+- Vercel deployment `dpl_Dv4vuEoYL3Gyo218SsNoqHVhMxto` reached READY and was
+  aliased to production; production Playwright completed 8 passing browser
+  tests.
 - The browser walkthrough verified `/`, `/command` and `/vault`.
 - The health check reads the Registry, Engine, Gate and Vault, verifies vault
   gate wiring and gate engine wiring, checks all three hosted routes, confirms
@@ -100,26 +101,13 @@ after the run; no private key was committed.
 ## Fresh immutable lifecycle evidence
 
 The opt-in live lifecycle completed against the current fresh Studionet stack.
-It created and activated `CI-LIVE-1790774289`, opened
-`CI-INC-1790774289`, finalized the assessment parent
-`0xdee27572e2815362d67233c431d1f160978fdaba8485ee232a75fee4aea9225d` and
-issuance child
-`0x585a924b779c554a8c3074cd1cbc34c5a92aadbbb4865c03d9d3b589ccb52554`,
-confirmed `TRIGGER_CONFIRMED`, issued `EXC-CI-INC-1790774289`, dispatched the
-capability once through
-`0x543350552ba18298bd9394bebca4a772a9bba57277537c00adf9eb796feda27d`,
-finalized protected-vault child
-`0x75428d6d7f4df5efb77bbabed42e21858bd9178322da3d6a28d1ec1be8858afb`, and
-reconciled it with
-`0x598b74005c8b0808e0571d8806a3da881d41eb4bdc06044ae14c7d1aeabeeaca`.
-The charter publication transaction was
-`0xbe4390cafc6e1c628fd1c0fc7d4fa302e832c815f671860c691cb7549fd77628`;
-activation was
-`0x5754bdce1f915d9b35a207b5a62e60f18a3be47da7d0f0bc16f55941077ace93`;
-incident creation was
-`0x91eb575bacdf4cf9b2f17dcecffa7d7d2f281de440dfdd7088e3822de25b09ae`.
-The final capability state was `APPLIED`, `consumed: true`, `dispatch_count: 1`;
-the final Vault state had `withdrawals_paused: true` for the requested duration.
+It created and activated `CI-LIVE-1790777878`, opened
+`CI-INC-1790777878`, reached `TRIGGER_CONFIRMED`, issued
+`EXC-CI-INC-1790777878`, dispatched the capability once through the new Gate,
+finalized the protected-Vault child, and reconciled to `APPLIED` with
+`consumed: true`. The final Vault pause was observed and later expired. The
+test harness does not emit a durable transaction manifest for this run, so the
+fresh record keys and final states are recorded without inventing hashes.
 
 The fixture used immutable URLs pinned to pushed commit
 `84de2b15e428497bc6dec64aedf54d1ee1c06761`; both evidence files returned HTTP

@@ -37,30 +37,23 @@ The deployment-health workflow verifies all three hosted routes, RPC
 reachability, chain 61999, Registry/Engine/Gate/Vault reads, Vault → Gate
 wiring, Gate → Engine wiring and source verification.
 
-Production Vercel deployment `dpl_4W1ZgoqduQuDN4yEBjSjg2p6dcvU` reached READY
+Production Vercel deployment `dpl_Dv4vuEoYL3Gyo218SsNoqHVhMxto` reached READY
 and is aliased to [exigency.vercel.app](https://exigency.vercel.app).
 
 ## CURRENT AUTHORITY LIFECYCLE
 
 The fresh opt-in live fixture completed against the current deployment:
 
-- charter: `CI-LIVE-1790774289`;
-- incident: `CI-INC-1790774289`, with `TRIGGER_CONFIRMED` in its assessment;
-- publish / activate / open incident:
-  `0xbe4390cafc6e1c628fd1c0fc7d4fa302e832c815f671860c691cb7549fd77628` /
-  `0x5754bdce1f915d9b35a207b5a62e60f18a3be47da7d0f0bc16f55941077ace93` /
-  `0x91eb575bacdf4cf9b2f17dcecffa7d7d2f281de440dfdd7088e3822de25b09ae`;
-- assessment parent / issuance child:
-  `0xdee27572e2815362d67233c431d1f160978fdaba8485ee232a75fee4aea9225d` /
-  `0x585a924b779c554a8c3074cd1cbc34c5a92aadbbb4865c03d9d3b589ccb52554`;
-- capability: `EXC-CI-INC-1790774289`, `APPLIED`, `consumed: true`,
-  `dispatch_count: 1`;
-- execution parent / protected-vault child:
-  `0x543350552ba18298bd9394bebca4a772a9bba57277537c00adf9eb796feda27d` /
-  `0x75428d6d7f4df5efb77bbabed42e21858bd9178322da3d6a28d1ec1be8858afb`;
-- reconcile:
-  `0x598b74005c8b0808e0571d8806a3da881d41eb4bdc06044ae14c7d1aeabeeaca`;
-- Vault: withdrawals paused for the requested duration.
+- charter: `CI-LIVE-1790777878`;
+- incident: `CI-INC-1790777878`;
+- capability: `EXC-CI-INC-1790777878`;
+- assessment: `TRIGGER_CONFIRMED`;
+- dispatch occurred once, the protected-Vault child finalized, and reconcile
+  reached `APPLIED` with `consumed: true`;
+- the pause was observed and later expired.
+
+The harness did not emit a durable transaction manifest for this run, so this
+report does not claim unrecorded lifecycle transaction hashes.
 
 The fixture uses immutable, real evidence files:
 
