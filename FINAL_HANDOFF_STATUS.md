@@ -2,12 +2,12 @@
 
 ## CURRENT CANONICAL STATE — 2026-09-30
 
-- Hardened source commit: `ff0fa440dd4fdc6171918a0498d60efc69334573` — `Prioritize active payout recovery`.
+- Hardened source commit: `2d69aa122adbb122759db43527266f4fcc5427da` — `Retire successful payout recovery state`.
 - Branch: `main`; repository: [Bibidee/exigency](https://github.com/Bibidee/exigency).
 - Network: Studionet 61999; RPC: `https://studio.genlayer.com/api`.
 - Production frontend: [https://exigency.vercel.app](https://exigency.vercel.app).
-- Vercel deployment `dpl_4W1ZgoqduQuDN4yEBjSjg2p6dcvU` reached READY and is
-  aliased to the production domain.
+- The production alias served the rebuilt frontend; the final production
+  Playwright suite passed all 8 browser checks.
 
 ## SECURITY FIXES
 
@@ -26,8 +26,9 @@
 - Failure recovery first selects the current exact-value `DISPATCHED` record;
   historical acknowledged matches are considered only without an active
   dispatch, and ambiguous matches fail closed.
-- Acknowledged recovery candidates are capped at 32 per holder to prevent
-  unbounded state growth.
+- A proven successful payout transitions to `SUCCESS_CLOSED` through a
+  holder-only close write, removing its recovery candidate without changing
+  credit. Unclosed acknowledged candidates remain capped at 32 per holder.
 - Retry is limited to the original record, amount and destination. Acknowledged
   records cannot be replayed.
 - The platform boundary and assumptions are documented in
@@ -36,7 +37,7 @@
 ## TEST RESULTS
 
 - Unit: **14 passed**.
-- Direct Mode: **30 passed**.
+- Direct Mode: **34 passed**.
 - Contract `genvm-lint check`: PASS for all four contracts.
 - Contract `genvm-lint validate`: PASS for all four contracts.
 - Typecheck: PASS.
@@ -48,14 +49,14 @@
 
 | Contract | Address | Deployment transaction |
 | --- | --- | --- |
-| CharterRegistry | `0xF90B40Ee10CD75c8EEed86c02DA1Baf0CeA53ac3` | `0x2c534eeb65ea140e80e8ebfdb64b69f542a42f03ab17aacf5b538587d3df4f69` |
-| ExigencyEngine | `0x2e0051F7Dcad06c6715c8E995e5afe095B5d8c23` | `0x10c6b7e86b0ac8827b5f13335d94f954ee7fe2668221478d95b1293f65fee750` |
-| CapabilityGate | `0x4834294DE7C8CBEa2ad0A25F7C8B5e93f233E263` | `0xba594ab946703860bba65c3d5bb6e05f896ea40f999ab1e0c6bb149023cbbd99` |
-| ProtectedVault | `0x78C968f8409694575F828d015ce210a282de6530` | `0x7a61135e9e892769047e077e98146252f5c54372bee734d568831cc9b7e99312` |
+| CharterRegistry | `0xa034003895e4b3506a5aE1d5dD02492603fF1B6a` | `0x70c042ea2d427bcd095002552154ce022a47348d992d0aaa81bf280932d31cec` |
+| ExigencyEngine | `0x2ff218faad3A858A2e8F5ce89558f7E2E7f72815` | `0xa0b9e378cc7f233b3a6341da44624ec1a8be66430715dbd6be4a0702ca467ba2` |
+| CapabilityGate | `0x507eBD4fD0432cB266D7dfCC42c02ffB76667F0A` | `0xd0524735297a0fb34bae75a9c076d94c7a13e3872fcd05f0e7addca5c0a19f56` |
+| ProtectedVault | `0x6821fa5fF7a67856BB340ae64a83AFCE5dF299ce` | `0xd6962fc9a164d3994eba18f4ec4da0dee09a864809179b150a32f05d7a2c7041` |
 
-Bind transaction: `0xd3b1c458da0767c201e3e46fb37c6df5fe4765fc7d51bb8fb0a86d6d83d0c5d3`.
+Bind transaction: `0xf0c154b7ef55f1a4664e730077e44c434240e7ae40c4887a4297f547fbb4067a`.
 
-Deployed source commit: `ff0fa440dd4fdc6171918a0498d60efc69334573`. `npm run source:verify` passed with exact
+Deployed source commit: `2d69aa122adbb122759db43527266f4fcc5427da`. `npm run source:verify` passed with exact
 byte matches for all four contracts.
 
 ## HEALTH
@@ -71,16 +72,19 @@ dispatched for the final deployment.
 ## LIVE VAULT ACCOUNTING PROOF
 
 - Account: `0x865e118a3be4FA0760775565fCd31be156e1e3d7`.
-- Deposit: `0.015 GEN`, tx `0xe66c0b4f04ba02ad3c4a6891e100a74204daa8377429d4d2da5c3db888d7ab2b`.
-- First withdrawal parent / child: `0x6bda4b9cd6b2b2db3715ec8959cc726f9b78379fe85f458b0f5f0d6669fac14a` /
-  `0xbd059c0fa38e7b26cb07dbb6a6da383413a7327cb3bc764ae74321044e1d51b2`.
-- First acknowledgement: `0xb13538c328c670eb01e94eea7185d5e08a7fcedc92d49e3946a1b7aec0ec9c64`.
-- Second withdrawal parent / child: `0xc994be8a4e4535cc6f9d85d91f80e01256774c32d9661883a1f66cf5af98d937` /
-  `0xf92655c8b2cb8d85e6c6f72b73040d23af2ffdc4636904df6cefc998bd31a239`.
-- Second acknowledgement: `0x633d1d2d9372cceece6d446285b2ded7eaef75987f6b5dafe12c70d191609396`.
+- Deposit: `0.015 GEN`, tx `0x74c69aed38622ab930ad7369a9ddd241ff726861ba25b4f6879878d0478ca548`.
+- First withdrawal parent / child: `0xb7dcbf7688307d35514395754da61135e6f8468561a3348e394d9ae84dd1315d` /
+  `0xed3c79cf7f9259efb63ed969a909add99d0c546c254eba1221de22f1832f8ab6`.
+- First acknowledgement / close: `0xf22cb55443080184cabae0a262915089b8c68aa94ecb5e8b4b2e58c98cf0dc96` /
+  `0x1bf1648f13b7b9ae71aa937f3e76664d7dce6c4967fdcf253323a27040331d5a`.
+- Second withdrawal parent / child: `0x31aa4cc23714407f8b8c5c6d0fc579fc981650063a95e52e45d199b58bfea378` /
+  `0xebbce34e8449af40a9a0e120e70c3664b945cc3c557c50620b08da8c339fbe71`.
+- Second acknowledgement / close: `0x0d243b7ea6424a4784f446a82c76c55de5887f50ec3c4450998c30195c2191bc` /
+  `0xc5e6b4c1beac63fabc050f9cd772e126b8c4e581c75648198bacc13cfe96707d`.
 - Both payout children matched the connected account, paid `0.005 GEN` and
   reported `value_credited: true`. Final holder credit and total:
-  `5000000000000000` wei (`0.005 GEN`).
+  `5000000000000000` wei (`0.005 GEN`). Both records finished as
+  `SUCCESS_CLOSED` and the recovery list was empty.
 
 The live automation remains opt-in; the temporary CLI export was removed after
 the run and no secret was committed.

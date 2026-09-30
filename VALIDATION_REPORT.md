@@ -1,6 +1,6 @@
 # Validation Report
 
-Current validated state: source commit `ff0fa440dd4fdc6171918a0498d60efc69334573`
+Current validated state: source commit `2d69aa122adbb122759db43527266f4fcc5427da`
 deployed to a fresh Studionet 61999 stack. The public source-of-truth manifest is
 `deployment-manifest.public.json`; all four deployed contract byte hashes
 match the repository exactly.
@@ -9,7 +9,7 @@ match the repository exactly.
 
 - `python -m py_compile contracts/*.py` — PASS, all four contracts.
 - `pytest tests/unit -q` — **14 passed**.
-- `pytest tests/direct -q` — **30 passed**.
+- `pytest tests/direct -q` — **34 passed**.
 - `genvm-lint check` — PASS for all four contracts.
 - `genvm-lint validate` — PASS for all four contracts.
 - `npm run toolchain:check` — PASS.
@@ -31,8 +31,9 @@ match the repository exactly.
   acknowledged matches are considered only when there is no active dispatch,
   and ambiguous acknowledged matches fail closed.
 - Acknowledged recovery candidates are holder-scoped and capped at 32 entries;
-  the contract rejects further acknowledgements rather than growing state
-  without bound.
+  proven successful payouts transition to `SUCCESS_CLOSED` and retire their
+  candidates, so 33rd and 40th successful same-holder withdrawals remain
+  reusable. Unclosed acknowledgements still fail closed at the bound.
 - Duplicate failure delivery is idempotent; retry reuses one exact record.
 - Direct Mode covers direct-EOA identity, acknowledgement-before-resolution,
   repeated same-holder withdrawals, multi-user isolation, retry conservation
@@ -42,14 +43,14 @@ match the repository exactly.
 
 - Network: Studionet, chain **61999**.
 - RPC: `https://studio.genlayer.com/api`.
-- Registry: `0xF90B40Ee10CD75c8EEed86c02DA1Baf0CeA53ac3`.
-- Engine: `0x2e0051F7Dcad06c6715c8E995e5afe095B5d8c23`.
-- Gate: `0x4834294DE7C8CBEa2ad0A25F7C8B5e93f233E263`.
-- Vault: `0x78C968f8409694575F828d015ce210a282de6530`.
+- Registry: `0xa034003895e4b3506a5aE1d5dD02492603fF1B6a`.
+- Engine: `0x2ff218faad3A858A2e8F5ce89558f7E2E7f72815`.
+- Gate: `0x507eBD4fD0432cB266D7dfCC42c02ffB76667F0A`.
+- Vault: `0x6821fa5fF7a67856BB340ae64a83AFCE5dF299ce`.
 - Engine binding transaction:
-  `0xd3b1c458da0767c201e3e46fb37c6df5fe4765fc7d51bb8fb0a86d6d83d0c5d3`.
+  `0xf0c154b7ef55f1a4664e730077e44c434240e7ae40c4887a4297f547fbb4067a`.
 - Source commit for the deployed contract bytes:
-  `ff0fa440dd4fdc6171918a0498d60efc69334573`.
+  `2d69aa122adbb122759db43527266f4fcc5427da`.
 - Exact source verification: PASS for Registry, Engine, Gate and Vault.
 
 Deployment transaction hashes and SHA-256 values are recorded in
@@ -58,8 +59,8 @@ Deployment transaction hashes and SHA-256 values are recorded in
 ## Hosted application and health
 
 - Production: [https://exigency.vercel.app](https://exigency.vercel.app).
-- Vercel deployment `dpl_4W1ZgoqduQuDN4yEBjSjg2p6dcvU` reached READY and was
-  aliased to production.
+- The production alias served the rebuilt frontend; production Playwright
+  completed 8 passing browser tests.
 - The browser walkthrough verified `/`, `/command` and `/vault`.
 - The health check reads the Registry, Engine, Gate and Vault, verifies vault
   gate wiring and gate engine wiring, checks all three hosted routes, confirms
@@ -77,19 +78,21 @@ The unlocked-CLI Studionet proof completed successfully against the fresh vault.
 It used one deposit and two same-holder withdrawals:
 
 - account: `0x865e118a3be4FA0760775565fCd31be156e1e3d7`;
-- deposit `0.015 GEN`: `0xe66c0b4f04ba02ad3c4a6891e100a74204daa8377429d4d2da5c3db888d7ab2b`;
-- first withdrawal parent: `0x6bda4b9cd6b2b2db3715ec8959cc726f9b78379fe85f458b0f5f0d6669fac14a`;
-- first payout child: `0xbd059c0fa38e7b26cb07dbb6a6da383413a7327cb3bc764ae74321044e1d51b2`;
-- first acknowledgement: `0xb13538c328c670eb01e94eea7185d5e08a7fcedc92d49e3946a1b7aec0ec9c64`;
-- second withdrawal parent: `0xc994be8a4e4535cc6f9d85d91f80e01256774c32d9661883a1f66cf5af98d937`;
-- second payout child: `0xf92655c8b2cb8d85e6c6f72b73040d23af2ffdc4636904df6cefc998bd31a239`;
-- second acknowledgement: `0x633d1d2d9372cceece6d446285b2ded7eaef75987f6b5dafe12c70d191609396`;
+- deposit `0.015 GEN`: `0x74c69aed38622ab930ad7369a9ddd241ff726861ba25b4f6879878d0478ca548`;
+- first withdrawal parent / payout child: `0xb7dcbf7688307d35514395754da61135e6f8468561a3348e394d9ae84dd1315d` /
+  `0xed3c79cf7f9259efb63ed969a909add99d0c546c254eba1221de22f1832f8ab6`;
+- first acknowledgement / close: `0xf22cb55443080184cabae0a262915089b8c68aa94ecb5e8b4b2e58c98cf0dc96` /
+  `0x1bf1648f13b7b9ae71aa937f3e76664d7dce6c4967fdcf253323a27040331d5a`;
+- second withdrawal parent / payout child: `0x31aa4cc23714407f8b8c5c6d0fc579fc981650063a95e52e45d199b58bfea378` /
+  `0xebbce34e8449af40a9a0e120e70c3664b945cc3c557c50620b08da8c339fbe71`;
+- second acknowledgement / close: `0x0d243b7ea6424a4784f446a82c76c55de5887f50ec3c4450998c30195c2191bc` /
+  `0xc5e6b4c1beac63fabc050f9cd772e126b8c4e581c75648198bacc13cfe96707d`;
 - each payout recipient matched the account, amount was `5000000000000000` wei,
   and `value_credited` was true;
 - final holder credit and total credited: `5000000000000000` wei (`0.005 GEN`);
-- both withdrawal records were distinct `ACKNOWLEDGED` records and both
+- both withdrawal records were distinct `SUCCESS_CLOSED` records and neither
   remained in the recovery candidate list. This is the expected result for
-  `0.015 - 0.005 - 0.005 GEN`.
+  `0.015 - 0.005 - 0.005 GEN` with successful-closure retirement.
 
 The live accounting script remains opt-in. The temporary CLI export was removed
 after the run; no private key was committed.
