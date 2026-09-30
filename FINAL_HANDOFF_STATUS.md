@@ -55,7 +55,7 @@ byte matches for all four contracts.
 
 ## HEALTH
 
-`npm run health:check` passed locally, and the exact-head [deployment-health workflow](https://github.com/Bibidee/exigency/actions/runs/36684218596)
+`npm run health:check` passed locally, and the exact-head [deployment-health workflow](https://github.com/Bibidee/exigency/actions/runs/36684624430)
 passed. It checks `/`,
 `/command`, `/vault`, Studionet RPC reachability, the manifest chain and all
 four contract reads, plus Vault → Gate and Gate → Engine wiring. The

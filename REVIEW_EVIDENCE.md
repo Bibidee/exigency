@@ -15,8 +15,8 @@ address and transaction values.
 
 ## CURRENT CI
 
-The exact-head [CI run](https://github.com/Bibidee/exigency/actions/runs/36684010853)
-for commit `aea8c655db7f85aa9f887edbedd56182fc376144` passed. It covers contract
+The exact-head [CI run](https://github.com/Bibidee/exigency/actions/runs/36684359707)
+for commit `775af51bbbeca78f55883ac74154b3c1b962fff2` passed. It covers contract
 validation, Python/unit/direct tests, frontend typecheck/build, and 8 browser
 regression tests.
 
@@ -33,7 +33,7 @@ regression tests.
 
 ## CURRENT HEALTH
 
-The exact-head [deployment-health run](https://github.com/Bibidee/exigency/actions/runs/36684218596)
+The exact-head [deployment-health run](https://github.com/Bibidee/exigency/actions/runs/36684624430)
 passed against the production alias. The check verifies all three hosted routes,
 RPC reachability, chain 61999, Registry/Engine/Gate/Vault reads, Vault → Gate
 wiring, Gate → Engine wiring and source verification in the workflow.
