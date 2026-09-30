@@ -3,7 +3,7 @@ import publicManifest from "@/deployment-manifest.public.json";
 export const NETWORK = {
   name: "Studionet",
   chainId: 61999,
-  rpc: "https://studio.genlayer.com/api/",
+  rpc: "https://studio.genlayer.com/api",
   explorer: "https://explorer-studio.genlayer.com",
 } as const;
 
