@@ -2,7 +2,13 @@
 
 ## CURRENT CANONICAL DEPLOYMENT
 
+- Repository HEAD: `f15da235433e91ae27ac3604db397b03966fd629` — `Harden payout closure recovery and regression coverage`.
 - Source commit deployed: `2d69aa122adbb122759db43527266f4fcc5427da`.
+- Production: [https://exigency.vercel.app](https://exigency.vercel.app).
+- Vercel deployment: `dpl_52VBpXhjVtM6UQ6cYrBr2syva3bE`, READY,
+  created `2026-09-30T19:30:58Z`, aliased to production.
+- Exact Vercel deployment-to-Git-SHA metadata was not independently exported;
+  the deployment was created from a clean tracked-files snapshot of final HEAD.
 - Network: Studionet 61999; RPC `https://studio.genlayer.com/api`.
 - Registry: `0xa034003895e4b3506a5aE1d5dD02492603fF1B6a`.
 - Engine: `0x2ff218faad3A858A2e8F5ce89558f7E2E7f72815`.
@@ -15,10 +21,13 @@ address and transaction values.
 
 ## CURRENT CI
 
-The final exact-head CI and deployment-health runs are dispatched after this
-evidence update and recorded in the final report. CI covers contract
-validation, Python/unit/direct tests, frontend typecheck/build, and 8 browser
-regression tests.
+The final exact-head CI is [run
+36761914945](https://github.com/Bibidee/exigency/actions/runs/36761914945),
+and deployment-health is [run
+36762442429](https://github.com/Bibidee/exigency/actions/runs/36762442429),
+both on repository HEAD above. CI covers contract validation,
+Python/unit/direct tests, frontend typecheck/build, and 10 browser regression
+tests.
 
 ## CURRENT SOURCE VERIFICATION
 
@@ -37,8 +46,8 @@ The deployment-health workflow verifies all three hosted routes, RPC
 reachability, chain 61999, Registry/Engine/Gate/Vault reads, Vault → Gate
 wiring, Gate → Engine wiring and source verification.
 
-Production Vercel deployment `dpl_Dv4vuEoYL3Gyo218SsNoqHVhMxto` reached READY
-and is aliased to [exigency.vercel.app](https://exigency.vercel.app).
+Vercel deployment `dpl_52VBpXhjVtM6UQ6cYrBr2syva3bE` reached READY and is
+aliased to [exigency.vercel.app](https://exigency.vercel.app).
 
 ## CURRENT AUTHORITY LIFECYCLE
 
@@ -97,7 +106,7 @@ false success.
 ## CURRENT SECURITY TESTS
 
 - Unit: 14 passed.
-- Direct Mode: 34 passed, including active-dispatch priority,
+- Direct Mode: 43 passed, including active-dispatch priority,
   acknowledgement-before-resolution recovery,
   duplicate failure delivery, multi-holder isolation and retry conservation.
 - Contract lint and validation: PASS for all four contracts.

@@ -1,7 +1,8 @@
 # Validation Report
 
-Current validated state: source commit `2d69aa122adbb122759db43527266f4fcc5427da`
-deployed to a fresh Studionet 61999 stack. The public source-of-truth manifest is
+Current validated state: repository HEAD `f15da235433e91ae27ac3604db397b03966fd629`;
+contract source commit `2d69aa122adbb122759db43527266f4fcc5427da` remains
+deployed to Studionet 61999. The public source-of-truth manifest is
 `deployment-manifest.public.json`; all four deployed contract byte hashes
 match the repository exactly.
 
@@ -60,18 +61,26 @@ Deployment transaction hashes and SHA-256 values are recorded in
 ## Hosted application and health
 
 - Production: [https://exigency.vercel.app](https://exigency.vercel.app).
-- Vercel deployment `dpl_Dv4vuEoYL3Gyo218SsNoqHVhMxto` reached READY and was
-  aliased to production; production Playwright completed 8 passing browser
-  tests.
+- Vercel deployment `dpl_52VBpXhjVtM6UQ6cYrBr2syva3bE` reached READY on
+  `2026-09-30T19:30:58Z` and was aliased to production. Vercel did not expose
+  an independent Git SHA binding; the deployment was created from a clean
+  tracked-files snapshot of final HEAD.
+- Production Playwright completed **10** passing browser tests.
+- Browser E2E mocks are test-only and unavailable in production code paths. Every
+  runtime mock hook is gated by `process.env.NODE_ENV !== "production"`; the
+  mock object is installed only by the browser test fixtures.
 - The browser walkthrough verified `/`, `/command` and `/vault`.
 - The health check reads the Registry, Engine, Gate and Vault, verifies vault
   gate wiring and gate engine wiring, checks all three hosted routes, confirms
   Studionet RPC reachability and runs exact source verification in the
   workflow.
-- The final CI and deployment-health runs for the handoff commit are dispatched
-  after this evidence update and recorded in the final report. The workflow
+- The final exact-head CI is [run
+  36761914945](https://github.com/Bibidee/exigency/actions/runs/36761914945),
+  and deployment-health is [run
+  36762442429](https://github.com/Bibidee/exigency/actions/runs/36762442429),
+  both on `f15da235433e91ae27ac3604db397b03966fd629`. The workflow
   covers contract validation, Python/unit/direct tests, frontend typecheck/build,
-  8 browser tests, hosted routes, Studionet RPC, contract wiring and source
+  10 browser tests, hosted routes, Studionet RPC, contract wiring and source
   verification. Deployment-health is also scheduled every six hours.
 
 ## Fresh live accounting proof

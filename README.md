@@ -27,6 +27,19 @@ EXIGENT is intentionally built for **stable Studionet** only.
 
 Do **not** substitute Studio Dev / chain 61997. The repository-local `genlayer@0.39.1` must be used instead of a globally installed `0.40.0rc2`.
 
+## Current submission state
+
+- Repository HEAD: `f15da235433e91ae27ac3604db397b03966fd629`.
+- Production: [https://exigency.vercel.app](https://exigency.vercel.app).
+- READY Vercel deployment: `dpl_52VBpXhjVtM6UQ6cYrBr2syva3bE`, created
+  `2026-09-30T19:30:58Z` and aliased to production.
+- Vercel does not independently export the Git SHA for this deployment; it was
+  created from a clean tracked-files snapshot of the final HEAD.
+- Final checks: 14 unit, 43 Direct Mode and 10 browser tests passed; all four
+  deployed contract sources still match exactly.
+- Browser E2E mocks are test-only and unavailable in production code paths;
+  runtime mock hooks are gated by `process.env.NODE_ENV !== "production"`.
+
 ## Contracts
 
 ### `CharterRegistry`

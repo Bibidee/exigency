@@ -4,11 +4,17 @@
 
 - Hardened source commit: `2d69aa122adbb122759db43527266f4fcc5427da` — `Retire successful payout recovery state`.
 - Branch: `main`; repository: [Bibidee/exigency](https://github.com/Bibidee/exigency).
+- Final repository HEAD: `f15da235433e91ae27ac3604db397b03966fd629` — `Harden payout closure recovery and regression coverage`.
 - Network: Studionet 61999; RPC: `https://studio.genlayer.com/api`.
 - Production frontend: [https://exigency.vercel.app](https://exigency.vercel.app).
-- Vercel deployment `dpl_Dv4vuEoYL3Gyo218SsNoqHVhMxto` reached READY and was
-  aliased to the production domain; the final production Playwright suite
-  passed all 8 browser checks.
+- Vercel deployment `dpl_52VBpXhjVtM6UQ6cYrBr2syva3bE` reached READY on
+  2026-09-30T19:30:58Z and is aliased to the production domain.
+- Vercel's deployment export does not expose a Git SHA binding. The deployment
+  was created from a clean tracked-files snapshot of final HEAD; exact
+  deployment-to-Git-SHA metadata is not independently exported by Vercel.
+- The final Playwright suite passed all **10 browser checks**.
+- Browser E2E mocks are test-only and unavailable in production code paths;
+  runtime mock hooks are gated by `process.env.NODE_ENV !== "production"`.
 
 ## SECURITY FIXES
 
@@ -39,6 +45,7 @@
 
 - Unit: **14 passed**.
 - Direct Mode: **43 passed**.
+- Browser: **10 passed**.
 - Contract `genvm-lint check`: PASS for all four contracts.
 - Contract `genvm-lint validate`: PASS for all four contracts.
 - Typecheck: PASS.
@@ -47,6 +54,10 @@
   CLI/test dependencies; no blind major-version downgrade was applied.
 
 ## CURRENT DEPLOYMENT
+
+The contract source was unchanged from deployed source commit
+`2d69aa122adbb122759db43527266f4fcc5427da`; no contract redeployment was
+performed in this cleanup pass.
 
 | Contract | Address | Deployment transaction |
 | --- | --- | --- |
@@ -62,9 +73,11 @@ byte matches for all four contracts.
 
 ## HEALTH
 
-`npm run health:check` passed locally. The final exact-head deployment-health
-workflow is dispatched after this evidence update and recorded in the final
-report. It checks `/`,
+`npm run health:check` passed locally. The final exact-head CI is [run
+36761914945](https://github.com/Bibidee/exigency/actions/runs/36761914945),
+and deployment-health is [run
+36762442429](https://github.com/Bibidee/exigency/actions/runs/36762442429),
+both on final HEAD. Health checks `/`,
 `/command`, `/vault`, Studionet RPC reachability, the manifest chain and all
 four contract reads, plus Vault → Gate and Gate → Engine wiring. The
 deployment-health workflow is scheduled every six hours and is manually
