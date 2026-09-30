@@ -11,14 +11,18 @@ class _Recipient:
 _Recipient(Address(recipient)).emit_transfer(value=amount)
 ```
 
-The current platform guarantees used by `ProtectedVault` are:
+The current platform guarantees relevant to `ProtectedVault` are:
 
 - external value messages execute only on `finalized`;
 - the value is held by the message until the child is activated;
-- a failed value message invokes the sender contract's payable
-  `__on_errored_message__` hook with the refunded `gl.message.value`;
-- `gl.message.origin_address` is the original transaction initiator and is
-  preserved through internal child-message chains;
+- `gl.message.value` is available to payable methods, and
+  `gl.message.origin_address` is preserved through internal child-message
+  chains;
+- the official value-transfer documentation states that a failed child value
+  message is **not automatically returned** to the sender;
+- the current GenVM v0.3 Python SDK removed the
+  `__on_errored_message__` handler hook. The current bootloader does not
+  dispatch it, and the deployed Vault schema does not expose it;
 - child transaction ids and full receipts are available to clients through
   `getTriggeredTransactionIds` / `get_transaction_ids` and receipt APIs;
 - there is no documented contract-side successful-child callback for an
@@ -26,13 +30,15 @@ The current platform guarantees used by `ProtectedVault` are:
 
 Consequences for the vault:
 
-1. The contract correlates failure by preserved origin plus the holder-scoped
-   recovery state. It never uses a global lock or immutable creation order as
-   the child identifier.
-2. The current `DISPATCHED` record is checked first. If the holder's active
+1. The Direct Mode state machine correlates a simulated failure by preserved
+   origin plus holder-scoped recovery state. It never uses a global lock or
+   immutable creation order as the child identifier. This is a tested model,
+   not proof that current Studionet can invoke the callback.
+2. If a supported runtime failure callback is restored in a future GenLayer
+   release, the current `DISPATCHED` record is checked first. If the holder's active
    record is dispatched and its amount equals the refunded value, that exact
    record is recovered. An amount mismatch fails closed.
-3. If there is no active dispatched record, the contract checks only the
+3. If there is no active dispatched record, the Direct Mode model checks only the
    holder's bounded `ACKNOWLEDGED` recovery candidates. One exact match is
    recoverable; more than one exact match raises an explicit ambiguity error
    and changes no accounting state.
@@ -48,6 +54,18 @@ Consequences for the vault:
    `value_credited` before acknowledging a successful payout. This is a
    read/reconciliation boundary, not the source of refund safety.
 
+The live limitation is material: because the current runtime removed the
+errored-message hook and does not automatically return failed value, a live
+failed external payout cannot currently reach the contract recovery path. A
+`DISPATCHED` record can therefore remain debited and unresolved if an external
+child fails. The project is **NOT READY** for a claim that live failure
+recovery is supported. No live failure was fabricated, and no production
+contract was redeployed while this protocol mismatch remains unresolved.
+
+A safe fix requires a protocol-supported failure callback or a redesigned
+payout architecture with a documented on-chain completion/retry mechanism.
+This repository does not invent either mechanism in this audit.
+
 The success-close boundary is intentional: `SUCCESS_CLOSED` means that the
 holder submitted a holder-only retirement after the application proved the
 finalized child. It does not mean that `ProtectedVault` inspected the child
@@ -58,16 +76,16 @@ current holder record after reload, and requires a fresh child proof before
 enabling close. If the parent hash is missing, it displays an explicit
 recoverability limitation instead of silently selecting a historical record.
 
-The acknowledged candidate list is holder-scoped and capped at 32 entries.
+The acknowledged candidate list is holder-scoped and capped at 32 entries in
+the Direct Mode model.
 The contract rejects a new acknowledgement that would exceed that cap rather
 than allowing unbounded storage or silently creating ambiguous recovery. The
 normal application path closes each candidate after independently proving
 finality, parent linkage, recipient, exact amount and `value_credited`, so
 successful withdrawals do not accumulate indefinitely. There is no arbitrary
-timeout cleanup: if the holder does not perform the explicit close, the
-candidate remains recoverable and counts toward the bound. A finalized external
-child is not expected to invoke the error hook later, but that client-side
-observation is not a contract-side proof.
+timeout cleanup. In Direct Mode, an unclosed candidate remains recoverable and
+counts toward the bound; on current Studionet, no live failure callback is
+available to consume it.
 
 Primary references:
 
@@ -75,3 +93,4 @@ Primary references:
 - [GenLayer Transaction Context](https://docs.genlayer.com/developers/intelligent-contracts/features/transaction-context)
 - [GenLayer Value Transfers](https://docs.genlayer.com/developers/intelligent-contracts/features/value-transfers)
 - [GenLayer transaction querying](https://docs.genlayer.com/developers/decentralized-applications/querying-a-transaction)
+- [GenVM v0.3 changelog](https://github.com/genlayerlabs/genvm/blob/main/doc/website/src/python-sdk/changelog-notes/v0.3.rst)

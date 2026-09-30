@@ -68,27 +68,30 @@ Deposit, withdrawal, acknowledgement and retry require a direct EOA call
 (`sender_address == origin_address`). This prevents an internal contract call
 from writing credit under the original transaction origin's identity.
 
-GenLayer preserves `origin_address` through child message chains. A failed
-value-transfer child invokes the vault's errored-message handler, which uses
-that origin and the exact refunded value to restore credit and total credit
-exactly once, then marks the record `FAILED_RECOVERABLE`. A duplicate callback
-cannot double-credit. Retry reuses the same withdrawal id, amount and
-destination.
+GenLayer preserves `origin_address` through child message chains, and
+`gl.message.value` is available to payable methods. However, the current
+official GenVM v0.3 SDK removed `__on_errored_message__`; the current runtime
+does not dispatch the handler, and failed value is not automatically returned.
+The vault's callback recovery behavior is therefore proven only in Direct Mode
+and is not a live Studionet guarantee. A real failed external payout can remain
+`DISPATCHED` and debited until a protocol-supported failure mechanism exists.
+No live failure was fabricated during this audit.
 
 GenLayer currently exposes no contract-side successful-child callback or child
 identifier in the errored-message context for an external EOA value transfer.
 The frontend therefore proves the finalized child, parent, recipient, amount
 and `value_credited` before submitting the holder acknowledgement. The
 acknowledgement marks the record `ACKNOWLEDGED`, releases the holder lock and
-retains a holder recovery candidate; a late failure callback can still move
-that exact record to `FAILED_RECOVERABLE` and restore the amount. Once that
+retains a holder recovery candidate. In the Direct Mode model, a late failure
+callback can still move that exact record to `FAILED_RECOVERABLE` and restore
+the amount; current Studionet has no supported callback to do so. Once that
 proof is complete, the same holder submits `close_successful_withdrawal`,
 which changes the record to `SUCCESS_CLOSED` and removes its recovery
 candidate without changing credit. A closed record cannot be retried or
 recovered.
 
-Recovery matching is deterministic without pretending that an amount is a
-child identifier: the callback first requires the current holder-scoped
+Recovery matching is deterministic in the Direct Mode callback model without
+pretending that an amount is a child identifier: the callback first requires the current holder-scoped
 `DISPATCHED` record and exact value, then considers holder-scoped
 `ACKNOWLEDGED` candidates only when there is no active dispatch. Multiple
 acknowledged candidates with the same amount fail closed as ambiguous rather
@@ -96,18 +99,21 @@ than selecting an older or newer record. Acknowledged recovery candidates are
 capped at 32 per holder; the frontend's success-closure step removes proven
 successful candidates so normal successful withdrawals do not accumulate
 forever. An acknowledgement that is not closed remains intentionally bounded
-and recoverable.
+and recoverable in Direct Mode; on current Studionet it has no live failure
+callback path.
 
 Accounting states:
 
 | State | Holder credit | Total credit | Retry | Restore |
 | --- | --- | --- | --- | --- |
-| `DISPATCHED` | debited | debited | no | exact origin/value callback |
-| `ACKNOWLEDGED` | debited | debited | no | yes, if a failure callback arrives |
+| `DISPATCHED` | debited | debited | no | Direct Mode callback only |
+| `ACKNOWLEDGED` | debited | debited | no | Direct Mode callback only |
 | `SUCCESS_CLOSED` | debited | debited | no | no; recovery metadata retired |
 | `FAILED_RECOVERABLE` | restored | restored | exact record only | no second restore |
 
-Studio simulates balances; live proof must still verify the recipient wallet
-balance before and after the finalized payout. The platform boundary and
-message-context assumptions are recorded in
+Studio simulates balances; live success proof must still verify the recipient
+wallet balance before and after the finalized payout. Live failed-payout
+recovery is currently **NOT READY** because the runtime hook required by the
+contract is removed. The platform boundary and message-context assumptions
+are recorded in
 `docs/GENLAYER_VALUE_TRANSFER_SEMANTICS.md`.

@@ -84,22 +84,28 @@ Charter policy is immutable. New policy requires a new `charter_key`. The first 
 `ProtectedVault` debits a holder and records a unique `DISPATCHED` withdrawal
 before emitting the native-value child. In-flight correlation is stored in
 `active_withdrawal_by_holder`, and GenLayer's preserved `origin_address`
-identifies the holder inside `__on_errored_message__`. Deposit, withdrawal,
+identifies the holder through the child-message context. Deposit, withdrawal,
 acknowledgement and retry are restricted to direct EOA calls where
 `sender_address == origin_address`; an internal contract cannot impersonate a
 holder. An unfinished payout therefore blocks only its own holder.
 
-The platform exposes an errored-message hook for failed value transfers, but no
-contract-side successful-child callback or child identifier in the error context
-for a transfer to an EOA. The holder acknowledgement is consequently
-non-destructive: it is accepted only after the application proves the child
-externally, changes the record to `ACKNOWLEDGED`, releases the holder lock, and
-retains a bounded recovery candidate. A failure callback first resolves the
-holder's current `DISPATCHED` record when the refunded value matches. Only when
-there is no active dispatch does it inspect acknowledged candidates; one exact
-match is recoverable, while multiple exact matches fail closed. The callback
-then moves the selected record to `FAILED_RECOVERABLE`, restores the exact
-amount, removes its candidate, and cannot restore it twice.
+The current official GenVM v0.3 runtime removed the
+`__on_errored_message__` hook, does not dispatch it, and does not automatically
+return failed value to the sender. The holder acknowledgement is consequently
+non-destructive only in the Direct Mode model: it is accepted after the
+application proves the child externally, changes the record to `ACKNOWLEDGED`,
+releases the holder lock, and retains a bounded recovery candidate. A real
+failed external payout currently has no supported contract-side callback that
+can move it to `FAILED_RECOVERABLE`. This is a live **NOT READY** limitation;
+the Direct Mode failure tests do not prove live Studionet recovery.
+
+If GenLayer restores a supported failure callback, the existing selection rule
+remains: first resolve the holder's current `DISPATCHED` record when the
+refunded value matches; only when there is no active dispatch inspect
+acknowledged candidates; one exact match is recoverable, while multiple exact
+matches fail closed. The callback then moves the selected record to
+`FAILED_RECOVERABLE`, restores the exact amount, removes its candidate, and
+cannot restore it twice.
 
 After the application has proven the finalized payout child, the holder calls
 `close_successful_withdrawal`. This changes the record to `SUCCESS_CLOSED` and
