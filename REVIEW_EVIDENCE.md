@@ -15,9 +15,10 @@ address and transaction values.
 
 ## CURRENT CI
 
-The final exact-head CI run is recorded after the documentation commit below.
-It covers contract validation, Python/unit/direct tests, frontend typecheck/build,
-and browser regression tests.
+The exact-head [CI run](https://github.com/Bibidee/exigency/actions/runs/36684010853)
+for commit `aea8c655db7f85aa9f887edbedd56182fc376144` passed. It covers contract
+validation, Python/unit/direct tests, frontend typecheck/build, and 8 browser
+regression tests.
 
 ## CURRENT SOURCE VERIFICATION
 
@@ -32,10 +33,10 @@ and browser regression tests.
 
 ## CURRENT HEALTH
 
-Local health will be re-run against the production alias after the frontend
-deployment. The check verifies all three hosted routes, RPC reachability, chain
-61999, Registry/Engine/Gate/Vault reads, Vault → Gate wiring, Gate → Engine
-wiring and source verification in the workflow.
+The exact-head [deployment-health run](https://github.com/Bibidee/exigency/actions/runs/36684218596)
+passed against the production alias. The check verifies all three hosted routes,
+RPC reachability, chain 61999, Registry/Engine/Gate/Vault reads, Vault → Gate
+wiring, Gate → Engine wiring and source verification in the workflow.
 
 Production Vercel deployment `dpl_H7fyxUo48Sp29TFZ2HfF47rfGSYy` reached READY
 and is aliased to [exigency.vercel.app](https://exigency.vercel.app).

@@ -55,8 +55,8 @@ byte matches for all four contracts.
 
 ## HEALTH
 
-`npm run health:check` and the final deployment-health workflow will be recorded
-after the fresh frontend alias is ready. It checks `/`,
+`npm run health:check` passed locally, and the exact-head [deployment-health workflow](https://github.com/Bibidee/exigency/actions/runs/36684218596)
+passed. It checks `/`,
 `/command`, `/vault`, Studionet RPC reachability, the manifest chain and all
 four contract reads, plus Vault → Gate and Gate → Engine wiring. The
 deployment-health workflow is scheduled every six hours and is manually
