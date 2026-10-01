@@ -64,7 +64,7 @@ def test_execution_envelope_rejects_wrong_holder_target_action_duration_and_dige
     with direct_vm.expect_revert("target does not match capability"):
         gate.execute_capability("EXC-ENVELOPE", to_hex(direct_charlie), "PAUSE_PROTECTED_ACTION", 30)
     with direct_vm.expect_revert("action does not match capability"):
-        gate.execute_capability("EXC-ENVELOPE", to_hex(direct_bob), "PAUSE_WITHDRAWALS", 30)
+        gate.execute_capability("EXC-ENVELOPE", to_hex(direct_bob), "UNSUPPORTED_ACTION", 30)
     with direct_vm.expect_revert("duration does not match capability"):
         gate.execute_capability("EXC-ENVELOPE", to_hex(direct_bob), "PAUSE_PROTECTED_ACTION", 29)
     with direct_vm.expect_revert("action digest mismatch"):

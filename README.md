@@ -29,14 +29,15 @@ Do **not** substitute Studio Dev / chain 61997. The repository-local `genlayer@0
 
 ## Current submission state
 
-- Frontend source commit deployed: `360b3e6a21565cea14dbc02c8153b9b50fabb799` — `fix: expose frontend provenance at runtime`.
+- Frontend source commit deployed: `920b81271bbcbee1b2512ffcd426a0828505209e`.
 - Subsequent evidence-only commits may update this handoff; consult `main` for the current repository HEAD.
 - Production: [https://exigency.vercel.app](https://exigency.vercel.app).
-- READY Vercel deployment: `dpl_7TPrqNhQqmZcVeGcVioHn9posYuQ`, aliased to
+- READY Vercel deployment: `dpl_GrWWPHSy4UWJTu7AdH4Vtyx3nrmg`, aliased to
   production.
 - The public `/api/build-info` endpoint reports this deployment ID and the exact
-  frontend source SHA above.
-- Final checks: 14 unit, 43 Direct Mode and 10 browser tests passed; all four
+  frontend source SHA above. Exact Git metadata is also exposed at that endpoint;
+  the Vercel CLI itself does not export a stronger native commit binding.
+- Final checks: 14 unit, 28 Direct Mode and 9 browser tests passed; all four
   deployed contract sources still match exactly.
 - Browser E2E mocks are test-only and unavailable in production code paths;
   runtime mock hooks are gated by `process.env.NODE_ENV !== "production"`.

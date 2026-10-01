@@ -1,136 +1,85 @@
-# EXIGENT Review Evidence
+# Review evidence — current architecture
 
-## CURRENT CANONICAL DEPLOYMENT
+## Scope
 
-- Frontend source commit deployed: `360b3e6a21565cea14dbc02c8153b9b50fabb799` — `fix: expose frontend provenance at runtime`.
-- Evidence-only documentation may be updated after this deployment; use `main` for the current repository HEAD.
-- Source commit deployed: `2d69aa122adbb122759db43527266f4fcc5427da`.
-- Production: [https://exigency.vercel.app](https://exigency.vercel.app).
-- Vercel deployment: `dpl_7TPrqNhQqmZcVeGcVioHn9posYuQ`, READY, aliased to
-  production.
-- The public `/api/build-info` endpoint reports the exact deployment ID and
-  frontend source SHA above.
-- Network: Studionet 61999; RPC `https://studio.genlayer.com/api`.
-- Registry: `0xa034003895e4b3506a5aE1d5dD02492603fF1B6a`.
-- Engine: `0x2ff218faad3A858A2e8F5ce89558f7E2E7f72815`.
-- Gate: `0x507eBD4fD0432cB266D7dfCC42c02ffB76667F0A`.
-- Vault: `0x6821fa5fF7a67856BB340ae64a83AFCE5dF299ce`.
+This report describes the current non-custodial EXIGENT deployment. It supersedes
+older payout-era evidence; historical payout records are retained only as
+historical records and are not claims about the current target.
 
-The Gate address above is authoritative from the deployment manifest and the
-Vault wiring read; the public manifest contains the exact case-preserving
-address and transaction values.
+## Production provenance
 
-## CURRENT CI
+- Production URL: [https://exigency.vercel.app/](https://exigency.vercel.app/)
+- Vercel deployment: `dpl_GrWWPHSy4UWJTu7AdH4Vtyx3nrmg`
+- State: `READY`
+- Preview deployment URL: `https://exigency-en9wl9sl1-bibidees-projects.vercel.app`
+- Frontend source reported by `/api/build-info`:
+  `920b81271bbcbee1b2512ffcd426a0828505209e`
 
-The final exact-head CI is [run
-36782459920](https://github.com/Bibidee/exigency/actions/runs/36782459920),
-and deployment-health is [run
-36783529434](https://github.com/Bibidee/exigency/actions/runs/36783529434),
-both on repository HEAD above. CI covers contract validation,
-Python/unit/direct tests, frontend typecheck/build, and 10 browser regression
-tests.
+The runtime endpoint binds the live alias, deployment ID, and frontend source
+SHA. Vercel CLI output did not provide an additional native Git binding.
 
-## CURRENT SOURCE VERIFICATION
+## Contract provenance
 
-`npm run source:verify` passed after redeployment. Exact SHA-256 values:
+| Contract | Address | Source SHA-256 |
+| --- | --- | --- |
+| CharterRegistry | `0x2ecf811BbFB57cf34Fd55395A5793393Ae431441` | `f2dd93241b0c8b3b7ef27abb1bb38e8aab3ee64dc113f804a97f2f40ac9b9bb0` |
+| ExigencyEngine | `0x911Bef23368d88e994301BeA1988e753aB2fC2BA` | `0ad4fb5fdae59962d69c76eec9befc11b508ac43185ca69c0e0127514f885244` |
+| CapabilityGate | `0xe77fdD519d4Dba4851701B3f1D498619c5b94b01` | `f6bf0d15da516d77a24fa8dd6cb22ddab6196dc162e2c4f81ead315a5c872db7` |
+| ProtectedVault | `0xf7aB890a71D40d053453728bb2bA97e31207E3c8` | `bbc88fa83c776e2d0dfbaa6cdf9328337573db71db2fbd0c12c5cd3a0f155929` |
 
-| Contract | SHA-256 |
-| --- | --- |
-| CharterRegistry | `ea59f36b845897a247063e6664e6e5164af6ec53dbf4e7d85c489e2bebc99218` |
-| ExigencyEngine | `0ad4fb5fdae59962d69c76eec9befc11b508ac43185ca69c0e0127514f885244` |
-| CapabilityGate | `0480c0a730a111ee9a2e7542a92668a5976ee0ce57086a562b15e9a43ba2fdfe` |
-| ProtectedVault | `83d25a3f8303ff99213b9b23f40480c969c71ab2076b81b9b1d6e17ffcb8c940` |
+The clean deployment transactions, binding transaction, source commit, and
+these hashes are recorded in `deployment-manifest.public.json`.
 
-## CURRENT HEALTH
+## Current security boundary
 
-The deployment-health workflow verifies all three hosted routes, RPC
-reachability, chain 61999, Registry/Engine/Gate/Vault reads, Vault → Gate
-wiring, Gate → Engine wiring and source verification.
+`ProtectedVault` is deliberately non-custodial. It stores no user GEN and has
+no deposit, withdrawal, external payout, refund, retry, or failed-payout
+callback. The only protected operation is a unique direct-EOA action. A
+finalized `PAUSE_PROTECTED_ACTION` capability can pause that action through the
+Gate, and the pause expires on-chain.
 
-Vercel deployment `dpl_7TPrqNhQqmZcVeGcVioHn9posYuQ` reached READY and is
-aliased to [exigency.vercel.app](https://exigency.vercel.app).
+This removes the unsupported runtime dependency that previously made live
+failed-payout recovery unsafe. No live payout failure is claimed.
 
-## CURRENT AUTHORITY LIFECYCLE
+## Fresh live proof
 
-The fresh opt-in live fixture completed against the current deployment:
+The latest fresh synthetic authority lifecycle was:
 
-- charter: `CI-LIVE-1790777878`;
-- incident: `CI-INC-1790777878`;
-- capability: `EXC-CI-INC-1790777878`;
-- assessment: `TRIGGER_CONFIRMED`;
-- dispatch occurred once, the protected-Vault child finalized, and reconcile
-  reached `APPLIED` with `consumed: true`;
-- the pause was observed and later expired.
+- Charter: `CI-LIVE-1790816856`
+- Incident: `CI-INC-1790816856`
+- Capability: `EXC-CI-INC-1790816856`
+- Protected action before pause: accepted
+- Protected action during pause: finalized with contract error
+- Protected action after expiry: accepted
+- After-expiry transaction:
+  `0x5cf605b2996ba7e395a0c89a78b21ab6f4ec65a12d9a61b2a262fe5f6f8c7457`
 
-The harness did not emit a durable transaction manifest for this run, so this
-report does not claim unrecorded lifecycle transaction hashes.
+Uncaptured intermediate hashes are explicitly `NOT RECORDED`.
 
-The fixture uses immutable, real evidence files:
+## Wallet roles
 
-- [primary evidence](https://raw.githubusercontent.com/Bibidee/exigency/84de2b15e428497bc6dec64aedf54d1ee1c06761/demo/evidence/active_incident_primary.md)
-- [secondary evidence](https://raw.githubusercontent.com/Bibidee/exigency/84de2b15e428497bc6dec64aedf54d1ee1c06761/demo/evidence/active_incident_secondary.md)
+The live CLI lifecycle used the owner account
+`0x865e118a3be4fa0760775565fcd31be156e1e3d7`. A second wallet is only
+negative authorization evidence: it attempted an owner-only incident and was
+rejected. This is not a two-wallet successful lifecycle.
 
-Both URLs returned HTTP 200 before this update.
+## Verification results
 
-## CURRENT VAULT ACCOUNTING
+- Unit: 14 passed
+- Direct Mode: 28 passed
+- Browser: 9 passed
+- Contract lint/validation: passed
+- Typecheck: passed
+- Build: passed
+- Source verification: 4/4 exact byte matches
 
-The latest Brave session is the current observed accounting state. The valid
-lifecycle used owner wallet `0x4a7d…32f5`; wallet `0xff20…9b54` was only the
-negative non-owner authorization test. Latest deposit, withdrawal, payout,
-acknowledgement and close evidence:
+Browser mocks are gated out of production with
+`process.env.NODE_ENV !== "production"`.
 
-- deposit `0.010 GEN`: `0x0c2268e8fbc43dcd73c40616cc9daac109b7d57d06dc16c8b6e406fcdab0d523`;
-- withdrawal parent / child: `0xd4df78b62aa572029b4da8c516551c5b6f3e07670f35beb1031f113716fe27c` /
-  `0xe76369bacac9ed3ece9dbda86865010540330645681a3d4c442888b370d72ab8`;
-- acknowledgement: `0xd242a03df3742318437208985c6b3f2c32375e9a6fdcf7a750fc7a6638172f27`;
-- success close: `0xfcb6366f3fbdec9faadd5cd3e3a52c7880b39999974b62a509c2e40627f689a1`;
-- final observed holder credit: `0.005 GEN`; total credited: `0.010 GEN`; pause state OPEN; recovery
-  candidate retired.
+## Remaining limitations
 
-The browser now persists public withdrawal reconciliation metadata and offers
-safe acknowledged-reload recovery. A rejected close leaves `ACKNOWLEDGED`, not
-false success.
-
-- Account: `0x865e118a3be4FA0760775565fCd31be156e1e3d7`.
-- Deposit `0.015 GEN`: `0x74c69aed38622ab930ad7369a9ddd241ff726861ba25b4f6879878d0478ca548`.
-- First withdrawal parent / child: `0xb7dcbf7688307d35514395754da61135e6f8468561a3348e394d9ae84dd1315d` /
-  `0xed3c79cf7f9259efb63ed969a909add99d0c546c254eba1221de22f1832f8ab6`.
-- First acknowledgement / close: `0xf22cb55443080184cabae0a262915089b8c68aa94ecb5e8b4b2e58c98cf0dc96` /
-  `0x1bf1648f13b7b9ae71aa937f3e76664d7dce6c4967fdcf253323a27040331d5a`.
-- Second withdrawal parent / child: `0x31aa4cc23714407f8b8c5c6d0fc579fc981650063a95e52e45d199b58bfea378` /
-  `0xebbce34e8449af40a9a0e120e70c3664b945cc3c557c50620b08da8c339fbe71`.
-- Second acknowledgement / close: `0x0d243b7ea6424a4784f446a82c76c55de5887f50ec3c4450998c30195c2191bc` /
-  `0xc5e6b4c1beac63fabc050f9cd772e126b8c4e581c75648198bacc13cfe96707d`.
-- Both children paid the account exactly `5000000000000000` wei with
-  `value_credited: true`; final credit and total were `5000000000000000` wei.
-
-## CURRENT SECURITY TESTS
-
-- Unit: 14 passed.
-- Direct Mode: 43 passed, including active-dispatch priority,
-  acknowledgement-before-resolution recovery,
-  duplicate failure delivery, multi-holder isolation and retry conservation.
-- Contract lint and validation: PASS for all four contracts.
-- Dependency audit: 5 moderate, 0 high, 0 critical.
-
-## CURRENT KNOWN LIMITATIONS
-
-- The private-key live accounting script is intentionally opt-in; the fresh
-  unlocked-CLI funded proof is recorded above.
-- GenLayer has no documented contract-side successful-child callback or child
-  identifier in the error context for an external EOA value transfer. The
-  contract prioritizes the current exact-value `DISPATCHED` record, fails closed
-  on ambiguous acknowledged matches, and caps acknowledged recovery candidates
-  at 32 per holder. The application closes candidates only after independently
-  proving the successful child.
-- The full live authority write fixture remains opt-in because it creates fresh
-  consensus records; it was executed successfully for the current deployment
-  during this final audit.
-- A real live payout failure was not fabricated: this deployment pays the
-  holder EOA directly, so a failed child cannot be induced safely from the UI.
-  The failure/recovery matrix remains covered in Direct Mode.
-
-## HISTORICAL EVIDENCE
-
-Previous deployments, CI runs and browser captures remain in Git history. They
-are retained for audit context but are not current deployment claims.
+- Five moderate transitive npm advisories remain; no forced incompatible
+  upgrade was applied.
+- Some historical lifecycle transaction hashes remain `NOT RECORDED`.
+- Per-validator HTTP status and content digest are fetch/audit provenance, not
+  a claim that every validator returns byte-identical content.

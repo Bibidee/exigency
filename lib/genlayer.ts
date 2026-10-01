@@ -20,7 +20,6 @@ type BrowserE2eMock = {
   readContract?: (address: string, functionName: string, args: unknown[]) => unknown | Promise<unknown>;
   submitWrite?: (account: string, address: string, functionName: string, args: unknown[], value: bigint) => `0x${string}` | Promise<`0x${string}`>;
   waitForFinalization?: (hash: `0x${string}`) => unknown | Promise<unknown>;
-  waitForTriggeredValueTransfer?: (parentHash: `0x${string}`, expectedRecipient: string, expectedAmount: bigint) => `0x${string}` | Promise<`0x${string}`>;
   getTransaction?: (hash: `0x${string}`) => unknown | Promise<unknown>;
 };
 
@@ -156,18 +155,7 @@ export async function submitWrite(
 
 type TransactionReceiptRecord = Record<string, unknown>;
 
-function asWei(value: unknown) {
-  try {
-    return BigInt(String(value ?? "0"));
-  } catch {
-    return 0n;
-  }
-}
-
-export async function waitForFinalization(
-  hash: `0x${string}`,
-  options: { allowValueTransfer?: boolean } = {},
-) {
+export async function waitForFinalization(hash: `0x${string}`) {
   if (process.env.NODE_ENV !== "production" && typeof window !== "undefined" && window.__EXIGENT_E2E_MOCK__?.waitForFinalization) {
     return await window.__EXIGENT_E2E_MOCK__.waitForFinalization(hash);
   }
@@ -185,42 +173,11 @@ export async function waitForFinalization(
   const leaderResult = consensus?.leader_receipt?.find((entry) => entry.execution_result)?.execution_result;
   const executionResult = directResult ?? (leaderResult === "SUCCESS" ? ExecutionResult.FINISHED_WITH_RETURN : leaderResult === "ERROR" ? ExecutionResult.FINISHED_WITH_ERROR : undefined);
   const statusName = String(value.statusName ?? value.status_name ?? "").toUpperCase();
-  const valueCredited = value.value_credited === true || value.valueCredited === true;
-  const nativeValueTransferFinalized = options.allowValueTransfer
-    && statusName === "FINALIZED"
-    && valueCredited
-    && asWei(value.value) > 0n;
   if (executionResult === ExecutionResult.FINISHED_WITH_ERROR) {
     throw new Error(`Studionet finalized the transaction with a contract execution error (${hash}).`);
   }
-  if (executionResult !== ExecutionResult.FINISHED_WITH_RETURN && !nativeValueTransferFinalized) {
+  if (executionResult !== ExecutionResult.FINISHED_WITH_RETURN) {
     throw new Error(`Studionet finalized the transaction without a successful execution result (${hash}).`);
-  }
-  return receipt;
-}
-
-export async function waitForValueTransferFinalization(
-  hash: `0x${string}`,
-  expectedRecipient: string,
-  expectedAmount: bigint,
-  expectedParent?: string,
-) {
-  const receipt = await waitForFinalization(hash, { allowValueTransfer: true });
-  const value = receipt as unknown as TransactionReceiptRecord;
-  const recipient = String(value.recipient ?? value.to_address ?? "").toLowerCase();
-  const triggeredBy = String(value.triggered_by ?? value.triggeredBy ?? "").toLowerCase();
-  const actualAmount = asWei(value.value);
-  if (recipient !== expectedRecipient.toLowerCase()) {
-    throw new Error(`Payout child recipient mismatch for ${hash}.`);
-  }
-  if (actualAmount !== expectedAmount) {
-    throw new Error(`Payout child amount mismatch for ${hash}: expected ${expectedAmount}, got ${actualAmount}.`);
-  }
-  if (expectedParent && triggeredBy !== expectedParent.toLowerCase()) {
-    throw new Error(`Payout child parent mismatch for ${hash}.`);
-  }
-  if (!(value.value_credited === true || value.valueCredited === true)) {
-    throw new Error(`Payout child value was not credited for ${hash}.`);
   }
   return receipt;
 }
@@ -260,28 +217,4 @@ export async function waitForTriggeredChildren(hash: `0x${string}`): Promise<`0x
   const children = await waitForTriggeredTransactionIds(hash);
   for (const child of children) await waitForFinalization(child);
   return children;
-}
-
-export async function waitForTriggeredValueTransfer(
-  parentHash: `0x${string}`,
-  expectedRecipient: string,
-  expectedAmount: bigint,
-): Promise<`0x${string}`> {
-  if (process.env.NODE_ENV !== "production" && typeof window !== "undefined" && window.__EXIGENT_E2E_MOCK__?.waitForTriggeredValueTransfer) {
-    return await window.__EXIGENT_E2E_MOCK__.waitForTriggeredValueTransfer(parentHash, expectedRecipient, expectedAmount);
-  }
-  const children = await waitForTriggeredTransactionIds(parentHash);
-  const matches: `0x${string}`[] = [];
-  for (const child of children) {
-    try {
-      await waitForValueTransferFinalization(child, expectedRecipient, expectedAmount, parentHash);
-      matches.push(child);
-    } catch {
-      // A parent may emit other children. Only the uniquely matching, credited payout is acceptable.
-    }
-  }
-  if (matches.length !== 1) {
-    throw new Error(`Expected exactly one successful payout child for ${parentHash}, found ${matches.length}.`);
-  }
-  return matches[0];
 }

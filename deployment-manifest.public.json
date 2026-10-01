@@ -27,10 +27,10 @@
   "sourceCommit": "5e5ddd484087272560c977570e7bf58ad812262f",
   "frontend": {
     "productionUrl": "https://exigency.vercel.app/",
-    "vercelDeploymentId": "dpl_7TPrqNhQqmZcVeGcVioHn9posYuQ",
-    "deploymentUrl": "https://exigency-2ofdequqm-bibidees-projects.vercel.app",
+    "vercelDeploymentId": "dpl_GrWWPHSy4UWJTu7AdH4Vtyx3nrmg",
+    "deploymentUrl": "https://exigency-en9wl9sl1-bibidees-projects.vercel.app",
     "readyState": "READY",
-    "sourceCommit": "pending-frontend-deployment",
+    "sourceCommit": "920b81271bbcbee1b2512ffcd426a0828505209e",
     "provenancePath": "/api/build-info"
   }
 }

@@ -179,16 +179,16 @@ def test_live_studionet_lifecycle_writes():
         contracts["charterRegistry"],
         "publish_charter",
         charter, protocol, "EXIGENT CI", target,
-            "SYNTHETIC TEST ONLY: trigger when approved public synthetic evidence confirms an active fictional security incident affecting withdrawal-safety assumptions and supports a proportionate temporary withdrawal pause. Never treat this fixture as a real incident.",
-            "Approved public synthetic test fixtures are acceptable only when retrievable, corroborated, current, and explicitly describe the fictional active incident and affected withdrawal-safety path.",
-        "raw.githubusercontent.com", "PAUSE_PROTECTED_ACTION", "30", "30", "1",
+        "SYNTHETIC TEST ONLY: trigger when approved public synthetic evidence confirms an active fictional security incident affecting protected-action assumptions and supports a proportionate temporary protected-action pause. Never treat this fixture as a real incident.",
+            "Approved public synthetic test fixtures are acceptable only when retrievable, corroborated, current, and explicitly describe the fictional active incident and affected protected-action path.",
+        "raw.githubusercontent.com", "PAUSE_PROTECTED_ACTION", "5", "30", "1",
     ))
     import time
     time.sleep(70)
     _finalize(_cli_write(contracts["charterRegistry"], "activate_charter", charter))
     _finalize(_cli_write(
         contracts["exigencyEngine"], "open_incident", incident, charter,
-        "PAUSE_PROTECTED_ACTION", "10",
+        "PAUSE_PROTECTED_ACTION", "5",
         "Automated live integration incident verifying source-grounded emergency authority and exact capability execution.",
         json.dumps(sources),
     ))
@@ -220,6 +220,10 @@ def test_live_studionet_lifecycle_writes():
                 break
         time.sleep(5)
     assert capability.get("issued_at", 0), "capability child did not finalize"
+    before_action_key = f"LIVE-ACTION-{stamp}-BEFORE"
+    before_action_hash = _finalize(_cli_write(contracts["protectedVault"], "execute_protected_action", before_action_key))
+    before_action_record = json.loads(_cli_call(contracts["protectedVault"], "get_protected_action_json", before_action_key))
+    assert before_action_record["action_key"] == before_action_key
     execute_output = _cli_write(
         contracts["capabilityGate"], "execute_capability", capability["capability_key"],
         capability["target"], capability["action_class"], str(capability["duration_minutes"]),
@@ -231,7 +235,7 @@ def test_live_studionet_lifecycle_writes():
         _finalize_hash(child_hash)
     dispatched = json.loads(_cli_call(contracts["capabilityGate"], "get_capability_json", capability["capability_key"]))
     assert dispatched["dispatch_status"] in {"DISPATCHED", "APPLIED"}
-    _finalize(_cli_write(contracts["capabilityGate"], "reconcile_capability", capability["capability_key"]))
+    reconcile_hash = _finalize(_cli_write(contracts["capabilityGate"], "reconcile_capability", capability["capability_key"]))
     applied = json.loads(_cli_call(contracts["capabilityGate"], "get_capability_json", capability["capability_key"]))
     assert applied["dispatch_status"] == "APPLIED"
     assert applied["consumed"] is True
@@ -239,3 +243,32 @@ def test_live_studionet_lifecycle_writes():
     assert applied["action_digest"]
     status = json.loads(_cli_call(contracts["protectedVault"], "get_status_json"))
     assert status["protected_action_paused"] is True
+    during_action_key = f"LIVE-ACTION-{stamp}-DURING"
+    during_output = _cli_write(contracts["protectedVault"], "execute_protected_action", during_action_key)
+    during_hash = during_output.split("Write Transaction Hash:", 1)[1].strip().splitlines()[0].strip()
+    with pytest.raises(AssertionError):
+        _finalize_hash(during_hash)
+
+    pause_until = int(json.loads(_cli_call(contracts["protectedVault"], "get_status_json"))["protected_action_paused_until"])
+    while int(time.time()) < pause_until:
+        time.sleep(min(15, max(1, pause_until - int(time.time()))))
+    after_action_key = f"LIVE-ACTION-{stamp}-AFTER"
+    after_action_hash = _finalize(_cli_write(contracts["protectedVault"], "execute_protected_action", after_action_key))
+    after_action_record = json.loads(_cli_call(contracts["protectedVault"], "get_protected_action_json", after_action_key))
+    final_status = json.loads(_cli_call(contracts["protectedVault"], "get_status_json"))
+    assert after_action_record["action_key"] == after_action_key
+    assert final_status["protected_action_paused"] is False
+    print(json.dumps({
+        "charter": charter,
+        "incident": incident,
+        "assessment": assessment_hash,
+        "issuanceChildren": assessment_children,
+        "capability": record["capability_key"],
+        "execution": execute_hash,
+        "protectedChildren": child_hashes,
+        "reconcile": reconcile_hash,
+        "beforeAction": before_action_hash,
+        "duringAction": during_hash,
+        "afterAction": after_action_hash,
+        "finalStatus": final_status,
+    }))

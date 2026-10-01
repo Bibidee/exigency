@@ -1,147 +1,84 @@
-# EXIGENT Final Handoff Status
+# EXIGENT final handoff
 
-## CURRENT CANONICAL STATE — 2026-10-01
+## Current status
 
-- Hardened source commit: `2d69aa122adbb122759db43527266f4fcc5427da` — `Retire successful payout recovery state`.
-- Branch: `main`; repository: [Bibidee/exigency](https://github.com/Bibidee/exigency).
-- Frontend source commit deployed: `360b3e6a21565cea14dbc02c8153b9b50fabb799` — `fix: expose frontend provenance at runtime`.
-- Evidence-only documentation may be updated after this deployment; use `main` for the current repository HEAD.
-- Network: Studionet 61999; RPC: `https://studio.genlayer.com/api`.
-- Production frontend: [https://exigency.vercel.app](https://exigency.vercel.app).
-- Vercel deployment `dpl_7TPrqNhQqmZcVeGcVioHn9posYuQ` is READY and is aliased
-  to the production domain.
-- Production `/api/build-info` reports deployment
-  `dpl_7TPrqNhQqmZcVeGcVioHn9posYuQ` and frontend SHA
-  `360b3e6a21565cea14dbc02c8153b9b50fabb799`.
-- The final Playwright suite passed all **10 browser checks**.
-- Browser E2E mocks are test-only and unavailable in production code paths;
-  runtime mock hooks are gated by `process.env.NODE_ENV !== "production"`.
+The final architecture is a non-custodial protected-action target. The former
+GEN deposit, asynchronous payout, refund, retry, and errored-message recovery
+surface was removed because the deployed GenVM runtime does not provide a
+supported contract callback for failed external value transfers. The target
+stores no user funds and emits no external payout.
 
-## SECURITY FIXES
+Current repository branch: `main` (see the exact final HEAD in the release
+report and Git history).
 
-- Replaced the global `active_withdrawal_key` with
-  `active_withdrawal_by_holder`. One user's unresolved payout cannot deny
-  service to unrelated holders.
-- Failure recovery uses the preserved GenLayer `origin_address` and exact
-  refunded value. It restores exactly one holder record and is idempotent.
-- Acknowledgement releases the holder lock while retaining a keyed recovery
-  candidate. A late failure can still move the record to
-  `FAILED_RECOVERABLE` and restore the exact amount.
-- Deposits, withdrawals, acknowledgements and retries require a direct EOA
-  caller (`sender_address == origin_address`).
-- Acknowledged withdrawals are reusable: repeated same-holder payouts create
-  distinct records and do not leave a stale active pointer.
-- Failure recovery first selects the current exact-value `DISPATCHED` record;
-  historical acknowledged matches are considered only without an active
-  dispatch, and ambiguous matches fail closed.
-- A proven successful payout transitions to `SUCCESS_CLOSED` through a
-  holder-only close write, removing its recovery candidate without changing
-  credit. Unclosed acknowledged candidates remain capped at 32 per holder.
-- Retry is limited to the original record, amount and destination. Acknowledged
-  records cannot be replayed.
-- The platform boundary and assumptions are documented in
-  `docs/GENLAYER_VALUE_TRANSFER_SEMANTICS.md`.
+Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 
-## TEST RESULTS
+Vercel deployment: `dpl_GrWWPHSy4UWJTu7AdH4Vtyx3nrmg` (`READY`)
 
-- Unit: **14 passed**.
-- Direct Mode: **43 passed**.
-- Browser: **10 passed**.
-- Contract `genvm-lint check`: PASS for all four contracts.
-- Contract `genvm-lint validate`: PASS for all four contracts.
-- Typecheck: PASS.
-- Production build: PASS.
-- `npm audit`: 5 moderate, 0 high, 0 critical. The findings are transitive
-  CLI/test dependencies; no blind major-version downgrade was applied.
+The production `/api/build-info` endpoint reports deployment
+`dpl_GrWWPHSy4UWJTu7AdH4Vtyx3nrmg` and frontend source
+`920b81271bbcbee1b2512ffcd426a0828505209e`. This is the available runtime
+provenance binding; the Vercel CLI does not expose a stronger native mapping.
 
-## CURRENT DEPLOYMENT
+## Current contracts
 
-The contract source was unchanged from deployed source commit
-`2d69aa122adbb122759db43527266f4fcc5427da`; no contract redeployment was
-performed in this cleanup pass.
+| Contract | Address |
+| --- | --- |
+| CharterRegistry | `0x2ecf811BbFB57cf34Fd55395A5793393Ae431441` |
+| ExigencyEngine | `0x911Bef23368d88e994301BeA1988e753aB2fC2BA` |
+| CapabilityGate | `0xe77fdD519d4Dba4851701B3f1D498619c5b94b01` |
+| ProtectedVault | `0xf7aB890a71D40d053453728bb2bA97e31207E3c8` |
 
-| Contract | Address | Deployment transaction |
-| --- | --- | --- |
-| CharterRegistry | `0xa034003895e4b3506a5aE1d5dD02492603fF1B6a` | `0x70c042ea2d427bcd095002552154ce022a47348d992d0aaa81bf280932d31cec` |
-| ExigencyEngine | `0x2ff218faad3A858A2e8F5ce89558f7E2E7f72815` | `0xa0b9e378cc7f233b3a6341da44624ec1a8be66430715dbd6be4a0702ca467ba2` |
-| CapabilityGate | `0x507eBD4fD0432cB266D7dfCC42c02ffB76667F0A` | `0xd0524735297a0fb34bae75a9c076d94c7a13e3872fcd05f0e7addca5c0a19f56` |
-| ProtectedVault | `0x6821fa5fF7a67856BB340ae64a83AFCE5dF299ce` | `0xd6962fc9a164d3994eba18f4ec4da0dee09a864809179b150a32f05d7a2c7041` |
-
-Bind transaction: `0xf0c154b7ef55f1a4664e730077e44c434240e7ae40c4887a4297f547fbb4067a`.
-
-Deployed source commit: `2d69aa122adbb122759db43527266f4fcc5427da`. `npm run source:verify` passed with exact
+Network: Studionet 61999. The clean deployment and engine binding are recorded
+in `deployment-manifest.public.json`. `npm run source:verify` reports exact
 byte matches for all four contracts.
 
-## HEALTH
+## Protected target model
 
-`npm run health:check` passed locally. The final exact-head CI is [run
-36782459920](https://github.com/Bibidee/exigency/actions/runs/36782459920),
-and deployment-health is [run
-36783529434](https://github.com/Bibidee/exigency/actions/runs/36783529434),
-both on frontend source commit `360b3e6a21565cea14dbc02c8153b9b50fabb799`. Health checks `/`,
-`/command`, `/vault`, Studionet RPC reachability, the manifest chain and all
-four contract reads, plus Vault → Gate and Gate → Engine wiring. The
-deployment-health workflow is scheduled every six hours and is manually
-dispatched for the final deployment.
+- A direct EOA can execute a unique protected action while it is open.
+- A finalized capability can pause that action through `CapabilityGate`.
+- The pause is bounded and expires according to contract time.
+- Replays, wrong callers, conflicting capability digests, and writes during the
+  pause are rejected.
+- There is no payable deposit, payout, refund, withdrawal, or user-value
+  accounting path.
 
-## LIVE VAULT ACCOUNTING PROOF
+The live lifecycle created fresh synthetic records and proved the full
+authority path. The latest recorded lifecycle keys are:
 
-### Latest Brave session
+- Charter: `CI-LIVE-1790816856`
+- Incident: `CI-INC-1790816856`
+- Capability: `EXC-CI-INC-1790816856`
+- Protected action before pause: `LIVE-ACTION-1790816856-BEFORE`
+- Protected action during pause: submitted and finalized with contract error
+- Protected action after expiry: `LIVE-ACTION-1790816856-AFTER`
+- After-expiry transaction: `0x5cf605b2996ba7e395a0c89a78b21ab6f4ec65a12d9a61b2a262fe5f6f8c7457`
 
-- Owner wallet: `0x4a7d…32f5` — completed the valid lifecycle and accounting.
-- Second wallet: `0xff20…9b54` — negative owner-authorization test only; the
-  attempted incident rolled back as required.
-- Latest deposit `0.010 GEN`: `0x0c2268e8fbc43dcd73c40616cc9daac109b7d57d06dc16c8b6e406fcdab0d523`.
-- Withdrawal parent / payout child: `0xd4df78b62aa572029b4da8c516551c5b6f3e07670f35beb1031f113716fe27c` /
-  `0xe76369bacac9ed3ece9dbda86865010540330645681a3d4c442888b370d72ab8`.
-- Acknowledgement / success close: `0xd242a03df3742318437208985c6b3f2c32375e9a6fdcf7a750fc7a6638172f27` /
-  `0xfcb6366f3fbdec9faadd5cd3e3a52c7880b39999974b62a509c2e40627f689a1`.
-- Current observed holder credit: `0.005 GEN`; total credited: `0.010 GEN`; latest withdrawal is
-  `SUCCESS_CLOSED`; recovery metadata is retired; both pause states are OPEN.
+Some intermediate lifecycle transaction hashes were not retained by the live
+CLI output and remain `NOT RECORDED`; no hashes are invented here.
 
-The acknowledged-reload browser recovery path is covered by Playwright. The
-frontend persists only public id/hash metadata, re-proves the child after
-reload, and keeps close disabled until proof succeeds.
+## Test baseline
 
-- Account: `0x865e118a3be4FA0760775565fCd31be156e1e3d7`.
-- Deposit: `0.015 GEN`, tx `0x74c69aed38622ab930ad7369a9ddd241ff726861ba25b4f6879878d0478ca548`.
-- First withdrawal parent / child: `0xb7dcbf7688307d35514395754da61135e6f8468561a3348e394d9ae84dd1315d` /
-  `0xed3c79cf7f9259efb63ed969a909add99d0c546c254eba1221de22f1832f8ab6`.
-- First acknowledgement / close: `0xf22cb55443080184cabae0a262915089b8c68aa94ecb5e8b4b2e58c98cf0dc96` /
-  `0x1bf1648f13b7b9ae71aa937f3e76664d7dce6c4967fdcf253323a27040331d5a`.
-- Second withdrawal parent / child: `0x31aa4cc23714407f8b8c5c6d0fc579fc981650063a95e52e45d199b58bfea378` /
-  `0xebbce34e8449af40a9a0e120e70c3664b945cc3c557c50620b08da8c339fbe71`.
-- Second acknowledgement / close: `0x0d243b7ea6424a4784f446a82c76c55de5887f50ec3c4450998c30195c2191bc` /
-  `0xc5e6b4c1beac63fabc050f9cd772e126b8c4e581c75648198bacc13cfe96707d`.
-- Both payout children matched the connected account, paid `0.005 GEN` and
-  reported `value_credited: true`. Final holder credit and total:
-  `5000000000000000` wei (`0.005 GEN`). Both records finished as
-  `SUCCESS_CLOSED` and the recovery list was empty.
+Current local baseline after the redesign:
 
-The live automation remains opt-in; the temporary CLI export was removed after
-the run and no secret was committed.
+- Unit: 14 passed
+- Direct Mode: 28 passed
+- Browser: 9 passed
+- Contract lint and validation: passed
+- Typecheck: passed
+- Production build: passed
 
-## IMMUTABLE LIFECYCLE EVIDENCE
+Browser mocks are test-only and unavailable in production code paths; all
+`__EXIGENT_E2E_MOCK__` behavior is gated away from production.
 
-The fresh opt-in live authority fixture completed successfully against the new
-full-stack deployment. It created charter `CI-LIVE-1790777878`, incident
-`CI-INC-1790777878`, and capability `EXC-CI-INC-1790777878`; the finalized
-assessment was `TRIGGER_CONFIRMED`, execution dispatched once, the protected
-Vault child finalized, and reconciliation reached `APPLIED` with
-`consumed: true`. The fixture verified the resulting Vault pause and later
-health confirmed both pause windows had expired. This run generated fresh
-records on the current addresses above; the harness does not emit a durable
-transaction manifest for this lifecycle, so no unrecorded hash is presented.
+## Limitations
 
-The fixture uses commit-pinned evidence URLs at
-`84de2b15e428497bc6dec64aedf54d1ee1c06761`; both files returned HTTP 200 and
-were included in the finalized assessment commitments.
+- Live failed-payout recovery is not a feature because the target no longer
+  transfers or custodies GEN. Its safety property is enforced structurally by
+  removing the unsupported value-transfer surface.
+- Five moderate transitive npm advisories remain; no unsafe forced upgrade was
+  applied. The production dependency tree has no high or critical finding.
+- Some historical authority transaction hashes remain `NOT RECORDED`.
 
-A real live payout failure was not fabricated. This deployment pays the holder
-EOA directly, so a failed child cannot be induced safely from the UI;
-failure/recovery remains proven by the Direct Mode suite.
-
-## HISTORICAL EVIDENCE
-
-Earlier deployment and CI records remain in Git history and in the prior
-review evidence commits. They are not the current deployment.
+These limitations are explicit and do not represent a claim of live payout
+recovery.
