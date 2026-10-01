@@ -29,9 +29,11 @@ provenance binding; the Vercel CLI does not expose a stronger native mapping.
 | CapabilityGate | `0xe77fdD519d4Dba4851701B3f1D498619c5b94b01` |
 | ProtectedVault | `0xf7aB890a71D40d053453728bb2bA97e31207E3c8` |
 
-Network: Studionet 61999. The clean deployment and engine binding are recorded
-in `deployment-manifest.public.json`. `npm run source:verify` reports exact
-byte matches for all four contracts.
+Network: Studionet 61999. A fresh deployment writes
+`deployment-manifest.generated.json`; after finality, provenance, and source
+hash confirmation, the verified public record is committed separately as
+`deployment-manifest.public.json`. `npm run source:verify` reports exact byte
+matches for all four contracts.
 
 ## Protected target model
 

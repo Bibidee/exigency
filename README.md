@@ -71,7 +71,8 @@ Validators independently:
 3. return one bounded outcome;
 4. compare per-source semantic state;
 5. perform a second substantive equivalence check over trigger clauses and material findings;
-6. commit the final assessment to the actual fetched HTTP status and SHA-256 content digest for every frozen source.
+6. commit the final assessment to the fetched HTTP status and a validator-local
+   content digest of the normalized fetched content for every frozen source.
 
 Outcomes:
 
@@ -223,7 +224,10 @@ npm run deploy
 It writes:
 
 - `.env.generated`
-- `deployment-manifest.public.json` (committed public contract source of truth)
+- `deployment-manifest.generated.json` (fresh deployment output)
+
+After finality and source verification, copy the verified public deployment
+record into the committed `deployment-manifest.public.json`.
 
 Then:
 

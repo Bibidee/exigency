@@ -57,7 +57,11 @@ Deployment order is deliberate:
 4. bind gate -> engine
 5. ProtectedVault(gate)
 
-The deployment script writes local `.env.generated` and `deployment-manifest.generated.json`; copy verified public values into the committed `deployment-manifest.public.json` only after finality and source verification.
+`deploy/deployScript.ts` produces local `.env.generated` and
+`deployment-manifest.generated.json` for a fresh deployment. The verified
+public deployment record used for review is committed separately as
+`deployment-manifest.public.json` after deployment finality, provenance, and
+source hashes are confirmed.
 
 ## 5. Frontend
 

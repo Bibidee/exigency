@@ -27,8 +27,10 @@ SHA. Vercel CLI output did not provide an additional native Git binding.
 | CapabilityGate | `0xe77fdD519d4Dba4851701B3f1D498619c5b94b01` | `f6bf0d15da516d77a24fa8dd6cb22ddab6196dc162e2c4f81ead315a5c872db7` |
 | ProtectedVault | `0xf7aB890a71D40d053453728bb2bA97e31207E3c8` | `bbc88fa83c776e2d0dfbaa6cdf9328337573db71db2fbd0c12c5cd3a0f155929` |
 
-The clean deployment transactions, binding transaction, source commit, and
-these hashes are recorded in `deployment-manifest.public.json`.
+The deployment script first produces `deployment-manifest.generated.json`.
+After finality, provenance, and source-hash confirmation, the clean deployment
+transactions, binding transaction, source commit, and these hashes are copied
+into the committed public record `deployment-manifest.public.json`.
 
 ## Current security boundary
 

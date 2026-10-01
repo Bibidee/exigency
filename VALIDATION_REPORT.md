@@ -19,7 +19,10 @@ transfer recovery.
   `5e5ddd484087272560c977570e7bf58ad812262f`
 - Source verification: 4/4 exact byte matches
 
-See `deployment-manifest.public.json` for deployment and binding transactions.
+`deploy/deployScript.ts` produces `deployment-manifest.generated.json` for a
+fresh deployment. The committed `deployment-manifest.public.json` is the
+verified public deployment record copied in after finality, provenance, and
+source-hash confirmation. It contains the deployment and binding transactions.
 
 ## Current target checks
 
@@ -77,9 +80,7 @@ Recorded current local results:
 - Typecheck: passed
 - Build: passed
 
-The final exact-head CI and deployment-health run must be recorded after the
-last documentation commit. Browser mocks remain development/test-only and are
-not available in production.
+Browser mocks remain development/test-only and are not available in production.
 
 ## Limitations
 
