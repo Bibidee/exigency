@@ -79,7 +79,7 @@ Recommended demo charter:
 
 ```text
 Protocol key: EXIGENT-DEMO
-Allowed actions: PAUSE_WITHDRAWALS, PAUSE_DEPOSITS, PAUSE_ALL
+Allowed actions: PAUSE_PROTECTED_ACTION
 Max pause: 90 minutes
 Capability TTL: 30 minutes
 Activation delay: 1 minute

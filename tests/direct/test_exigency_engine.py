@@ -10,7 +10,7 @@ def _install_registry_hook(direct_vm, owner, *, scopes=None):
         "owner": to_hex(owner),
         "protected_target": to_hex(owner),
         "charter_digest": "a" * 64,
-        "allowed_actions": ["PAUSE_WITHDRAWALS"],
+        "allowed_actions": ["PAUSE_PROTECTED_ACTION"],
         "max_pause_minutes": 30,
         "evidence_hosts": ["example.com"],
     }
@@ -42,7 +42,7 @@ def _open(engine, key, evidence):
     return engine.open_incident(
         key,
         "CHARTER-ENGINE-DIRECT",
-        "PAUSE_WITHDRAWALS",
+        "PAUSE_PROTECTED_ACTION",
         5,
         "This incident reason is long enough to exercise the direct engine behavior.",
         json.dumps(evidence),

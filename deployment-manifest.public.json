@@ -5,32 +5,32 @@
   "rpc": "https://studio.genlayer.com/api",
   "explorer": "https://explorer-studio.genlayer.com",
   "contracts": {
-    "charterRegistry": "0xa034003895e4b3506a5aE1d5dD02492603fF1B6a",
-    "exigencyEngine": "0x2ff218faad3A858A2e8F5ce89558f7E2E7f72815",
-    "capabilityGate": "0x507eBD4fD0432cB266D7dfCC42c02ffB76667F0A",
-    "protectedVault": "0x6821fa5fF7a67856BB340ae64a83AFCE5dF299ce"
+    "charterRegistry": "0x2ecf811BbFB57cf34Fd55395A5793393Ae431441",
+    "exigencyEngine": "0x911Bef23368d88e994301BeA1988e753aB2fC2BA",
+    "capabilityGate": "0xe77fdD519d4Dba4851701B3f1D498619c5b94b01",
+    "protectedVault": "0xf7aB890a71D40d053453728bb2bA97e31207E3c8"
   },
-  "bindEngineTransaction": "0xf0c154b7ef55f1a4664e730077e44c434240e7ae40c4887a4297f547fbb4067a",
+  "bindEngineTransaction": "0x3f260ebd652e5ba01fc265de237557ae151cd1c3659773d451154c67af9e0ab8",
   "deploymentTransactions": {
-    "charterRegistry": "0x70c042ea2d427bcd095002552154ce022a47348d992d0aaa81bf280932d31cec",
-    "capabilityGate": "0xd0524735297a0fb34bae75a9c076d94c7a13e3872fcd05f0e7addca5c0a19f56",
-    "exigencyEngine": "0xa0b9e378cc7f233b3a6341da44624ec1a8be66430715dbd6be4a0702ca467ba2",
-    "protectedVault": "0xd6962fc9a164d3994eba18f4ec4da0dee09a864809179b150a32f05d7a2c7041"
+    "charterRegistry": "0xdf6772331faade207a8b0d8458282426ca0b727ffee82804e585c51aaa073fdf",
+    "capabilityGate": "0x7f13fdafa4117004405cffc29b5225bfbbc4bc93d02545c066ef8c1c6d1b2309",
+    "exigencyEngine": "0x5a163aec6e012329967facd06cc6e50bd8524a8f0e8bac05b892c07667306880",
+    "protectedVault": "0xbc0fd5d1fc8eaf86543ac160c739c2abfb8bb3dd50a500b7b6eb20cc8f13c4bc"
   },
   "deployedSourceSha256": {
-    "charterRegistry": "ea59f36b845897a247063e6664e6e5164af6ec53dbf4e7d85c489e2bebc99218",
+    "charterRegistry": "f2dd93241b0c8b3b7ef27abb1bb38e8aab3ee64dc113f804a97f2f40ac9b9bb0",
     "exigencyEngine": "0ad4fb5fdae59962d69c76eec9befc11b508ac43185ca69c0e0127514f885244",
-    "capabilityGate": "0480c0a730a111ee9a2e7542a92668a5976ee0ce57086a562b15e9a43ba2fdfe",
-    "protectedVault": "83d25a3f8303ff99213b9b23f40480c969c71ab2076b81b9b1d6e17ffcb8c940"
+    "capabilityGate": "f6bf0d15da516d77a24fa8dd6cb22ddab6196dc162e2c4f81ead315a5c872db7",
+    "protectedVault": "bbc88fa83c776e2d0dfbaa6cdf9328337573db71db2fbd0c12c5cd3a0f155929"
   },
   "sourceVerification": "verified-exact-byte-match",
-  "sourceCommit": "2d69aa122adbb122759db43527266f4fcc5427da",
+  "sourceCommit": "pending-final-contract-source-commit",
   "frontend": {
     "productionUrl": "https://exigency.vercel.app/",
     "vercelDeploymentId": "dpl_7TPrqNhQqmZcVeGcVioHn9posYuQ",
     "deploymentUrl": "https://exigency-2ofdequqm-bibidees-projects.vercel.app",
     "readyState": "READY",
-    "sourceCommit": "360b3e6a21565cea14dbc02c8153b9b50fabb799",
+    "sourceCommit": "pending-frontend-deployment",
     "provenancePath": "/api/build-info"
   }
 }

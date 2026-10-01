@@ -61,19 +61,6 @@ export type CapabilityRecord = {
   dispatched_at?: number;
 };
 
-export type WithdrawalRecord = {
-  withdrawal_id: string;
-  holder: string;
-  destination: string;
-  amount: string;
-  status: "DISPATCHED" | "ACKNOWLEDGED" | "SUCCESS_CLOSED" | "FAILED_RECOVERABLE" | string;
-  requested_at: number;
-  acknowledged_at?: number;
-  recovery_pending?: boolean;
-  failed_at?: number;
-  retry_count: number;
-};
-
 export async function getCharter(key: string): Promise<CharterRecord | null> {
   const raw = await readContract<string>(ADDRESSES.charterRegistry, "get_charter_json", [key]);
   return raw ? (JSON.parse(raw) as CharterRecord) : null;
@@ -135,45 +122,6 @@ export async function reconcileCapability(account: `0x${string}`, capabilityKey:
   return submitWrite(account, ADDRESSES.capabilityGate, "reconcile_capability", [capabilityKey]);
 }
 
-export async function depositToVault(account: `0x${string}`, value: bigint) {
-  return submitWrite(account, ADDRESSES.protectedVault, "deposit", [], value);
-}
-
-export async function withdrawFromVault(account: `0x${string}`, value: bigint) {
-  return submitWrite(account, ADDRESSES.protectedVault, "withdraw", [value]);
-}
-
-export async function getWithdrawal(withdrawalKey: string): Promise<WithdrawalRecord | null> {
-  if (!withdrawalKey) return null;
-  const raw = await readContract<string>(ADDRESSES.protectedVault, "get_withdrawal_json", [withdrawalKey]);
-  return raw ? (JSON.parse(raw) as WithdrawalRecord) : null;
-}
-
-export async function listWithdrawalKeys() {
-  return readContract<string[]>(ADDRESSES.protectedVault, "list_withdrawal_keys", []);
-}
-
-export async function getActiveWithdrawalKey(account: string) {
-  return readContract<string>(ADDRESSES.protectedVault, "get_active_withdrawal_key", [account]);
-}
-
-export async function listHolderWithdrawalKeys(account: string) {
-  return readContract<string[]>(ADDRESSES.protectedVault, "get_holder_withdrawal_keys", [account]);
-}
-
-export async function settleWithdrawal(account: `0x${string}`, withdrawalKey: string) {
-  return submitWrite(account, ADDRESSES.protectedVault, "settle_withdrawal", [withdrawalKey]);
-}
-
-export async function closeSuccessfulWithdrawal(account: `0x${string}`, withdrawalKey: string) {
-  return submitWrite(account, ADDRESSES.protectedVault, "close_successful_withdrawal", [withdrawalKey]);
-}
-
-export async function retryWithdrawal(account: `0x${string}`, withdrawalKey: string) {
-  return submitWrite(account, ADDRESSES.protectedVault, "retry_withdrawal", [withdrawalKey]);
-}
-
-export async function getVaultCredit(account: string) {
-  const raw = await readContract<bigint | string | number>(ADDRESSES.protectedVault, "get_credit", [account]);
-  return BigInt(raw as bigint | string | number);
+export async function executeProtectedAction(account: `0x${string}`, actionKey: string) {
+  return submitWrite(account, ADDRESSES.protectedVault, "execute_protected_action", [actionKey]);
 }

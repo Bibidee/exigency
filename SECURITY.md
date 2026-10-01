@@ -2,118 +2,66 @@
 
 ## Core invariants
 
-1. **No capability before finality.** A semantic assessment may store an accepted result, but authority issuance is an `on="finalized"` child message.
-2. **No direct emergency admin.** `ProtectedVault` emergency methods accept only `CapabilityGate`.
-3. **No arbitrary target.** The protected target comes from the active charter and is included in the action digest.
-4. **No arbitrary action.** Only three explicit action classes exist in v1 and the charter narrows that set further.
-5. **No duration expansion.** Incident creation enforces the charter maximum; execution must exactly match the issued capability.
-6. **No replay.** Capability remains `DISPATCHED` until the protected child is reconciled as applied; exact retries cannot alter its authority envelope.
-7. **No issuer substitution.** `CapabilityGate` binds one engine exactly once.
-8. **No source-host substitution.** Incident URLs outside the charter allow-list are rejected before web access.
-9. **No operator claim as evidence.** Prompt language marks the reason and fetched content as data and explicitly disallows self-attestation.
-10. **No silent uncertainty.** Weak, unavailable or conflicting evidence has explicit no-authority outcomes.
-11. **No protocol-key takeover after claim.** Once a protocol key is claimed, another wallet cannot publish a replacement charter under that identity.
-12. **No charter rollback.** A newly active charter cannot be replaced by an older published version.
-13. **No mutable-source hand-wave.** Final assessment records include code-derived HTTP status and SHA-256 content digests for every fetched source plus an aggregate evidence commitment.
-14. **No internal holder impersonation.** Vault credit flows require the immediate sender and original transaction origin to be the same EOA.
-15. **No stale holder lock.** A proven payout acknowledgement releases only that holder's lock. The application then calls the holder-only success-closure write, which retires the exact recovery candidate after the finalized child has been proven.
-16. **No false success closure.** `SUCCESS_CLOSED` is a holder-confirmed retirement of recovery metadata after the client proves the finalized payout child; the contract itself cannot inspect that child receipt. A browser interruption leaves the record `ACKNOWLEDGED`, and the frontend re-proves the stored parent/child relationship before enabling closure.
+1. **No capability before finality.** Issuance and protected-target execution
+   are `on="finalized"` child messages.
+2. **No direct emergency admin.** The protected target accepts pause calls only
+   from `CapabilityGate`.
+3. **No arbitrary target or action.** The charter freezes the target and the
+   action digest binds the exact execution envelope.
+4. **No duration expansion.** The incident and capability enforce the charter
+   maximum and exact duration.
+5. **No replay.** Applied capabilities and protected action keys cannot be
+   replayed successfully.
+6. **No issuer substitution.** The Gate binds one Engine exactly once.
+7. **No source-host substitution.** Incident URLs outside the charter scope
+   are rejected before web access.
+8. **No silent uncertainty.** Weak, unavailable or conflicting evidence fails
+   closed.
+9. **No protocol-key takeover or charter rollback.** Protocol ownership and
+   monotonic activation are enforced on-chain.
+10. **No internal user impersonation.** Protected actions require
+    `sender_address == origin_address`.
+11. **No stranded user value.** The final target is non-custodial: it accepts
+    no GEN and emits no external payout, so no failed child can permanently
+    debit user entitlement.
+12. **No fake receipt trust.** The protected consequence is its own finalized
+    contract state transition; it does not claim to verify an external payout.
 
-## Prompt injection
+## Protected consequence boundary
 
-Charter, incident and web contents are untrusted data. The assessment prompt explicitly instructs validators not to obey commands inside those blocks. This does not make prompt injection impossible; it reduces the attack surface and must be combined with independent validator reconstruction and bounded outputs.
+The previous payout design depended on `__on_errored_message__`, which the
+current GenVM runtime removed. Failed child value is not automatically returned
+and the contract has no supported EOA-payout receipt callback. That design is
+not shipped.
 
-## Source risks
-
-A charter owner controls which evidence hosts are approved before an incident. This is intentional governance input, not a truth oracle. A bad charter can still choose bad sources. Review should therefore inspect the charter itself and demonstrate cases with conflicting/unavailable evidence. The source commitment proves what bytes the leader actually evaluated; it does not prove that those bytes were objectively true.
+The current `ProtectedVault` instead records a unique direct-EOA protected
+action. The action succeeds while open, rejects while a finalized
+`PAUSE_PROTECTED_ACTION` capability is active, and succeeds again after expiry.
+The contract stores no user funds and has no deposit, withdrawal, refund,
+acknowledgement, retry or administrator restoration method.
 
 ## Capability risks
 
-The v1 capability gate routes only the three supported pause actions. It does not implement generic method selectors, arbitrary calldata or value transfer. That narrowness is intentional: a generic executor would dramatically increase privilege and review complexity.
+The Gate exposes only `PAUSE_PROTECTED_ACTION`. It does not implement generic
+method selectors, arbitrary calldata, value transfer, or an admin bypass. The
+protected target verifies the Gate address and rejects conflicting duplicate
+capability delivery.
 
-## GEN transfer note
+## Prompt injection and source risks
 
-`ProtectedVault.withdraw` uses the current GenLayer external-message value-transfer pattern. Accounting is debited at dispatch, and GenLayer's errored-message refund handler restores the exact amount when the payout child fails. Studio simulates balances; live proof must still verify the recipient wallet balance before and after the finalized payout.
+Charter, incident and web contents are untrusted data. Validators are instructed
+not to follow commands inside those blocks. The evidence commitment proves what
+bytes were fetched by a validator; it does not prove that those bytes are
+objectively true.
 
-## Success-close trust boundary
+## Wallet roles
 
-The contract proves the holder, withdrawal id, state transition and recovery-metadata retirement. It does not prove a child receipt because no contract-side successful-child callback or receipt introspection is available for an external EOA payout. The application proves parent finality, child linkage, recipient, amount and `value_credited`; the holder then authorizes `close_successful_withdrawal`. Closing prematurely is irreversible for that record: a later error callback cannot restore a `SUCCESS_CLOSED` withdrawal. The direct-mode regression `test_holder_success_close_irreversibly_retires_failure_recovery` preserves this intentional limitation.
+The successful authority lifecycle uses the charter-owner wallet. A second
+wallet is used only to verify that unauthorized incident creation is rejected.
+This is not a two-wallet successful separation-of-duties lifecycle.
 
-For incident assessments, consensus binds the bounded decision, source states
-and material findings. Per-validator `http_status` and `content_digest` values
-remain fetch provenance and are not treated as a byte-for-byte equality proof
-across all validators.
+## References
 
-The browser persists only the public withdrawal id, parent hash and proven child hash in session storage. After reload it validates the id against the current holder record, re-proves the child, and keeps the close action disabled until proof succeeds. If the parent hash is unavailable, the UI shows an explicit recoverability warning rather than presenting the record as complete.
-# Evidence transport and payout settlement boundaries
-
-Evidence URL paths are canonicalized before they are frozen in an incident. Dot
-segments, percent-encoding, backslashes, queries, fragments and control
-characters are rejected so validators cannot disagree about the effective path
-or scope boundary. Repeated slashes are collapsed.
-
-The GenLayer web API used by this project exposes a complete response body, not
-a streaming byte-limited reader. `ExigencyEngine` therefore applies strict
-post-fetch per-source and aggregate byte limits before content enters the
-assessment prompt, bounds excerpts and error text, and fails closed when a
-response is too large. These are processing limits, not a claim that the
-upstream network transfer was interrupted early.
-
-Vault withdrawals debit accounting at dispatch and create a unique withdrawal
-record. In-flight correlation is stored per holder, not in one global lock, so
-one unresolved payout cannot freeze unrelated users. A holder can perform
-another withdrawal after an `ACKNOWLEDGED` payout; each record remains distinct.
-
-Deposit, withdrawal, acknowledgement and retry require a direct EOA call
-(`sender_address == origin_address`). This prevents an internal contract call
-from writing credit under the original transaction origin's identity.
-
-GenLayer preserves `origin_address` through child message chains, and
-`gl.message.value` is available to payable methods. However, the current
-official GenVM v0.3 SDK removed `__on_errored_message__`; the current runtime
-does not dispatch the handler, and failed value is not automatically returned.
-The vault's callback recovery behavior is therefore proven only in Direct Mode
-and is not a live Studionet guarantee. A real failed external payout can remain
-`DISPATCHED` and debited until a protocol-supported failure mechanism exists.
-No live failure was fabricated during this audit.
-
-GenLayer currently exposes no contract-side successful-child callback or child
-identifier in the errored-message context for an external EOA value transfer.
-The frontend therefore proves the finalized child, parent, recipient, amount
-and `value_credited` before submitting the holder acknowledgement. The
-acknowledgement marks the record `ACKNOWLEDGED`, releases the holder lock and
-retains a holder recovery candidate. In the Direct Mode model, a late failure
-callback can still move that exact record to `FAILED_RECOVERABLE` and restore
-the amount; current Studionet has no supported callback to do so. Once that
-proof is complete, the same holder submits `close_successful_withdrawal`,
-which changes the record to `SUCCESS_CLOSED` and removes its recovery
-candidate without changing credit. A closed record cannot be retried or
-recovered.
-
-Recovery matching is deterministic in the Direct Mode callback model without
-pretending that an amount is a child identifier: the callback first requires the current holder-scoped
-`DISPATCHED` record and exact value, then considers holder-scoped
-`ACKNOWLEDGED` candidates only when there is no active dispatch. Multiple
-acknowledged candidates with the same amount fail closed as ambiguous rather
-than selecting an older or newer record. Acknowledged recovery candidates are
-capped at 32 per holder; the frontend's success-closure step removes proven
-successful candidates so normal successful withdrawals do not accumulate
-forever. An acknowledgement that is not closed remains intentionally bounded
-and recoverable in Direct Mode; on current Studionet it has no live failure
-callback path.
-
-Accounting states:
-
-| State | Holder credit | Total credit | Retry | Restore |
-| --- | --- | --- | --- | --- |
-| `DISPATCHED` | debited | debited | no | Direct Mode callback only |
-| `ACKNOWLEDGED` | debited | debited | no | Direct Mode callback only |
-| `SUCCESS_CLOSED` | debited | debited | no | no; recovery metadata retired |
-| `FAILED_RECOVERABLE` | restored | restored | exact record only | no second restore |
-
-Studio simulates balances; live success proof must still verify the recipient
-wallet balance before and after the finalized payout. Live failed-payout
-recovery is currently **NOT READY** because the runtime hook required by the
-contract is removed. The platform boundary and message-context assumptions
-are recorded in
-`docs/GENLAYER_VALUE_TRANSFER_SEMANTICS.md`.
+- [GenLayer Messages](https://docs.genlayer.com/developers/intelligent-contracts/features/messages)
+- [GenLayer Value Transfers](https://docs.genlayer.com/developers/intelligent-contracts/features/value-transfers)
+- [GenVM v0.3 changelog](https://github.com/genlayerlabs/genvm/blob/main/doc/website/src/python-sdk/changelog-notes/v0.3.rst)

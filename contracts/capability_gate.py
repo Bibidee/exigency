@@ -7,9 +7,7 @@ from genlayer import *
 
 
 ALLOWED_ACTIONS = (
-    "PAUSE_WITHDRAWALS",
-    "PAUSE_DEPOSITS",
-    "PAUSE_ALL",
+    "PAUSE_PROTECTED_ACTION",
 )
 
 
@@ -154,22 +152,8 @@ class CapabilityGate(gl.Contract):
         self.capabilities[capability_key] = json.dumps(record, sort_keys=True)
 
         protected = gl.get_contract_at(Address(target_hex))
-        if action_class == "PAUSE_WITHDRAWALS":
-            protected.emit(on="finalized").emergency_pause_withdrawals(
-                int(duration_minutes),
-                str(record["incident_key"]),
-                capability_key,
-                str(record["action_digest"]),
-            )
-        elif action_class == "PAUSE_DEPOSITS":
-            protected.emit(on="finalized").emergency_pause_deposits(
-                int(duration_minutes),
-                str(record["incident_key"]),
-                capability_key,
-                str(record["action_digest"]),
-            )
-        elif action_class == "PAUSE_ALL":
-            protected.emit(on="finalized").emergency_pause_all(
+        if action_class == "PAUSE_PROTECTED_ACTION":
+            protected.emit(on="finalized").emergency_pause_protected_action(
                 int(duration_minutes),
                 str(record["incident_key"]),
                 capability_key,

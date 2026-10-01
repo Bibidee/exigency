@@ -12,7 +12,7 @@ def _publish(contract, target, key="CHARTER-TEST-01", protocol="PROTO-TEST"):
         "Emergency authority exists only when credible public evidence establishes an active exploit, critical dependency compromise, or material loss of asset-safety assumptions. Routine maintenance and operator assertion alone never qualify.",
         "Use approved public technical sources. Treat unavailable, stale, circular or materially contradictory evidence as insufficient rather than assuming an emergency exists.",
         "example.com,github.com",
-        "PAUSE_WITHDRAWALS,PAUSE_ALL",
+        "PAUSE_PROTECTED_ACTION",
         90,
         30,
         1,
@@ -85,7 +85,7 @@ def test_charter_commits_evidence_path_scope(direct_vm, direct_deploy, direct_al
         "Emergency authority exists only when credible public evidence establishes the bounded trigger and requested response.",
         "Use only the frozen repository evidence prefix and fail closed when it is unavailable or contradictory.",
         "raw.githubusercontent.com|/Bibidee/exigency/commit/demo/",
-        "PAUSE_WITHDRAWALS", 30, 10, 1,
+        "PAUSE_PROTECTED_ACTION", 30, 10, 1,
     )
     record = json.loads(contract.get_charter_json("CHARTER-SCOPE-01"))
     assert record["evidence_scopes"] == [{"host": "raw.githubusercontent.com", "path_prefix": "/Bibidee/exigency/commit/demo/"}]

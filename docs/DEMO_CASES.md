@@ -5,9 +5,9 @@ Use evidence URLs from hosts actually frozen in the active demo charter.
 ## Case A: trigger confirmed
 
 - Evidence shows an active exploit or critical dependency compromise.
-- Requested action: `PAUSE_WITHDRAWALS`.
+- Requested action: `PAUSE_PROTECTED_ACTION`.
 - Duration: inside the hard maximum.
-- Expected: `TRIGGER_CONFIRMED` -> parent finalizes -> capability child appears -> exact execution -> gate finalizes -> vault pause child executes.
+- Expected: `TRIGGER_CONFIRMED` -> parent finalizes -> capability child appears -> exact execution -> gate finalizes -> protected-action pause child executes.
 
 ## Case B: weak evidence
 
@@ -41,7 +41,7 @@ Use evidence URLs from hosts actually frozen in the active demo charter.
 
 ## Case H: bypass attempt
 
-- Call `ProtectedVault.emergency_pause_withdrawals` directly from an EOA.
+- Call `ProtectedVault.emergency_pause_protected_action` directly from an EOA.
 - Expected: `emergency authority requires CapabilityGate`.
 
 

@@ -20,7 +20,7 @@ export default function NewCharterPage() {
   const [form, setForm] = useState({
     charterKey: `CHARTER-${new Date().getUTCFullYear()}-01`, protocolKey: "EXIGENT-DEMO", protocolName: "EXIGENT Protected Vault",
     target: ADDRESSES.protectedVault, trigger: defaultTrigger, evidence: defaultEvidence,
-    hosts: "raw.githubusercontent.com,github.com", actions: "PAUSE_WITHDRAWALS,PAUSE_DEPOSITS,PAUSE_ALL",
+    hosts: "raw.githubusercontent.com,github.com", actions: "PAUSE_PROTECTED_ACTION",
     maxPause: "90", ttl: "30", delay: "1"
   });
   const set = (k:string,v:string) => setForm((f)=>({...f,[k]:v}));

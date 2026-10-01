@@ -99,16 +99,16 @@ Execution recomputes the action digest before consuming the capability. The prot
 
 ### `ProtectedVault`
 
-A real test-GEN consequence surface:
+A non-custodial protected consequence surface:
 
-- payable deposits;
-- credited balances;
-- withdrawals;
-- deposit pause;
-- withdrawal pause;
-- full pause.
+- direct-EOA protected actions;
+- unique action replay protection;
+- finalized `PAUSE_PROTECTED_ACTION` capability;
+- transaction-time pause expiry;
+- no payable deposits, external payouts or user-value custody.
 
-There is deliberately no owner/admin pause function. Emergency methods only accept the configured `CapabilityGate` as caller.
+There is deliberately no owner/admin pause function. The emergency method only
+accepts the configured `CapabilityGate` as caller.
 
 ## Authority lifecycle
 
@@ -158,20 +158,19 @@ Routes are product-specific to EXIGENT:
 /incident/new             freeze an emergency request
 /incident/[incidentKey]   inspect / assess an incident
 /capability/[key]         inspect / execute a finalized capability
-/vault                    deposit, withdraw and observe the protected target
+/vault                    execute and observe the protected action target
 ```
 
 The frontend uses an injected EIP-1193 wallet only. It does not use Privy, WalletConnect, a centralized decision backend, Firebase, Supabase or mock contract results.
 
-### Vault payout recovery boundary
+### Protected-target safety boundary
 
-The browser stores only public withdrawal reconciliation metadata: the
-withdrawal id, parent transaction hash and proven payout-child hash. If a
-browser reload occurs after acknowledgement, the record remains visibly
-`ACKNOWLEDGED`; the user must re-prove the finalized child before the
-`SUCCESS_CLOSED` action becomes available. A rejected close can be retried.
-`SUCCESS_CLOSED` is holder-confirmed recovery-metadata retirement after
-client-side proof, not a receipt proof performed by the contract itself.
+The current runtime does not provide a supported errored-message callback for
+failed external value transfers, and failed child value is not automatically
+returned. The final target therefore accepts no user GEN and emits no external
+payout. A direct user action changes authoritative contract state while open,
+the finalized `PAUSE_PROTECTED_ACTION` capability pauses that action, and it
+works again after expiry. No browser state is treated as authority.
 
 ## Local setup
 
@@ -240,13 +239,13 @@ The intended review flow is adversarial, not a happy-path-only demo:
 1. Publish a charter with a short **demo** activation delay.
 2. Prove activation fails before the delay.
 3. Activate it after the delay.
-4. Deposit test GEN into `ProtectedVault`.
+4. Execute the protected action before any emergency capability.
 5. Open an incident using only approved evidence hosts.
 6. Prove a disallowed host is rejected before consensus.
 7. Assess a genuine evidence set.
 8. Show `ACCEPTED` is not enough: capability is absent until the parent is `FINALIZED` and its child issuance executes.
 9. Execute the exact capability.
-10. Show the vault pause takes effect only after the gate execution finalizes and its child runs.
+10. Show the protected action pause takes effect only after the gate execution finalizes and its child runs.
 11. Replay the capability and show rejection.
 12. Change target/action/duration and show digest or envelope rejection.
 13. Attempt to call the vault emergency method directly and show the caller is rejected.

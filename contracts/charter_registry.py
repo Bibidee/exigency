@@ -8,9 +8,7 @@ from genlayer import *
 
 
 ALLOWED_ACTIONS = (
-    "PAUSE_WITHDRAWALS",
-    "PAUSE_DEPOSITS",
-    "PAUSE_ALL",
+    "PAUSE_PROTECTED_ACTION",
 )
 
 

@@ -134,34 +134,22 @@ def test_live_studionet_manifest_and_contract_reads():
     assert _cli_call(contracts["charterRegistry"], "list_charter_keys")
     status = json.loads(_cli_call(contracts["protectedVault"], "get_status_json"))
     assert status["gate_address"].lower() == contracts["capabilityGate"].lower()
-    assert isinstance(status["withdrawals_paused"], bool)
-    assert isinstance(status["deposits_paused"], bool)
+    assert isinstance(status["protected_action_paused"], bool)
+    assert isinstance(status["protected_action_count"], str)
 
 
 @pytest.mark.skipif(
-    os.environ.get("EXIGENT_RUN_LIVE_ACCOUNTING") != "1",
-    reason="set EXIGENT_RUN_LIVE_ACCOUNTING=1 with EXIGENT_LIVE_PRIVATE_KEY for payable coverage",
+    os.environ.get("EXIGENT_RUN_LIVE_PROTECTED_ACTION") != "1",
+    reason="set EXIGENT_RUN_LIVE_PROTECTED_ACTION=1 with EXIGENT_LIVE_PRIVATE_KEY for protected-target coverage",
 )
-def test_live_studionet_vault_deposit_withdraw_accounting():
-    """Exercise real payable value and repeated same-holder accounting with a funded test key."""
+def test_live_studionet_protected_action():
+    """Exercise the real non-custodial protected target with an unlocked key."""
     command = ["node", str(ROOT / "scripts" / "live-vault-accounting.mjs")]
     result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=True)
     payload = json.loads(result.stdout.strip().splitlines()[-1])
-    assert payload["depositHash"].startswith("0x")
-    assert payload["firstWithdrawal"]["parentHash"].startswith("0x")
-    assert payload["firstWithdrawal"]["payoutChildren"]
-    assert payload["firstWithdrawal"]["acknowledgeHash"].startswith("0x")
-    assert payload["firstWithdrawal"]["status"] == "SUCCESS_CLOSED"
-    assert payload["secondWithdrawal"]["parentHash"].startswith("0x")
-    assert payload["secondWithdrawal"]["payoutChildren"]
-    assert payload["secondWithdrawal"]["acknowledgeHash"].startswith("0x")
-    assert payload["secondWithdrawal"]["status"] == "SUCCESS_CLOSED"
-    assert payload["firstWithdrawal"]["withdrawalId"] != payload["secondWithdrawal"]["withdrawalId"]
-    assert int(payload["depositedCredit"]) == int(payload["beforeCredit"]) + int(payload["depositAmount"])
-    assert int(payload["finalCredit"]) == int(payload["beforeCredit"]) + int(payload["depositAmount"]) - 2 * int(payload["withdrawalAmount"])
-    assert int(payload["finalTotal"]) == int(payload["beforeTotal"]) + int(payload["depositAmount"]) - 2 * int(payload["withdrawalAmount"])
-    assert payload["firstWithdrawal"]["withdrawalId"] not in payload["recoveryIds"]
-    assert payload["secondWithdrawal"]["withdrawalId"] not in payload["recoveryIds"]
+    assert payload["parentHash"].startswith("0x")
+    assert int(payload["afterCount"]) == int(payload["beforeCount"]) + 1
+    assert payload["valueCustody"] == "NONE"
 
 
 @pytest.mark.skipif(
@@ -193,14 +181,14 @@ def test_live_studionet_lifecycle_writes():
         charter, protocol, "EXIGENT CI", target,
             "SYNTHETIC TEST ONLY: trigger when approved public synthetic evidence confirms an active fictional security incident affecting withdrawal-safety assumptions and supports a proportionate temporary withdrawal pause. Never treat this fixture as a real incident.",
             "Approved public synthetic test fixtures are acceptable only when retrievable, corroborated, current, and explicitly describe the fictional active incident and affected withdrawal-safety path.",
-        "raw.githubusercontent.com", "PAUSE_WITHDRAWALS", "30", "30", "1",
+        "raw.githubusercontent.com", "PAUSE_PROTECTED_ACTION", "30", "30", "1",
     ))
     import time
     time.sleep(70)
     _finalize(_cli_write(contracts["charterRegistry"], "activate_charter", charter))
     _finalize(_cli_write(
         contracts["exigencyEngine"], "open_incident", incident, charter,
-        "PAUSE_WITHDRAWALS", "10",
+        "PAUSE_PROTECTED_ACTION", "10",
         "Automated live integration incident verifying source-grounded emergency authority and exact capability execution.",
         json.dumps(sources),
     ))
@@ -250,4 +238,4 @@ def test_live_studionet_lifecycle_writes():
     assert int(applied["dispatch_count"]) == 1
     assert applied["action_digest"]
     status = json.loads(_cli_call(contracts["protectedVault"], "get_status_json"))
-    assert status["withdrawals_paused"] is True
+    assert status["protected_action_paused"] is True

@@ -62,9 +62,9 @@ export default function CommandPage() {
             {capabilities.length ? capabilities.slice().reverse().slice(0,6).map((key) => <Link className="data-card" href={`/capability/${encodeURIComponent(key)}`} key={key}><div><strong>{key}</strong><small>Finality-issued execution authority</small></div><KeyRound size={16}/></Link>) : <div className="empty"><KeyRound size={22} style={{marginBottom:8}}/><br/>No capabilities loaded.</div>}
           </div>
         </Panel>
-        <Panel eyebrow="Protected target" title="Vault state">
+        <Panel eyebrow="Protected target" title="Protected action state">
           <div className="panel-body">
-            {vault ? <dl className="keyvals"><div className="keyval"><dt>Withdrawals paused</dt><dd>{String(vault.withdrawals_paused)}</dd></div><div className="keyval"><dt>Deposits paused</dt><dd>{String(vault.deposits_paused)}</dd></div><div className="keyval"><dt>Total credits</dt><dd className="mono">{String(vault.total_credits)}</dd></div></dl> : <div className="empty"><Vault size={22} style={{marginBottom:8}}/><br/>{isConfigured ? "Vault state could not be read from Studionet." : "Vault state unavailable until deployment."}</div>}
+            {vault ? <dl className="keyvals"><div className="keyval"><dt>Action paused</dt><dd>{String(vault.protected_action_paused)}</dd></div><div className="keyval"><dt>Executed operations</dt><dd className="mono">{String(vault.protected_action_count)}</dd></div><div className="keyval"><dt>Value custody</dt><dd>NONE</dd></div></dl> : <div className="empty"><Vault size={22} style={{marginBottom:8}}/><br/>{isConfigured ? "Protected target state could not be read from Studionet." : "Protected target unavailable until deployment."}</div>}
           </div>
         </Panel>
       </div>
