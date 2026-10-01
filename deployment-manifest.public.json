@@ -24,7 +24,7 @@
     "protectedVault": "bbc88fa83c776e2d0dfbaa6cdf9328337573db71db2fbd0c12c5cd3a0f155929"
   },
   "sourceVerification": "verified-exact-byte-match",
-  "sourceCommit": "pending-final-contract-source-commit",
+  "sourceCommit": "5e5ddd484087272560c977570e7bf58ad812262f",
   "frontend": {
     "productionUrl": "https://exigency.vercel.app/",
     "vercelDeploymentId": "dpl_7TPrqNhQqmZcVeGcVioHn9posYuQ",
