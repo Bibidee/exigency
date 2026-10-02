@@ -158,6 +158,7 @@ class CapabilityGate(gl.Contract):
                 str(record["incident_key"]),
                 capability_key,
                 str(record["action_digest"]),
+                str(record["holder"]),
             )
         else:
             raise gl.vm.UserError("unsupported action class")

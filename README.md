@@ -107,6 +107,7 @@ A non-custodial protected consequence surface:
 - unique action replay protection;
 - finalized `PAUSE_PROTECTED_ACTION` capability;
 - transaction-time pause expiry;
+- target-governance authorization before capability issuance and application;
 - no payable deposits, external payouts or user-value custody.
 
 There is deliberately no owner/admin pause function. The emergency method only

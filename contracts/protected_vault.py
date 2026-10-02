@@ -27,6 +27,7 @@ class ProtectedVault(gl.Contract):
     """
 
     gate_address: str
+    governance_address: str
     protected_action_paused_until: u256
     protected_action_count: u256
     last_protected_action_json: str
@@ -39,6 +40,10 @@ class ProtectedVault(gl.Contract):
 
     def __init__(self, gate_address: str):
         self.gate_address = _address_hex(gate_address)
+        # The deployment account is the target's governance authority. A
+        # charter owner must match this address before the Gate can issue or
+        # apply a capability for this target.
+        self.governance_address = _address_hex(gl.message.sender_address)
         self.protected_action_paused_until = u256(0)
         self.protected_action_count = u256(0)
         self.last_protected_action_json = ""
@@ -47,6 +52,10 @@ class ProtectedVault(gl.Contract):
     def _require_gate(self) -> None:
         if _address_hex(gl.message.sender_address) != self.gate_address:
             raise gl.vm.UserError("emergency authority requires CapabilityGate")
+
+    def _require_governance_holder(self, holder: str) -> None:
+        if _address_hex(holder) != self.governance_address:
+            raise gl.vm.UserError("target governance rejected capability holder")
 
     def _require_direct_user(self) -> str:
         sender = _address_hex(gl.message.sender_address)
@@ -129,8 +138,10 @@ class ProtectedVault(gl.Contract):
         incident_key: str,
         capability_key: str,
         action_digest: str,
+        holder: str,
     ) -> int:
         self._require_gate()
+        self._require_governance_holder(holder)
         if duration_minutes < 1 or duration_minutes > 1440:
             raise gl.vm.UserError("invalid pause duration")
         if self._already_applied(capability_key, action_digest):
@@ -149,6 +160,7 @@ class ProtectedVault(gl.Contract):
         return json.dumps(
             {
                 "gate_address": self.gate_address,
+                "governance_address": self.governance_address,
                 "protected_action_count": str(self.protected_action_count),
                 "protected_action_paused": now < int(self.protected_action_paused_until),
                 "protected_action_paused_until": int(self.protected_action_paused_until),
@@ -174,6 +186,14 @@ class ProtectedVault(gl.Contract):
     @gl.public.view
     def get_applied_capability_digest(self, capability_key: str) -> str:
         return self.applied_capabilities.get(capability_key, "")
+
+    @gl.public.view
+    def get_governance_address(self) -> str:
+        return self.governance_address
+
+    @gl.public.view
+    def is_authorized_capability_holder(self, holder: str) -> bool:
+        return _address_hex(holder) == self.governance_address
 
     @gl.public.view
     def get_protected_action_count(self) -> u256:

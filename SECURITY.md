@@ -8,23 +8,26 @@
    from `CapabilityGate`.
 3. **No arbitrary target or action.** The charter freezes the target and the
    action digest binds the exact execution envelope.
-4. **No duration expansion.** The incident and capability enforce the charter
+4. **No unauthorized target governance.** The target's deployment wallet is
+   its governance address. The Engine rejects a charter owned by another
+   wallet, and the target repeats the holder check before applying the child.
+5. **No duration expansion.** The incident and capability enforce the charter
    maximum and exact duration.
-5. **No replay.** Applied capabilities and protected action keys cannot be
+6. **No replay.** Applied capabilities and protected action keys cannot be
    replayed successfully.
-6. **No issuer substitution.** The Gate binds one Engine exactly once.
-7. **No source-host substitution.** Incident URLs outside the charter scope
+7. **No issuer substitution.** The Gate binds one Engine exactly once.
+8. **No source-host substitution.** Incident URLs outside the charter scope
    are rejected before web access.
-8. **No silent uncertainty.** Weak, unavailable or conflicting evidence fails
+9. **No silent uncertainty.** Weak, unavailable or conflicting evidence fails
    closed.
-9. **No protocol-key takeover or charter rollback.** Protocol ownership and
+10. **No protocol-key takeover or charter rollback.** Protocol ownership and
    monotonic activation are enforced on-chain.
-10. **No internal user impersonation.** Protected actions require
+11. **No internal user impersonation.** Protected actions require
     `sender_address == origin_address`.
-11. **No stranded user value.** The final target is non-custodial: it accepts
+12. **No stranded user value.** The final target is non-custodial: it accepts
     no GEN and emits no external payout, so no failed child can permanently
     debit user entitlement.
-12. **No fake receipt trust.** The protected consequence is its own finalized
+13. **No fake receipt trust.** The protected consequence is its own finalized
     contract state transition; it does not claim to verify an external payout.
 
 ## Protected consequence boundary
@@ -44,8 +47,10 @@ acknowledgement, retry or administrator restoration method.
 
 The Gate exposes only `PAUSE_PROTECTED_ACTION`. It does not implement generic
 method selectors, arbitrary calldata, value transfer, or an admin bypass. The
-protected target verifies the Gate address and rejects conflicting duplicate
-capability delivery.
+protected target verifies the Gate address, binds governance to the deployment
+wallet, and rejects a capability whose holder is not that governance wallet.
+The Engine performs the same charter-owner/governance check before issuance,
+and the target repeats it at application time.
 
 ## Prompt injection and source risks
 

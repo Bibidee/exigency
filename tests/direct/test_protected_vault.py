@@ -5,19 +5,29 @@ import pytest
 from tests.direct.conftest import to_hex
 
 
-def deploy_target(direct_deploy, direct_alice):
+def deploy_target(direct_vm, direct_deploy, direct_alice):
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
     return direct_deploy("contracts/protected_vault.py", to_hex(direct_alice))
 
 
 def test_only_gate_can_pause_protected_action(direct_vm, direct_deploy, direct_alice, direct_bob):
-    target = deploy_target(direct_deploy, direct_alice)
+    target = deploy_target(direct_vm, direct_deploy, direct_alice)
     direct_vm.sender = direct_bob
     with direct_vm.expect_revert("emergency authority requires CapabilityGate"):
-        target.emergency_pause_protected_action(30, "INC-01", "EXC-01", "a" * 64)
+        target.emergency_pause_protected_action(30, "INC-01", "EXC-01", "a" * 64, to_hex(direct_alice))
+
+
+def test_unrelated_wallet_cannot_pause_target_through_configured_gate(direct_vm, direct_deploy, direct_alice, direct_bob):
+    target = deploy_target(direct_vm, direct_deploy, direct_alice)
+    direct_vm.sender = direct_alice
+    with direct_vm.expect_revert("target governance rejected capability holder"):
+        target.emergency_pause_protected_action(30, "INC-UNAUTHORIZED", "EXC-UNAUTHORIZED", "a" * 64, to_hex(direct_bob))
+    assert json.loads(target.get_status_json())["protected_action_paused"] is False
 
 
 def test_protected_action_executes_and_updates_authoritative_state(direct_vm, direct_deploy, direct_alice):
-    target = deploy_target(direct_deploy, direct_alice)
+    target = deploy_target(direct_vm, direct_deploy, direct_alice)
     direct_vm.sender = direct_alice
     direct_vm.origin = direct_alice
 
@@ -31,7 +41,7 @@ def test_protected_action_executes_and_updates_authoritative_state(direct_vm, di
 
 
 def test_replayed_protected_action_is_rejected(direct_vm, direct_deploy, direct_alice):
-    target = deploy_target(direct_deploy, direct_alice)
+    target = deploy_target(direct_vm, direct_deploy, direct_alice)
     direct_vm.sender = direct_alice
     direct_vm.origin = direct_alice
     target.execute_protected_action("ACTION-REPLAY")
@@ -41,7 +51,7 @@ def test_replayed_protected_action_is_rejected(direct_vm, direct_deploy, direct_
 
 
 def test_direct_eoa_enforcement_rejects_child_context(direct_vm, direct_deploy, direct_alice, direct_bob):
-    target = deploy_target(direct_deploy, direct_alice)
+    target = deploy_target(direct_vm, direct_deploy, direct_alice)
     direct_vm.sender = direct_bob
     direct_vm.origin = direct_alice
     with direct_vm.expect_revert("protected actions require a direct EOA caller"):
@@ -50,10 +60,10 @@ def test_direct_eoa_enforcement_rejects_child_context(direct_vm, direct_deploy, 
 
 def test_pause_blocks_action_and_expires_by_transaction_time(direct_vm, direct_deploy, direct_alice):
     direct_vm.warp("2026-09-27T20:00:00Z")
-    target = deploy_target(direct_deploy, direct_alice)
+    target = deploy_target(direct_vm, direct_deploy, direct_alice)
     direct_vm.sender = direct_alice
     direct_vm.origin = direct_alice
-    until = target.emergency_pause_protected_action(5, "INC-PAUSE", "EXC-PAUSE", "b" * 64)
+    until = target.emergency_pause_protected_action(5, "INC-PAUSE", "EXC-PAUSE", "b" * 64, to_hex(direct_alice))
     status = json.loads(target.get_status_json())
     assert status["protected_action_paused"] is True
     assert status["protected_action_paused_until"] == until
@@ -67,11 +77,11 @@ def test_pause_blocks_action_and_expires_by_transaction_time(direct_vm, direct_d
 
 def test_duplicate_capability_delivery_is_idempotent(direct_vm, direct_deploy, direct_alice):
     direct_vm.warp("2026-09-27T20:00:00Z")
-    target = deploy_target(direct_deploy, direct_alice)
+    target = deploy_target(direct_vm, direct_deploy, direct_alice)
     direct_vm.sender = direct_alice
     direct_vm.origin = direct_alice
-    first_until = target.emergency_pause_protected_action(5, "INC-IDEMPOTENT", "EXC-IDEMPOTENT", "c" * 64)
-    replay_until = target.emergency_pause_protected_action(5, "INC-IDEMPOTENT", "EXC-IDEMPOTENT", "c" * 64)
+    first_until = target.emergency_pause_protected_action(5, "INC-IDEMPOTENT", "EXC-IDEMPOTENT", "c" * 64, to_hex(direct_alice))
+    replay_until = target.emergency_pause_protected_action(5, "INC-IDEMPOTENT", "EXC-IDEMPOTENT", "c" * 64, to_hex(direct_alice))
     status = json.loads(target.get_status_json())
     assert replay_until == first_until
     assert status["protected_action_paused_until"] == first_until
@@ -80,16 +90,16 @@ def test_duplicate_capability_delivery_is_idempotent(direct_vm, direct_deploy, d
 
 
 def test_conflicting_capability_replay_fails_closed(direct_vm, direct_deploy, direct_alice):
-    target = deploy_target(direct_deploy, direct_alice)
+    target = deploy_target(direct_vm, direct_deploy, direct_alice)
     direct_vm.sender = direct_alice
     direct_vm.origin = direct_alice
-    target.emergency_pause_protected_action(5, "INC-CONFLICT", "EXC-CONFLICT", "d" * 64)
+    target.emergency_pause_protected_action(5, "INC-CONFLICT", "EXC-CONFLICT", "d" * 64, to_hex(direct_alice))
     with direct_vm.expect_revert("capability key is already bound to a different action"):
-        target.emergency_pause_protected_action(5, "INC-CONFLICT", "EXC-CONFLICT", "e" * 64)
+        target.emergency_pause_protected_action(5, "INC-CONFLICT", "EXC-CONFLICT", "e" * 64, to_hex(direct_alice))
 
 
 def test_multiple_holders_remain_isolated(direct_vm, direct_deploy, direct_alice, direct_bob):
-    target = deploy_target(direct_deploy, direct_alice)
+    target = deploy_target(direct_vm, direct_deploy, direct_alice)
     direct_vm.sender = direct_alice
     direct_vm.origin = direct_alice
     assert int(target.execute_protected_action("ALICE-ACTION")) == 1
@@ -101,7 +111,7 @@ def test_multiple_holders_remain_isolated(direct_vm, direct_deploy, direct_alice
 
 
 def test_invalid_action_key_fails_closed(direct_vm, direct_deploy, direct_alice):
-    target = deploy_target(direct_deploy, direct_alice)
+    target = deploy_target(direct_vm, direct_deploy, direct_alice)
     direct_vm.sender = direct_alice
     direct_vm.origin = direct_alice
     with direct_vm.expect_revert("invalid protected action key"):

@@ -210,6 +210,20 @@ class ExigencyEngine(gl.Contract):
         if active != charter_key:
             raise gl.vm.UserError("charter is not the active protocol charter")
 
+    def _target_authorizes_charter(self, charter: dict) -> bool:
+        """Require the protected target's governance wallet to own the charter.
+
+        A fresh protocol key is not authority to control an existing target.
+        The target's deployment account is its governance address, and the
+        target repeats this check when the finalized Gate child is applied.
+        """
+        try:
+            target = gl.get_contract_at(Address(str(charter.get("protected_target", ""))))
+            governance = target.view().get_governance_address()
+            return Address(str(charter.get("owner", ""))).as_hex == Address(str(governance)).as_hex
+        except Exception:
+            return False
+
     def _action_digest(self, incident_key: str, charter_digest: str, target: str, action_class: str, duration_minutes: int) -> str:
         return self._digest(
             {
@@ -528,6 +542,12 @@ Return only JSON: {{"equivalent": true}} or {{"equivalent": false}}.
         ]
         assessment["evidence_commitment_digest"] = self._digest(evidence_commitments)
         assessment["assessed_at"] = _now()
+        target_authorized = True
+        if assessment["decision"] == "TRIGGER_CONFIRMED":
+            target_authorized = self._target_authorizes_charter(charter)
+            if not target_authorized:
+                assessment["authority_status"] = "TARGET_GOVERNANCE_REJECTED"
+                assessment["authority_explanation"] = "The protected target has not authorized this charter owner."
 
         assessment_json = json.dumps(assessment, sort_keys=True)
         assessment_digest = hashlib.sha256(assessment_json.encode("utf-8")).hexdigest()
@@ -536,22 +556,25 @@ Return only JSON: {{"equivalent": true}} or {{"equivalent": false}}.
         incident["assessment_count"] = int(incident.get("assessment_count", 0)) + 1
 
         if assessment["decision"] == "TRIGGER_CONFIRMED":
-            capability_key = "EXC-" + incident_key
-            incident["capability_key"] = capability_key
-            incident["status"] = "AUTHORITY_PENDING_FINALITY"
-            gate = gl.get_contract_at(Address(self.gate_address))
-            gate.emit(on="finalized").issue_capability(
-                capability_key,
-                incident_key,
-                str(incident["requester"]),
-                str(incident["target"]),
-                str(incident["action_class"]),
-                int(incident["duration_minutes"]),
-                str(incident["action_digest"]),
-                str(incident["charter_digest"]),
-                assessment_digest,
-                int(charter.get("capability_ttl_minutes", 30)) * 60,
-            )
+            if not target_authorized:
+                incident["status"] = "ASSESSED_NO_AUTHORITY"
+            else:
+                capability_key = "EXC-" + incident_key
+                incident["capability_key"] = capability_key
+                incident["status"] = "AUTHORITY_PENDING_FINALITY"
+                gate = gl.get_contract_at(Address(self.gate_address))
+                gate.emit(on="finalized").issue_capability(
+                    capability_key,
+                    incident_key,
+                    str(incident["requester"]),
+                    str(incident["target"]),
+                    str(incident["action_class"]),
+                    int(incident["duration_minutes"]),
+                    str(incident["action_digest"]),
+                    str(incident["charter_digest"]),
+                    assessment_digest,
+                    int(charter.get("capability_ttl_minutes", 30)) * 60,
+                )
         else:
             incident["status"] = "ASSESSMENT_RETRYABLE" if assessment["decision"] in ("INSUFFICIENT_EVIDENCE", "CONFLICTING_EVIDENCE") and incident["assessment_count"] < MAX_ASSESSMENT_ATTEMPTS else "ASSESSED_NO_AUTHORITY"
 

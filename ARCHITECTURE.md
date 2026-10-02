@@ -31,7 +31,9 @@ they are not claimed to be byte-equality consensus across every validator.
 Capabilities are holder-, target-, action-, duration-, incident- and
 charter-digest-bound. The TTL begins when the finality-triggered issuance child
 executes. The Gate recomputes the action digest before dispatch and the target
-reconciles the finalized child before the capability becomes `APPLIED`.
+reconciles the finalized child before the capability becomes `APPLIED`. The
+Engine requires the charter owner to equal the target governance address before
+issuance; the target repeats the holder check when the child arrives.
 
 ## Protected consequence architecture
 
@@ -60,6 +62,8 @@ EXIGENT capability changes whether that action is accepted.
 - Each action key can execute once only.
 - A paused target rejects before mutating action state.
 - A finalized capability is the only caller that can pause the target.
+- The target's deployment wallet is governance; unrelated charter owners are
+  rejected before issuance and again before application.
 - Duplicate capability delivery is idempotent; a conflicting digest fails
   closed.
 - No browser state is authority; the frontend reads the target state from the
