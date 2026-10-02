@@ -5,26 +5,26 @@
   "rpc": "https://studio.genlayer.com/api",
   "explorer": "https://explorer-studio.genlayer.com",
   "contracts": {
-    "charterRegistry": "0x2ecf811BbFB57cf34Fd55395A5793393Ae431441",
-    "exigencyEngine": "0x911Bef23368d88e994301BeA1988e753aB2fC2BA",
-    "capabilityGate": "0xe77fdD519d4Dba4851701B3f1D498619c5b94b01",
-    "protectedVault": "0xf7aB890a71D40d053453728bb2bA97e31207E3c8"
+    "charterRegistry": "0xcb07C70A9f27b885031ab09693eC9AB49FE29ad5",
+    "exigencyEngine": "0x87Db5c9eBfe51c790572E77bEbe4e77A382f5234",
+    "capabilityGate": "0x3e3002E2955510171CC9e6373616a5e1A5439CA8",
+    "protectedVault": "0xA4b7b2B65CcC436c2CaE6e2d0fE66f45e9bBAbBb"
   },
-  "bindEngineTransaction": "0x3f260ebd652e5ba01fc265de237557ae151cd1c3659773d451154c67af9e0ab8",
+  "bindEngineTransaction": "0x96f44e3b856ef11d8a06248fa3a04c8ccdf50873bbffbe2726acf7f9d8fe3c25",
   "deploymentTransactions": {
-    "charterRegistry": "0xdf6772331faade207a8b0d8458282426ca0b727ffee82804e585c51aaa073fdf",
-    "capabilityGate": "0x7f13fdafa4117004405cffc29b5225bfbbc4bc93d02545c066ef8c1c6d1b2309",
-    "exigencyEngine": "0x5a163aec6e012329967facd06cc6e50bd8524a8f0e8bac05b892c07667306880",
-    "protectedVault": "0xbc0fd5d1fc8eaf86543ac160c739c2abfb8bb3dd50a500b7b6eb20cc8f13c4bc"
+    "charterRegistry": "0xe52638d7b8fe19ea840cb9a629b6d9e7d313ca0c63cad222f09d64a43c5eb9dd",
+    "capabilityGate": "0xa29fbfa7914c06a171c86b925cdd174455bce1725a91bc2cee1c32b4baba3f36",
+    "exigencyEngine": "0x6ad9b583b8221280afdf1da97df95f47202382d7444897d202aa2b2c0a5bb90e",
+    "protectedVault": "0xee9c3856235cafc21359fbbeaeaf5d3386c19c5e1dc351e8b2c606ad95265d54"
   },
   "deployedSourceSha256": {
     "charterRegistry": "f2dd93241b0c8b3b7ef27abb1bb38e8aab3ee64dc113f804a97f2f40ac9b9bb0",
-    "exigencyEngine": "0ad4fb5fdae59962d69c76eec9befc11b508ac43185ca69c0e0127514f885244",
-    "capabilityGate": "f6bf0d15da516d77a24fa8dd6cb22ddab6196dc162e2c4f81ead315a5c872db7",
-    "protectedVault": "bbc88fa83c776e2d0dfbaa6cdf9328337573db71db2fbd0c12c5cd3a0f155929"
+    "exigencyEngine": "54e13522bcc37d95e846356451aaaf688b778e2b0735fe088799afa23039cf72",
+    "capabilityGate": "11eddb616884680a69d686940d5d3240f4fdc3d2c6f5399ff48f7b0a7e8bb5f2",
+    "protectedVault": "3f70bb0a9ab3b71b7e49faef70a212108c424fc3f7ad3f550c9bcad28793d0d7"
   },
   "sourceVerification": "verified-exact-byte-match",
-  "sourceCommit": "5e5ddd484087272560c977570e7bf58ad812262f",
+  "sourceCommit": "34f97bee971fd4c0c750ab0dd8cf05ab48f191f2",
   "frontend": {
     "productionUrl": "https://exigency.vercel.app/",
     "vercelDeploymentId": "dpl_GrWWPHSy4UWJTu7AdH4Vtyx3nrmg",
