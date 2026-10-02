@@ -4,81 +4,86 @@
 
 The current deployment is validated as a non-custodial emergency protected
 action. It does not claim GEN deposits, payouts, refunds, or live failed-payout
-recovery. The previous payout architecture was removed because the current
-runtime does not provide a supported errored-message callback for safe value
-transfer recovery.
+recovery. The target stores no user value and has no external payout path.
 
 ## Deployed stack
 
 - Network: Studionet 61999
-- Registry: `0x2ecf811BbFB57cf34Fd55395A5793393Ae431441`
-- Engine: `0x911Bef23368d88e994301BeA1988e753aB2fC2BA`
-- Gate: `0xe77fdD519d4Dba4851701B3f1D498619c5b94b01`
-- Protected target: `0xf7aB890a71D40d053453728bb2bA97e31207E3c8`
+- Registry: `0xcb07C70A9f27b885031ab09693eC9AB49FE29ad5`
+- Engine: `0x87Db5c9eBfe51c790572E77bEbe4e77A382f5234`
+- Gate: `0x3e3002E2955510171CC9e6373616a5e1A5439CA8`
+- Protected target: `0xA4b7b2B65CcC436c2CaE6e2d0fE66f45e9bBAbBb`
 - Source commit for this deployed contract stack:
-  `5e5ddd484087272560c977570e7bf58ad812262f`
+  `34f97bee971fd4c0c750ab0dd8cf05ab48f191f2`
 - Source verification: 4/4 exact byte matches
 
-`deploy/deployScript.ts` produces `deployment-manifest.generated.json` for a
-fresh deployment. The committed `deployment-manifest.public.json` is the
-verified public deployment record copied in after finality, provenance, and
-source-hash confirmation. It contains the deployment and binding transactions.
+The committed `deployment-manifest.public.json` is the authoritative current
+deployment record.
+
+## Steward authorization fix
+
+Creating a fresh protocol key does not grant authority over an existing
+protected target. `ProtectedVault` stores its deployment wallet as governance.
+`ExigencyEngine` requires the charter owner to match target governance before
+capability issuance. `ProtectedVault` independently verifies the capability
+holder against governance before applying the emergency pause.
+
+Negative test:
+`test_unrelated_wallet_cannot_pause_target_through_configured_gate`
+
+Result: `PASS`.
+
+Corrected source: [security-fix commit](https://github.com/Bibidee/exigency/commit/34f97bee971fd4c0c750ab0dd8cf05ab48f191f2).
 
 ## Current target checks
 
-Direct Mode covers:
+Direct Mode covers Gate-only emergency pause, unique protected-action
+execution, replay rejection, direct sender/origin enforcement, pause and
+expiry behavior, duplicate capability idempotence, conflicting digest
+rejection, holder isolation, invalid-key rejection, and the unrelated-wallet
+governance rejection.
 
-- Gate-only emergency pause;
-- unique protected-action execution;
-- replay rejection;
-- direct sender/origin enforcement;
-- pause and expiry behavior;
-- duplicate capability idempotence;
-- conflicting digest rejection;
-- holder isolation;
-- invalid-key rejection;
-- absence of the unsupported payout/dead-callback surface.
+## Current health evidence
 
-The target stores no user value. Protected-action state transitions are
-authoritative contract state, not browser state.
+Deployment health run: [37054512946](https://github.com/Bibidee/exigency/actions/runs/37054512946) — `SUCCESS`.
 
-## Fresh live lifecycle
+It verified `/`, `/command`, and `/vault`, Studionet RPC, chain ID `61999`, all
+four contract reads, protected-target readability, an unpaused target, and
+`4/4` deployed source byte matches.
 
-The latest clean live lifecycle used synthetic evidence and the owner CLI
-account:
+Current counts on this fresh deployment are:
 
-- Charter: `CI-LIVE-1790816856`
-- Incident: `CI-INC-1790816856`
-- Capability: `EXC-CI-INC-1790816856`
-- before-pause action: accepted
-- during-pause action: finalized with contract error
-- after-expiry action: accepted
-- after-expiry transaction:
-  `0x5cf605b2996ba7e395a0c89a78b21ab6f4ec65a12d9a61b2a262fe5f6f8c7457`
+- charters: `0`
+- incidents: `0`
+- capabilities: `0`
+- protectedActionCount: `0`
 
-Some intermediate hashes were not captured by the CLI output and remain
-`NOT RECORDED`. No fabricated hash is used.
+## Historical pre-governance-fix lifecycle
+
+The lifecycle records `CI-LIVE-1790816856`, `CI-INC-1790816856`, and
+`EXC-CI-INC-1790816856` belong to the previous deployment. They are retained
+only as historical evidence and are not claimed as live proof of the current
+target-governance deployment. Missing intermediate hashes remain
+`NOT RECORDED`.
 
 ## Frontend
 
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
-- Deployment: `dpl_GrWWPHSy4UWJTu7AdH4Vtyx3nrmg`
+- Deployment: `dpl_DDgwTdaGbVuR159gAWHHEMgjdp63`
 - Deployment state: `READY`
 - Frontend source from `/api/build-info`:
-  `920b81271bbcbee1b2512ffcd426a0828505209e`
-
-The public build-info endpoint is the available deployment provenance source.
+  `de43a81c11ff37141680dcea1113a094338fb943`
 
 ## Test results
 
-Recorded current local results:
-
 - Unit: 14 passed
-- Direct Mode: 28 passed
+- Direct Mode: 29 passed
 - Browser: 9 passed
 - Contract lint and validation: passed
 - Typecheck: passed
 - Build: passed
+
+Exact-head CI: [37053963817](https://github.com/Bibidee/exigency/actions/runs/37053963817) — `SUCCESS`.
 
 Browser mocks remain development/test-only and are not available in production.
 
@@ -88,6 +93,4 @@ Browser mocks remain development/test-only and are not available in production.
   path; the safety decision is structural, not a fabricated failure proof.
 - Five moderate transitive npm advisories remain; no unsafe forced upgrade was
   applied.
-- Exact native Vercel Git metadata is not exported by the CLI; runtime
-  `/api/build-info` reports the live deployment and source SHA.
 - Some historical lifecycle hashes remain `NOT RECORDED`.

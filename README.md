@@ -29,15 +29,15 @@ Do **not** substitute Studio Dev / chain 61997. The repository-local `genlayer@0
 
 ## Current submission state
 
-- Frontend source commit deployed: `920b81271bbcbee1b2512ffcd426a0828505209e`.
+- Frontend source commit deployed: `de43a81c11ff37141680dcea1113a094338fb943`.
 - Subsequent evidence-only commits may update this handoff; consult `main` for the current repository HEAD.
 - Production: [https://exigency.vercel.app](https://exigency.vercel.app).
-- READY Vercel deployment: `dpl_GrWWPHSy4UWJTu7AdH4Vtyx3nrmg`, aliased to
+- READY Vercel deployment: `dpl_DDgwTdaGbVuR159gAWHHEMgjdp63`, aliased to
   production.
 - The public `/api/build-info` endpoint reports this deployment ID and the exact
   frontend source SHA above. Exact Git metadata is also exposed at that endpoint;
   the Vercel CLI itself does not export a stronger native commit binding.
-- Final checks: 14 unit, 28 Direct Mode and 9 browser tests passed; all four
+- Final checks: 14 unit, 29 Direct Mode and 9 browser tests passed; all four
   deployed contract sources still match exactly.
 - Browser E2E mocks are test-only and unavailable in production code paths;
   runtime mock hooks are gated by `process.env.NODE_ENV !== "production"`.
@@ -98,6 +98,16 @@ Accepts issuance only from the one-time-bound `ExigencyEngine`. Each capability 
 - single-use.
 
 Execution recomputes the action digest before consuming the capability. The protected action is then emitted `on="finalized"`.
+
+### Target-governance authorization
+
+Creating a fresh protocol key does not grant authority over an existing
+protected target. `ProtectedVault` stores its deployment wallet as the target
+governance address. Before issuing a capability, `ExigencyEngine` requires the
+charter owner to match that target governance address. `ProtectedVault` then
+independently checks the capability holder against governance before applying
+the emergency pause. An unrelated wallet therefore cannot create a charter
+for someone else's target and gain emergency authority over it.
 
 ### `ProtectedVault`
 
