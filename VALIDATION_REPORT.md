@@ -14,8 +14,8 @@ recovery. The target stores no user value and has no external payout path.
 - Gate: `0xE383404e8C00868A86BD412F4e72Cb13328Ed2EF`
 - Protected vault: `0xF3dC371E50c296c6Ef1067eAe95104F864F391B3`
 - Protected route: `0x7217760864796a1CaeDAaFB418b7d168a91331a4`
-- Source commit for this deployed contract stack: recorded in
-  `deployment-manifest.public.json`
+- Source commit for this deployed contract stack:
+  `5c7664b59f6ac4ea6839dbf85e2ad3174fec96ef`
 - Source verification: 5/5 exact byte matches
 
 The committed `deployment-manifest.public.json` is the authoritative current

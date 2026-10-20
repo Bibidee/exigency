@@ -57,8 +57,8 @@ The corrected source is deployed on Studionet (chain ID `61999`):
 | ProtectedVault | `0xF3dC371E50c296c6Ef1067eAe95104F864F391B3` |
 | ProtectedRoute | `0x7217760864796a1CaeDAaFB418b7d168a91331a4` |
 
-Deployed source commit: recorded in `deployment-manifest.public.json` after the
-V2 source commit is created. All five source files are verified byte-for-byte.
+Deployed source commit: `5c7664b59f6ac4ea6839dbf85e2ad3174fec96ef`.
+All five source files are verified byte-for-byte.
 
 ## Fresh live proof
 

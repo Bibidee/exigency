@@ -1,8 +1,10 @@
-.cache
-.next
 .pytest_cache
-.python312
 artifacts
-node_modules
-*.log
-.git
+test-results
+playwright-report
+.next
+__pycache__
+*.pyc
+.env.local
+.env.generated
+deployment-manifest.generated.json
