@@ -288,7 +288,7 @@ def test_live_studionet_v2_grouped_challenge_lifecycle():
     protocol = f"V2-PROTOCOL-{stamp}"
     sources = json.dumps([
         {"group": "official", "url": "https://raw.githubusercontent.com/Bibidee/exigency/main/demo/evidence/active_incident_primary_v2.md"},
-        {"group": "independent", "url": "https://raw.githubusercontent.com/Bibidee/exigency/main/demo/evidence/active_incident_secondary_v2.md"},
+        {"group": "independent", "url": "https://github.com/Bibidee/exigency/raw/refs/heads/main/demo/evidence/active_incident_secondary_v2.md"},
     ])
     groups = json.dumps([
         {"name": "official", "hosts": ["raw.githubusercontent.com"]},
@@ -299,7 +299,8 @@ def test_live_studionet_v2_grouped_challenge_lifecycle():
         contracts["protectedRoute"],
         "SYNTHETIC TEST ONLY: trigger when approved grouped public evidence confirms an active fictional incident.",
         "Approved grouped synthetic sources must be retrievable, corroborated and current.",
-        groups, "2", "DISABLE_PROTECTED_ROUTE", "90", "30", "1", "1", "1",
+        "raw.githubusercontent.com,github.com", "DISABLE_PROTECTED_ROUTE", "90", "30", "1",
+        groups, "2", "10", "1",
     ))
     import time
     time.sleep(70)

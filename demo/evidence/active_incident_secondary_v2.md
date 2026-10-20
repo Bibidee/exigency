@@ -9,4 +9,4 @@ This document is an independent fictional synthetic test fixture, not a report a
 
 Independent reproduction confirms that the fictional condition remains unresolved and that a short, temporary protected-action pause is proportionate while the source state is checked. No evidence in this fixture supports treasury transfer, ownership change, contract upgrade, or GEN custody.
 
-The intended bounded action is exactly `PAUSE_PROTECTED_ACTION`.
+The intended bounded action is exactly `DISABLE_PROTECTED_ROUTE` for the protected route target.
