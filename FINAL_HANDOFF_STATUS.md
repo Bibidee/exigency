@@ -7,7 +7,7 @@ target stores no user funds and emits no external payout.
 
 Current repository branch: `main`.
 
-Current evidence commit: updated after the V2 source and frontend release.
+The final repository SHA is the exact-head commit reported by the final CI run below.
 
 Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 
@@ -44,8 +44,7 @@ Corrected source: [security-fix commit](https://github.com/Bibidee/exigency/comm
 
 ## Current health evidence
 
-Deployment health will be dispatched again after the V2 production alias is
-live; the final run is recorded here.
+Deployment health: [39467650675](https://github.com/Bibidee/exigency/actions/runs/39467650675) — `SUCCESS`.
 
 It verified production routes `/`, `/command`, and `/vault`, Studionet RPC,
 chain ID `61999`, all five contract reads, both target bindings, unpaused
@@ -68,10 +67,10 @@ the current target-governance deployment. Missing intermediate hashes remain
 
 ## Test baseline
 
-Exact-head CI: [37053963817](https://github.com/Bibidee/exigency/actions/runs/37053963817) — `SUCCESS`.
+Exact-head CI: to be refreshed for this documentation commit.
 
 - Unit: 16 passed
-- Direct Mode: blocked by the local GenLayer runner stdin/runtime issue
+- Direct Mode: 32 passed in CI
 - Browser: 9 passed
 - Contract lint and validation: passed
 - Typecheck: passed

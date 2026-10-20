@@ -94,9 +94,9 @@ capability may be issued
 The fresh run proves that satisfying only the first condition cannot pause an
 unrelated protected target.
 
-## CI and health evidence
+## V2 CI and health evidence
 
-- [Exact-head CI](https://github.com/Bibidee/exigency/actions/runs/37056359979)
-- [Deployment health](https://github.com/Bibidee/exigency/actions/runs/37054512946)
+- [V2 exact-head CI](https://github.com/Bibidee/exigency/actions/runs/39467270883)
+- [V2 deployment health](https://github.com/Bibidee/exigency/actions/runs/39467650675)
 - [Production frontend](https://exigency.vercel.app/)
 

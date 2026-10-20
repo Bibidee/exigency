@@ -80,7 +80,7 @@ target-governance deployment. Missing intermediate hashes remain
 ## Test results
 
 - Unit: 16 passed
-- Direct Mode: blocked by the local GenLayer runner stdin/runtime issue
+- Direct Mode: 32 passed in CI
 - Browser: 9 passed
 - Contract lint and validation: passed
 - Typecheck: passed
