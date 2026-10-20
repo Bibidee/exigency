@@ -11,13 +11,10 @@ The final repository SHA is the exact-head commit reported by the final CI run b
 
 Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 
-Vercel deployment: `dpl_wz8QTEpaRBqRJUUUk9xYB8VNAFYM` (`READY`)
+Vercel deployment: `dpl_FYPyWPGnRtGwh85ZfG1naEVXkzsJ` (`READY`)
 
 The production `/api/build-info` endpoint reports frontend source
-`e6a7a9f8b920dafcaad57304c1d763072c580217`.
-The final `2c5e111` commit is documentation/evidence-only; exact Vercel
-Git-integration metadata for that documentation commit is not independently
-available.
+`d598887af943d3db9b9d982d7e2bf53a2054164c`.
 
 ## Current contracts
 
@@ -47,7 +44,8 @@ Corrected source: [security-fix commit](https://github.com/Bibidee/exigency/comm
 
 ## Current health evidence
 
-Deployment health: [39492576480](https://github.com/Bibidee/exigency/actions/runs/39492576480) — `SUCCESS` on the final evidence commit.
+Deployment health: the exact-head GitHub health run is recorded after the
+final production configuration correction.
 
 It verified production routes `/`, `/command`, and `/vault`, Studionet RPC,
 chain ID `61999`, all five contract reads, both target bindings, the current
