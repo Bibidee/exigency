@@ -11,7 +11,7 @@
     "protectedVault": "0xF3dC371E50c296c6Ef1067eAe95104F864F391B3",
     "protectedRoute": "0x7217760864796a1CaeDAaFB418b7d168a91331a4"
   },
-  "bindEngineTransaction": "0xfedf64f6137e410c931bda7e18439be697e8d51b709c3ed40005caf42bb9930a",
+  "bindEngineTransaction": "0x4b7f98acfda9ec8b5121fa4e7292d5f1e7ebba55343cabc297f227815007f021",
   "deploymentTransactions": {
     "charterRegistry": "0x409e27b1dec2e012ab8bbb2db9eb524d8ac2fc195107081cd94e9c26c2cc0acc",
     "capabilityGate": "0x63d834c6438dd8c074750f719d8e635450995a68b0d93944ceb7f3ce53649a6a",
