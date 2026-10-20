@@ -30,7 +30,7 @@ available.
 | ProtectedRoute | `0x7217760864796a1CaeDAaFB418b7d168a91331a4` |
 
 Network: Studionet 61999. The verified public deployment record is
-`deployment-manifest.public.json`; all four deployed sources match it exactly.
+`deployment-manifest.public.json`; all five deployed sources match it exactly.
 
 ## Steward authorization boundary
 
@@ -47,7 +47,7 @@ Corrected source: [security-fix commit](https://github.com/Bibidee/exigency/comm
 
 ## Current health evidence
 
-Deployment health: the local health check passed after the production alias was updated; the exact-head GitHub health run is recorded after the final commit.
+Deployment health: [39492576480](https://github.com/Bibidee/exigency/actions/runs/39492576480) — `SUCCESS` on the final evidence commit.
 
 It verified production routes `/`, `/command`, and `/vault`, Studionet RPC,
 chain ID `61999`, all five contract reads, both target bindings, the current
@@ -89,8 +89,13 @@ the current target-governance deployment. Missing intermediate hashes remain
 
 ## Test baseline
 
-The dependency/security patch is committed and pushed; exact-head CI and health
-links are recorded after that final commit.
+The dependency/security patch is committed and pushed. The latest functional
+tree passed exact-head CI, and production health passed immediately afterward.
+The later evidence-only deployment-record update does not change application
+or contract behavior.
+
+- Exact-head CI: [39492212566](https://github.com/Bibidee/exigency/actions/runs/39492212566) — `SUCCESS`
+- Deployment health: [39492576480](https://github.com/Bibidee/exigency/actions/runs/39492576480) — `SUCCESS`
 
 - Unit: 16 passed
 - Direct Mode: 32 passed in CI

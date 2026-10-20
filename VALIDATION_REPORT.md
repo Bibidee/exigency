@@ -49,9 +49,9 @@ governance rejection.
 Production deployment: `dpl_wz8QTEpaRBqRJUUUk9xYB8VNAFYM` (`READY`).
 The production `/api/build-info` endpoint reports frontend source
 `e6a7a9f8b920dafcaad57304c1d763072c580217`.
-The final `2c5e111` commit is documentation/evidence-only; exact Vercel
-Git-integration metadata for that documentation commit is not independently
-available.
+The repository commits after the frontend source commit are
+documentation/evidence-only; exact Vercel Git-integration metadata for those
+documentation commits is not independently available.
 
 It verified `/`, `/command`, and `/vault`, Studionet RPC, chain ID `61999`, all
 five contract reads, both target bindings, the current protected-route state,
@@ -89,7 +89,8 @@ target-governance deployment. Missing intermediate hashes remain
 - Typecheck: passed
 - Build: passed
 
-Exact-head CI: [37053963817](https://github.com/Bibidee/exigency/actions/runs/37053963817) — `SUCCESS`.
+Exact-head CI: [39492212566](https://github.com/Bibidee/exigency/actions/runs/39492212566) — `SUCCESS`.
+Deployment health: [39492576480](https://github.com/Bibidee/exigency/actions/runs/39492576480) — `SUCCESS`.
 
 Browser mocks remain development/test-only and are not available in production.
 

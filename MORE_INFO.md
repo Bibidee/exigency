@@ -96,7 +96,7 @@ unrelated protected target.
 
 ## V2 CI and health evidence
 
-- V2 exact-head functional CI and deployment-health links are recorded in the
-  final handoff after the dependency patch commit.
+- [V2 exact-head functional CI](https://github.com/Bibidee/exigency/actions/runs/39492212566)
+- [V2 deployment health](https://github.com/Bibidee/exigency/actions/runs/39492576480)
 - [Production frontend](https://exigency.vercel.app/)
 
