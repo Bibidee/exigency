@@ -29,16 +29,15 @@ Do **not** substitute Studio Dev / chain 61997. The repository-local `genlayer@0
 
 ## Current submission state
 
-- Frontend source commit deployed: `de43a81c11ff37141680dcea1113a094338fb943`.
+- Frontend source commit deployed: recorded in `deployment-manifest.public.json` after the V2 production deployment.
 - Subsequent evidence-only commits may update this handoff; consult `main` for the current repository HEAD.
 - Production: [https://exigency.vercel.app](https://exigency.vercel.app).
-- READY Vercel deployment: `dpl_DDgwTdaGbVuR159gAWHHEMgjdp63`, aliased to
-  production.
-- The public `/api/build-info` endpoint reports this deployment ID and the exact
-  frontend source SHA above. Exact Git metadata is also exposed at that endpoint;
-  the Vercel CLI itself does not export a stronger native commit binding.
-- Final checks: 14 unit, 29 Direct Mode and 9 browser tests passed; all four
-  deployed contract sources still match exactly.
+- The public `/api/build-info` endpoint is the authoritative frontend deployment
+  provenance check. The V2 deployment record is updated only after it reports
+  the production alias as READY.
+- Final checks: 16 unit, 9 browser tests, and all five deployed contract sources
+  match exactly. Direct Mode remains blocked by the local GenLayer test-runner
+  stdin/runtime issue documented in the final report.
 - Browser E2E mocks are test-only and unavailable in production code paths;
   runtime mock hooks are gated by `process.env.NODE_ENV !== "production"`.
 
@@ -231,6 +230,7 @@ npm run deploy
 3. `ExigencyEngine(registry, gate)`
 4. one-time `CapabilityGate.bind_engine(engine)`
 5. `ProtectedVault(gate)`
+6. `ProtectedRoute(gate)`
 
 It writes:
 
@@ -271,6 +271,20 @@ The intended review flow is adversarial, not a happy-path-only demo:
 17. Prove a different wallet cannot publish another version under the claimed protocol key and an older charter cannot roll back a newer active version.
 
 ## Important implementation boundary
+
+### V2 milestone surface
+
+V2 keeps the V1 authority chain and adds reusable protected-target dispatch
+through the narrow `apply_emergency_action` method. The Vault remains the
+original pause target; `ProtectedRoute` is a second target with a distinct
+route-disable consequence. Charters can require distinct evidence groups, and
+a confirmed assessment can remain provisional through a bounded challenge
+window before final reassessment.
+
+The V2 frontend exposes source-group policy at charter publication,
+`group|URL` entries at incident freeze, and challenge/final-reassessment
+controls on the incident page. Missing groups, source drift, expired challenge
+windows and exhausted challenge counts fail closed.
 
 EXIGENT does **not** claim GenLayer proves that a protocol is legally entitled to act, nor that web sources are universally true. The bounded question is:
 

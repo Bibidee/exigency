@@ -272,3 +272,61 @@ def test_live_studionet_lifecycle_writes():
         "afterAction": after_action_hash,
         "finalStatus": final_status,
     }))
+
+
+@pytest.mark.skipif(
+    os.environ.get("EXIGENT_RUN_LIVE_V2") != "1",
+    reason="set EXIGENT_RUN_LIVE_V2=1 with an unlocked CLI account for V2 lifecycle coverage",
+)
+def test_live_studionet_v2_grouped_challenge_lifecycle():
+    """Exercise grouped evidence, provisional assessment, challenge, and finalization."""
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    contracts = manifest["contracts"]
+    stamp = str(int(__import__("time").time()))
+    charter = f"V2-LIVE-{stamp}"
+    incident = f"V2-INC-{stamp}"
+    protocol = f"V2-PROTOCOL-{stamp}"
+    sources = json.dumps([
+        {"group": "official", "url": "https://raw.githubusercontent.com/Bibidee/exigency/main/demo/evidence/active_incident_primary_v2.md"},
+        {"group": "independent", "url": "https://raw.githubusercontent.com/Bibidee/exigency/main/demo/evidence/active_incident_secondary_v2.md"},
+    ])
+    groups = json.dumps([
+        {"name": "official", "hosts": ["raw.githubusercontent.com"]},
+        {"name": "independent", "hosts": ["github.com"]},
+    ])
+    _finalize(_cli_write(
+        contracts["charterRegistry"], "publish_charter_v2", charter, protocol, "EXIGENT V2 LIVE",
+        contracts["protectedRoute"],
+        "SYNTHETIC TEST ONLY: trigger when approved grouped public evidence confirms an active fictional incident.",
+        "Approved grouped synthetic sources must be retrievable, corroborated and current.",
+        groups, "2", "DISABLE_PROTECTED_ROUTE", "90", "30", "1", "1", "1",
+    ))
+    import time
+    time.sleep(70)
+    _finalize(_cli_write(contracts["charterRegistry"], "activate_charter", charter))
+    _finalize(_cli_write(
+        contracts["exigencyEngine"], "open_incident", incident, charter,
+        "DISABLE_PROTECTED_ROUTE", "60",
+        "Automated V2 live integration incident verifying grouped evidence and bounded challenge review.",
+        sources,
+    ))
+    assessment_hash = _finalize(_cli_write(contracts["exigencyEngine"], "assess_incident", incident))
+    record = json.loads(_cli_call(contracts["exigencyEngine"], "get_incident_json", incident))
+    assert record["assessment_stage"] == "PROVISIONAL"
+    assert record["status"] == "ASSESSMENT_PROVISIONAL"
+    _finalize(_cli_write(
+        contracts["exigencyEngine"], "challenge_incident", incident,
+        json.dumps([{"group": "independent", "url": "https://github.com/Bibidee/exigency"}]),
+        "Independent repository context is supplied for the bounded challenge review.",
+    ))
+    deadline = int(record["challenge_deadline"])
+    while int(time.time()) <= deadline:
+        time.sleep(min(15, max(1, deadline - int(time.time()) + 1)))
+    finalize_hash = _finalize(_cli_write(contracts["exigencyEngine"], "finalize_incident", incident))
+    children = _triggered_children(finalize_hash)
+    for child_hash in children:
+        _finalize_hash(child_hash)
+    final_record = json.loads(_cli_call(contracts["exigencyEngine"], "get_incident_json", incident))
+    assert final_record["assessment_stage"] == "FINAL"
+    assert final_record["capability_key"]
+    print(json.dumps({"charter": charter, "incident": incident, "assessment": assessment_hash, "finalize": finalize_hash, "capability": final_record["capability_key"]}))

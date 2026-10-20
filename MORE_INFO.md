@@ -1,4 +1,4 @@
-# EXIGENT — Steward Authorization Correction
+# EXIGENT — Steward Authorization Correction and V2 Evidence Boundary
 
 ## Purpose
 
@@ -45,18 +45,20 @@ test_unrelated_wallet_cannot_pause_target_through_configured_gate
 
 Result: `PASS`.
 
-## Current deployed target
+## Current deployed V2 stack
 
 The corrected source is deployed on Studionet (chain ID `61999`):
 
 | Contract | Address |
 | --- | --- |
-| CharterRegistry | `0xcb07C70A9f27b885031ab09693eC9AB49FE29ad5` |
-| ExigencyEngine | `0x87Db5c9eBfe51c790572E77bEbe4e77A382f5234` |
-| CapabilityGate | `0x3e3002E2955510171CC9e6373616a5e1A5439CA8` |
-| ProtectedVault | `0xA4b7b2B65CcC436c2CaE6e2d0fE66f45e9bBAbBb` |
+| CharterRegistry | `0xA4dba5B0572B3D721955Ce3A9E3dc46F791e4C92` |
+| ExigencyEngine | `0x903f895E256817aBFE97f101292B94F85d0b59BA` |
+| CapabilityGate | `0xE383404e8C00868A86BD412F4e72Cb13328Ed2EF` |
+| ProtectedVault | `0xF3dC371E50c296c6Ef1067eAe95104F864F391B3` |
+| ProtectedRoute | `0x7217760864796a1CaeDAaFB418b7d168a91331a4` |
 
-Deployed source commit: `34f97bee971fd4c0c750ab0dd8cf05ab48f191f2`.
+Deployed source commit: recorded in `deployment-manifest.public.json` after the
+V2 source commit is created. All five source files are verified byte-for-byte.
 
 ## Fresh live proof
 

@@ -3,19 +3,24 @@ import json
 from tests.direct.conftest import to_hex
 
 
-def _install_registry_hook(direct_vm, owner, *, scopes=None):
+def _install_registry_hook(direct_vm, owner, *, scopes=None, source_groups=None, target=None, challenge_window=0, maximum_challenges=0):
     charter = {
         "protocol_key": "PROTO-ENGINE-DIRECT",
         "protocol_name": "Engine Direct Test",
         "owner": to_hex(owner),
-        "protected_target": to_hex(owner),
+        "protected_target": target or to_hex(owner),
         "charter_digest": "a" * 64,
         "allowed_actions": ["PAUSE_PROTECTED_ACTION"],
         "max_pause_minutes": 30,
-        "evidence_hosts": ["example.com"],
+        "evidence_hosts": ["example.com", "github.com"],
     }
     if scopes is not None:
         charter["evidence_scopes"] = scopes
+    if source_groups is not None:
+        charter["source_groups"] = source_groups
+        charter["minimum_source_groups"] = 2
+        charter["challenge_window_minutes"] = challenge_window
+        charter["maximum_challenges"] = maximum_challenges
 
     def hook(vm, request):
         from genlayer.py import calldata
@@ -33,8 +38,8 @@ def _install_registry_hook(direct_vm, owner, *, scopes=None):
     direct_vm._gl_call_hook = hook
 
 
-def _deploy_engine(direct_vm, direct_deploy, owner, *, scopes=None):
-    _install_registry_hook(direct_vm, owner, scopes=scopes)
+def _deploy_engine(direct_vm, direct_deploy, owner, *, scopes=None, source_groups=None, target=None, challenge_window=0, maximum_challenges=0):
+    _install_registry_hook(direct_vm, owner, scopes=scopes, source_groups=source_groups, target=target, challenge_window=challenge_window, maximum_challenges=maximum_challenges)
     return direct_deploy("contracts/exigency_engine.py", to_hex(owner), to_hex(owner))
 
 
@@ -115,6 +120,30 @@ def test_duplicate_frozen_evidence_is_rejected(direct_vm, direct_deploy, direct_
             "INC-ENGINE-05",
             ["https://example.com/evidence/primary", "https://example.com/evidence/primary"],
         )
+
+
+def test_v2_evidence_requires_declared_distinct_source_groups(direct_vm, direct_deploy, direct_alice):
+    direct_vm.sender = direct_alice
+    engine = _deploy_engine(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        source_groups=[
+            {"name": "official", "hosts": ["example.com"]},
+            {"name": "independent", "hosts": ["github.com"]},
+        ],
+    )
+    with direct_vm.expect_revert("minimum source groups"):
+        _open(engine, "INC-ENGINE-GROUP-01", [{"group": "official", "url": "https://example.com/evidence/primary"}])
+    with direct_vm.expect_revert("does not belong to its declared source group"):
+        _open(engine, "INC-ENGINE-GROUP-02", [{"group": "official", "url": "https://github.com/Bibidee/exigency"}, {"group": "independent", "url": "https://example.com/evidence/primary"}])
+    assert _open(engine, "INC-ENGINE-GROUP-03", [
+        {"group": "official", "url": "https://example.com/evidence/primary"},
+        {"group": "independent", "url": "https://github.com/Bibidee/exigency"},
+    ]) == "INC-ENGINE-GROUP-03"
+    record = json.loads(engine.get_incident_json("INC-ENGINE-GROUP-03"))
+    assert record["evidence_mode"] == "V2"
+    assert {item["group"] for item in record["evidence_items"]} == {"official", "independent"}
 
 
 def test_validator_rejects_malicious_leader_decision(direct_vm, direct_deploy, direct_alice):

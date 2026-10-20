@@ -17,8 +17,11 @@ def main() -> int:
         assert manifest["network"] == "studionet"
         assert manifest["chainId"] == 61999
         assert manifest["rpc"] == "https://studio.genlayer.com/api"
-        assert len(manifest["contracts"]) == 4
-        assert all(str(value).startswith("0x") for value in manifest["contracts"].values())
+        assert len(manifest["contracts"]) in (4, 5)
+        required = ("charterRegistry", "exigencyEngine", "capabilityGate", "protectedVault")
+        assert all(str(manifest["contracts"].get(key, "")).startswith("0x") for key in required)
+        if manifest["contracts"].get("protectedRoute"):
+            assert str(manifest["contracts"]["protectedRoute"]).startswith("0x")
 
     package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
     assert package["devDependencies"]["genlayer"] == "0.39.1"

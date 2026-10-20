@@ -90,3 +90,27 @@ def test_charter_commits_evidence_path_scope(direct_vm, direct_deploy, direct_al
     record = json.loads(contract.get_charter_json("CHARTER-SCOPE-01"))
     assert record["evidence_scopes"] == [{"host": "raw.githubusercontent.com", "path_prefix": "/Bibidee/exigency/commit/demo/"}]
     assert "evidence_scopes" in record["charter_digest"] or len(record["charter_digest"]) == 64
+
+
+def test_v2_charter_freezes_source_groups_and_challenge_bounds(direct_vm, direct_deploy, direct_alice, direct_bob):
+    direct_vm.sender = direct_alice
+    contract = direct_deploy("contracts/charter_registry.py")
+    contract.publish_charter_v2(
+        "CHARTER-V2-01", "PROTO-V2", "V2 Protocol", to_hex(direct_bob),
+        "Emergency authority exists only when credible public evidence establishes the bounded trigger and requested response.",
+        "Use independent approved sources and fail closed when groups are missing or contradictory.",
+        "raw.githubusercontent.com,github.com", "PAUSE_PROTECTED_ACTION", 90, 30, 1,
+        json.dumps([
+            {"name": "official", "hosts": ["raw.githubusercontent.com"]},
+            {"name": "independent", "hosts": ["github.com"]},
+        ]), 2, 15, 1,
+    )
+    record = json.loads(contract.get_charter_json("CHARTER-V2-01"))
+    assert record["source_groups"] == [
+        {"name": "official", "hosts": ["raw.githubusercontent.com"]},
+        {"name": "independent", "hosts": ["github.com"]},
+    ]
+    assert record["minimum_source_groups"] == 2
+    assert record["challenge_window_minutes"] == 15
+    assert record["maximum_challenges"] == 1
+    assert record["challenge_policy"] == "CHARTER_OWNER"

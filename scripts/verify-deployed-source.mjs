@@ -21,6 +21,7 @@ const specs = [
   ["CapabilityGate", manifest.contracts?.capabilityGate, "contracts/capability_gate.py"],
   ["ProtectedVault", manifest.contracts?.protectedVault, "contracts/protected_vault.py"],
 ];
+if (manifest.contracts?.protectedRoute) specs.push(["ProtectedRoute", manifest.contracts.protectedRoute, "contracts/protected_route.py"]);
 
 const failures = [];
 let checked = 0;

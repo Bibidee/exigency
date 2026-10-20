@@ -99,6 +99,31 @@ class ProtectedVault(gl.Contract):
             raise gl.vm.UserError("capability key is already bound to a different action")
         return True
 
+    def _apply_emergency_action(
+        self,
+        action_class: str,
+        duration_minutes: int,
+        incident_key: str,
+        capability_key: str,
+        action_digest: str,
+        holder: str,
+    ) -> int:
+        self._require_gate()
+        self._require_governance_holder(holder)
+        if action_class != "PAUSE_PROTECTED_ACTION":
+            raise gl.vm.UserError("unsupported protected-vault action")
+        if duration_minutes < 1 or duration_minutes > 1440:
+            raise gl.vm.UserError("invalid pause duration")
+        if self._already_applied(capability_key, action_digest):
+            return int(self.applied_capability_until.get(capability_key, u256(0)))
+        until_ts = _now() + int(duration_minutes) * 60
+        if until_ts > int(self.protected_action_paused_until):
+            self.protected_action_paused_until = u256(until_ts)
+        self._record_emergency(
+            action_class, duration_minutes, incident_key, capability_key, action_digest, until_ts
+        )
+        return until_ts
+
     @gl.public.write
     def execute_protected_action(self, action_key: str) -> u256:
         """Execute one non-custodial protected operation.
@@ -132,6 +157,20 @@ class ProtectedVault(gl.Contract):
         return next_count
 
     @gl.public.write
+    def apply_emergency_action(
+        self,
+        action_class: str,
+        duration_minutes: int,
+        incident_key: str,
+        capability_key: str,
+        action_digest: str,
+        holder: str,
+    ) -> int:
+        return self._apply_emergency_action(
+            action_class, duration_minutes, incident_key, capability_key, action_digest, holder
+        )
+
+    @gl.public.write
     def emergency_pause_protected_action(
         self,
         duration_minutes: int,
@@ -140,19 +179,9 @@ class ProtectedVault(gl.Contract):
         action_digest: str,
         holder: str,
     ) -> int:
-        self._require_gate()
-        self._require_governance_holder(holder)
-        if duration_minutes < 1 or duration_minutes > 1440:
-            raise gl.vm.UserError("invalid pause duration")
-        if self._already_applied(capability_key, action_digest):
-            return int(self.applied_capability_until.get(capability_key, u256(0)))
-        until_ts = _now() + int(duration_minutes) * 60
-        if until_ts > int(self.protected_action_paused_until):
-            self.protected_action_paused_until = u256(until_ts)
-        self._record_emergency(
-            "PAUSE_PROTECTED_ACTION", duration_minutes, incident_key, capability_key, action_digest, until_ts
+        return self._apply_emergency_action(
+            "PAUSE_PROTECTED_ACTION", duration_minutes, incident_key, capability_key, action_digest, holder
         )
-        return until_ts
 
     @gl.public.view
     def get_status_json(self) -> str:

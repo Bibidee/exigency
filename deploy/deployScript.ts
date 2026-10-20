@@ -10,13 +10,26 @@ function code(file: string): Uint8Array {
 }
 
 async function waitFinal(client: GenLayerClient<any>, hash: TransactionHash) {
-  const receipt: any = await client.waitForTransactionReceipt({
-    hash,
-    status: "FINALIZED",
-    retries: 360,
-    interval: 5000,
-    fullTransaction: true,
-  } as any);
+  let receipt: any;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    try {
+      receipt = await client.waitForTransactionReceipt({
+        hash,
+        status: "FINALIZED",
+        retries: 360,
+        interval: 5000,
+        fullTransaction: true,
+      } as any);
+      break;
+    } catch (error) {
+      lastError = error;
+      if (attempt === 3) throw error;
+      console.warn(`[finality] transient RPC failure for ${String(hash)}; retrying (${attempt + 1}/3): ${String(error).split("\n")[0]}`);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+  }
+  if (!receipt) throw lastError ?? new Error(`No receipt returned for ${String(hash)}`);
   const leader = receipt?.consensus_data?.leader_receipt?.find((entry: any) => entry?.execution_result)?.execution_result;
   const result = receipt?.txExecutionResultName ?? (leader === "SUCCESS" ? "FINISHED_WITH_RETURN" : leader === "ERROR" ? "FINISHED_WITH_ERROR" : undefined);
   if (result !== "FINISHED_WITH_RETURN") {
@@ -63,6 +76,7 @@ export default async function main(client: GenLayerClient<any>) {
   const engine = await deployOne(client, "exigency_engine.py", [registry.address, gate.address]);
   const bindEngineTx = await writeAndFinalize(client, gate.address as `0x${string}`, "bind_engine", [engine.address]);
   const vault = await deployOne(client, "protected_vault.py", [gate.address]);
+  const route = await deployOne(client, "protected_route.py", [gate.address]);
 
   const env = [
     "NEXT_PUBLIC_GENLAYER_CHAIN_ID=61999",
@@ -72,6 +86,7 @@ export default async function main(client: GenLayerClient<any>) {
     `NEXT_PUBLIC_EXIGENCY_ENGINE_ADDRESS=${engine.address}`,
     `NEXT_PUBLIC_CAPABILITY_GATE_ADDRESS=${gate.address}`,
     `NEXT_PUBLIC_PROTECTED_VAULT_ADDRESS=${vault.address}`,
+    `NEXT_PUBLIC_PROTECTED_ROUTE_ADDRESS=${route.address}`,
     "",
   ].join("\n");
   writeFileSync(path.resolve(process.cwd(), ".env.generated"), env);
@@ -81,12 +96,13 @@ export default async function main(client: GenLayerClient<any>) {
     network: "studionet",
     chainId: CHAIN_ID,
     rpc: RPC,
-    contracts: { charterRegistry: registry.address, exigencyEngine: engine.address, capabilityGate: gate.address, protectedVault: vault.address },
+    contracts: { charterRegistry: registry.address, exigencyEngine: engine.address, capabilityGate: gate.address, protectedVault: vault.address, protectedRoute: route.address },
     deploymentTransactions: {
       charterRegistry: registry.txId,
       capabilityGate: gate.txId,
       exigencyEngine: engine.txId,
       protectedVault: vault.txId,
+      protectedRoute: route.txId,
     },
     bindEngineTransaction: bindEngineTx,
     generatedAt: new Date().toISOString(),

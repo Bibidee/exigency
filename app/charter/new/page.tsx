@@ -8,7 +8,7 @@ import PageIntro from "@/components/PageIntro";
 import Panel from "@/components/Panel";
 import TxNotice from "@/components/TxNotice";
 import { ADDRESSES, isConfigured } from "@/lib/config";
-import { publishCharter } from "@/lib/contracts";
+import { publishCharterV2 } from "@/lib/contracts";
 import { waitForFinalization } from "@/lib/genlayer";
 
 const defaultTrigger = "Emergency authority is triggered only when credible, current public evidence establishes an active exploit, a critical dependency compromise, or a material loss of the vault's asset-safety assumptions. Rumour, operator assertion, routine maintenance, market volatility, or reputational concern alone do not qualify.";
@@ -21,7 +21,7 @@ export default function NewCharterPage() {
     charterKey: `CHARTER-${new Date().getUTCFullYear()}-01`, protocolKey: "EXIGENT-DEMO", protocolName: "EXIGENT Protected Vault",
     target: ADDRESSES.protectedVault, trigger: defaultTrigger, evidence: defaultEvidence,
     hosts: "raw.githubusercontent.com,github.com", actions: "PAUSE_PROTECTED_ACTION",
-    maxPause: "90", ttl: "30", delay: "1"
+    maxPause: "90", ttl: "30", delay: "1", sourceGroups: '[{"name":"official","hosts":["raw.githubusercontent.com"]},{"name":"independent","hosts":["github.com"]}]', minGroups: "2", challengeWindow: "15", maxChallenges: "1"
   });
   const set = (k:string,v:string) => setForm((f)=>({...f,[k]:v}));
 
@@ -32,7 +32,7 @@ export default function NewCharterPage() {
     setBusy(true);
     try {
       setPhase("Estimating fees and submitting");
-      const hash = await publishCharter(account,[form.charterKey,form.protocolKey,form.protocolName,form.target,form.trigger,form.evidence,form.hosts,form.actions,Number(form.maxPause),Number(form.ttl),Number(form.delay)]);
+      const hash = await publishCharterV2(account,[form.charterKey,form.protocolKey,form.protocolName,form.target,form.trigger,form.evidence,form.hosts,form.actions,Number(form.maxPause),Number(form.ttl),Number(form.delay),form.sourceGroups,Number(form.minGroups),Number(form.challengeWindow),Number(form.maxChallenges)]);
       setTx(hash); setPhase("Waiting for FINALIZED");
       await waitForFinalization(hash);
       setFinalized(true); setPhase("Charter finalized");
@@ -52,14 +52,18 @@ export default function NewCharterPage() {
         <div className="field"><label>Trigger policy</label><textarea value={form.trigger} onChange={e=>set("trigger",e.target.value)}/></div>
         <div className="field"><label>Evidence policy</label><textarea value={form.evidence} onChange={e=>set("evidence",e.target.value)}/></div>
         <div className="field"><label>Approved evidence hosts</label><input value={form.hosts} onChange={e=>set("hosts",e.target.value)}/><span className="help">Comma separated hostnames. Incident URLs outside these hosts are rejected before consensus.</span></div>
+        <div className="field"><label>Source groups (JSON)</label><textarea value={form.sourceGroups} onChange={e=>set("sourceGroups",e.target.value)}/><span className="help">Each group freezes its own approved hosts. Incidents must meet the minimum distinct-group count.</span></div>
       </div></Panel>
       <Panel eyebrow="Deterministic envelope" title="What emergency power can never exceed"><div className="panel-body grid-2">
         <div className="field"><label>Allowed actions</label><input value={form.actions} onChange={e=>set("actions",e.target.value)}/></div>
         <div className="field"><label>Maximum pause (minutes)</label><input type="number" min="5" max="1440" value={form.maxPause} onChange={e=>set("maxPause",e.target.value)}/></div>
         <div className="field"><label>Capability TTL (minutes)</label><input type="number" min="5" max="120" value={form.ttl} onChange={e=>set("ttl",e.target.value)}/></div>
         <div className="field"><label>Activation delay (minutes)</label><input type="number" min="1" max="10080" value={form.delay} onChange={e=>set("delay",e.target.value)}/><span className="help">Demo default is 1 minute. Use a materially longer delay for production governance.</span></div>
+        <div className="field"><label>Minimum source groups</label><input type="number" min="2" max="8" value={form.minGroups} onChange={e=>set("minGroups",e.target.value)}/></div>
+        <div className="field"><label>Challenge window (minutes)</label><input type="number" min="0" max="1440" value={form.challengeWindow} onChange={e=>set("challengeWindow",e.target.value)}/><span className="help">A confirmed assessment stays provisional until this window closes.</span></div>
+        <div className="field"><label>Maximum challenges</label><input type="number" min="0" max="3" value={form.maxChallenges} onChange={e=>set("maxChallenges",e.target.value)}/></div>
       </div></Panel>
-      {!isConfigured && <div className="notice">The form is wired to <code>CharterRegistry.publish_charter</code>, but no address is bundled. This prevents a fake or simulated submission path.</div>}
+      {!isConfigured && <div className="notice">The form is wired to the V2 CharterRegistry entrypoint, but no address is bundled. This prevents a fake or simulated submission path.</div>}
       {phase && <div className={finalized?"notice good":"notice"}>{phase}</div>}
       {error && <div className="notice bad">{error}</div>}{tx && <TxNotice hash={tx} label="Charter publish submitted"/>}
       {finalized && <Link className="data-card" href={`/charter/${encodeURIComponent(form.charterKey)}`}><div><strong>Open finalized charter</strong><small>{form.charterKey}</small></div><span>→</span></Link>}

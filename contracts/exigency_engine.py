@@ -29,6 +29,7 @@ MAX_PROMPT_EXCERPT = 6000
 MAX_FETCH_ERROR = 300
 MAX_ASSESSMENT_ATTEMPTS = 3
 INCIDENT_EXPIRY_SECONDS = 24 * 60 * 60
+MAX_CHALLENGE_SOURCES = 2
 
 
 def _now() -> int:
@@ -193,6 +194,39 @@ class ExigencyEngine(gl.Contract):
                 return True
         return False
 
+    def _source_group_for_url(self, url: str, charter: dict) -> str:
+        remainder = url[8:]
+        host = remainder.split("/", 1)[0].lower()
+        for group in charter.get("source_groups", []):
+            if host in [str(item).lower() for item in group.get("hosts", [])]:
+                return str(group.get("name", ""))
+        return ""
+
+    def _validate_grouped_evidence(self, items: list, charter: dict) -> None:
+        groups = charter.get("source_groups", [])
+        if not groups:
+            return
+        allowed = {str(item.get("name", "")): item for item in groups}
+        seen_groups = set()
+        for item in items:
+            group_name = str(item.get("group", "")).strip().lower()
+            if group_name not in allowed:
+                raise gl.vm.UserError("evidence item uses an unknown source group")
+            expected = self._source_group_for_url(str(item.get("url", "")), charter)
+            if expected != group_name:
+                raise gl.vm.UserError("evidence URL does not belong to its declared source group")
+            seen_groups.add(group_name)
+        minimum = int(charter.get("minimum_source_groups", len(groups)))
+        if len(seen_groups) < minimum:
+            raise gl.vm.UserError("evidence does not meet the minimum source-group diversity")
+
+    def _assessment_urls(self, incident: dict) -> list:
+        urls = list(incident.get("evidence_urls", []))
+        for url in incident.get("challenge_evidence_urls", []):
+            if url not in urls:
+                urls.append(url)
+        return urls
+
     def _get_charter(self, charter_key: str) -> dict:
         registry = gl.get_contract_at(Address(self.registry_address))
         raw = registry.view().get_charter_json(charter_key)
@@ -272,6 +306,10 @@ class ExigencyEngine(gl.Contract):
         return fetched
 
     def _assessment_prompt(self, charter: dict, incident: dict, fetched: list) -> str:
+        source_groups = charter.get("source_groups", [])
+        diversity = ""
+        if source_groups:
+            diversity = f"Required source groups: {json.dumps(source_groups, sort_keys=True)}; minimum distinct groups: {charter.get('minimum_source_groups', 0)}."
         return f"""
 You are evaluating whether a protocol's pre-committed emergency charter has been triggered.
 This is a bounded authority question, not general legal advice and not an invitation to invent powers.
@@ -297,6 +335,10 @@ Requested duration minutes: {incident.get('duration_minutes', 0)}
 {json.dumps(fetched, sort_keys=True)}
 </evidence>
 
+<diversity>
+{diversity}
+</diversity>
+
 Return ONLY a JSON object with exactly these semantic fields:
 {{
   "decision": "TRIGGER_CONFIRMED" | "TRIGGER_NOT_CONFIRMED" | "INSUFFICIENT_EVIDENCE" | "ACTION_DISPROPORTIONATE" | "CONFLICTING_EVIDENCE",
@@ -320,8 +362,11 @@ Decision rules:
 """
 
     def _evaluate_once(self, charter: dict, incident: dict) -> dict:
-        urls = list(incident.get("evidence_urls", []))
+        urls = self._assessment_urls(incident)
         fetched = self._fetch_sources(urls)
+        group_by_url = {str(item.get("url", "")): str(item.get("group", "")) for item in incident.get("evidence_items", [])}
+        for item in fetched:
+            item["source_group"] = group_by_url.get(str(item.get("url", "")), "")
         prompt = self._assessment_prompt(charter, incident, fetched)
         raw = gl.nondet.exec_prompt(prompt, response_format="json")
         assessment = _normalise_assessment(raw, urls)
@@ -395,20 +440,28 @@ Decision rules:
             )
         except Exception:
             raise gl.vm.UserError("evidence URLs must be a JSON array")
-        if not isinstance(evidence_urls, list) or len(evidence_urls) < 1 or len(evidence_urls) > 4:
-            raise gl.vm.UserError("provide between 1 and 4 evidence URLs")
+        if not isinstance(evidence_urls, list) or len(evidence_urls) < 1 or len(evidence_urls) > 8:
+            raise gl.vm.UserError("provide between 1 and 8 evidence URLs")
 
         canonical_urls = []
+        evidence_items = []
         for raw in evidence_urls:
-            url = self._canonical_url(str(raw).strip())
-            host = self._host(url)
+            declared_group = ""
+            raw_url = raw
+            if isinstance(raw, dict):
+                raw_url = raw.get("url", "")
+                declared_group = str(raw.get("group", "")).strip().lower()
+            url = self._canonical_url(str(raw_url).strip())
+            self._host(url)
             if not self._scope_allowed(url, charter):
                 raise gl.vm.UserError("evidence URL is outside the charter evidence scope")
             if url in canonical_urls:
                 raise gl.vm.UserError("duplicate evidence URL")
             canonical_urls.append(url)
+            evidence_items.append({"url": url, "group": declared_group or self._source_group_for_url(url, charter) or "default"})
         if len(canonical_urls) < 1:
             raise gl.vm.UserError("no usable evidence URLs")
+        self._validate_grouped_evidence(evidence_items, charter)
 
         target = str(charter.get("protected_target", ""))
         charter_digest = str(charter.get("charter_digest", ""))
@@ -423,6 +476,8 @@ Decision rules:
             "duration_minutes": int(duration_minutes),
             "reason": reason,
             "evidence_urls": canonical_urls,
+            "evidence_items": evidence_items,
+            "evidence_mode": "V2" if charter.get("source_groups") else "V1",
             "opened_at": _now(),
             "expires_at": _now() + INCIDENT_EXPIRY_SECONDS,
         }
@@ -436,6 +491,11 @@ Decision rules:
         record["assessment_digest"] = ""
         record["assessment_count"] = 0
         record["capability_key"] = ""
+        record["assessment_stage"] = "NONE"
+        record["challenge_deadline"] = 0
+        record["challenge_count"] = 0
+        record["challenge_evidence_urls"] = []
+        record["challenge_reasons"] = []
 
         self.incidents[incident_key] = json.dumps(record, sort_keys=True)
         self.incident_keys.append(incident_key)
@@ -443,6 +503,9 @@ Decision rules:
 
     @gl.public.write
     def assess_incident(self, incident_key: str) -> dict:
+        return self._assess_incident(incident_key)
+
+    def _assess_incident(self, incident_key: str) -> dict:
         self._require_key(incident_key, "incident key")
         raw_record = self.incidents.get(incident_key, "")
         if not raw_record:
@@ -451,8 +514,13 @@ Decision rules:
 
         if gl.message.sender_address.as_hex != str(incident.get("requester", "")):
             raise gl.vm.UserError("only incident requester may ask for assessment")
-        if _now() > int(incident.get("expires_at", 0)):
+        now = _now()
+        if now > int(incident.get("expires_at", 0)):
             raise gl.vm.UserError("incident assessment window has expired")
+        status = str(incident.get("status", "OPEN"))
+        finalising_challenge = status in ("ASSESSMENT_PROVISIONAL", "CHALLENGED")
+        if finalising_challenge and now < int(incident.get("challenge_deadline", 0)):
+            raise gl.vm.UserError("challenge window is still open")
 
         previous_decision = ""
         if incident.get("assessment_json"):
@@ -462,7 +530,7 @@ Decision rules:
                 previous_decision = ""
         if int(incident.get("assessment_count", 0)) >= MAX_ASSESSMENT_ATTEMPTS:
             raise gl.vm.UserError("incident assessment retry limit exhausted")
-        if int(incident.get("assessment_count", 0)) > 0 and previous_decision not in (
+        if int(incident.get("assessment_count", 0)) > 0 and not finalising_challenge and previous_decision not in (
             "INSUFFICIENT_EVIDENCE",
             "CONFLICTING_EVIDENCE",
         ):
@@ -472,6 +540,8 @@ Decision rules:
         if str(charter.get("charter_digest", "")) != str(incident.get("charter_digest", "")):
             raise gl.vm.UserError("frozen charter digest mismatch")
 
+        assessment_urls = self._assessment_urls(incident)
+
         def leader_fn():
             return self._evaluate_once(charter, incident)
 
@@ -479,7 +549,7 @@ Decision rules:
             if not isinstance(leader_result, glvm.Return):
                 return False
             try:
-                leader = _normalise_assessment(leader_result.calldata, list(incident.get("evidence_urls", [])))
+                leader = _normalise_assessment(leader_result.calldata, assessment_urls)
             except Exception:
                 return False
 
@@ -528,7 +598,19 @@ Return only JSON: {{"equivalent": true}} or {{"equivalent": false}}.
                 return False
 
         assessment = gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
-        assessment = _normalise_assessment(assessment, list(incident.get("evidence_urls", [])))
+        assessment = _normalise_assessment(assessment, assessment_urls)
+        if incident.get("assessment_json"):
+            try:
+                previous = json.loads(str(incident["assessment_json"]))
+                before = {str(item.get("url")): str(item.get("content_digest", "")) for item in previous.get("source_states", [])}
+                after = {str(item.get("url")): str(item.get("content_digest", "")) for item in assessment.get("source_states", [])}
+                drifted = sorted(url for url in before if before.get(url) and after.get(url) and before.get(url) != after.get(url))
+                if drifted:
+                    assessment["drift_detected"] = True
+                    assessment["drifted_urls"] = drifted
+                    assessment["decision"] = "CONFLICTING_EVIDENCE"
+            except Exception:
+                pass
         assessment["incident_digest"] = str(incident["incident_digest"])
         assessment["charter_digest"] = str(incident["charter_digest"])
         assessment["action_digest"] = str(incident["action_digest"])
@@ -555,13 +637,19 @@ Return only JSON: {{"equivalent": true}} or {{"equivalent": false}}.
         incident["assessment_digest"] = assessment_digest
         incident["assessment_count"] = int(incident.get("assessment_count", 0)) + 1
 
+        challenge_window = int(charter.get("challenge_window_minutes", 0))
         if assessment["decision"] == "TRIGGER_CONFIRMED":
             if not target_authorized:
                 incident["status"] = "ASSESSED_NO_AUTHORITY"
+            elif challenge_window > 0 and not finalising_challenge:
+                incident["status"] = "ASSESSMENT_PROVISIONAL"
+                incident["assessment_stage"] = "PROVISIONAL"
+                incident["challenge_deadline"] = _now() + challenge_window * 60
             else:
                 capability_key = "EXC-" + incident_key
                 incident["capability_key"] = capability_key
                 incident["status"] = "AUTHORITY_PENDING_FINALITY"
+                incident["assessment_stage"] = "FINAL"
                 gate = gl.get_contract_at(Address(self.gate_address))
                 gate.emit(on="finalized").issue_capability(
                     capability_key,
@@ -577,9 +665,68 @@ Return only JSON: {{"equivalent": true}} or {{"equivalent": false}}.
                 )
         else:
             incident["status"] = "ASSESSMENT_RETRYABLE" if assessment["decision"] in ("INSUFFICIENT_EVIDENCE", "CONFLICTING_EVIDENCE") and incident["assessment_count"] < MAX_ASSESSMENT_ATTEMPTS else "ASSESSED_NO_AUTHORITY"
+            incident["assessment_stage"] = "FINAL"
 
         self.incidents[incident_key] = json.dumps(incident, sort_keys=True)
         return assessment
+
+    @gl.public.write
+    def challenge_incident(self, incident_key: str, challenge_evidence_json: str, challenge_reason: str) -> str:
+        """Record one bounded challenge without granting or revoking authority."""
+        raw_record = self.incidents.get(incident_key, "")
+        if not raw_record:
+            raise gl.vm.UserError("incident not found")
+        incident = json.loads(raw_record)
+        if str(incident.get("status", "")) not in ("ASSESSMENT_PROVISIONAL", "CHALLENGED"):
+            raise gl.vm.UserError("incident is not challengeable")
+        if _now() >= int(incident.get("challenge_deadline", 0)):
+            raise gl.vm.UserError("challenge window has closed")
+        charter = self._get_charter(str(incident["charter_key"]))
+        maximum = int(charter.get("maximum_challenges", 0))
+        if int(incident.get("challenge_count", 0)) >= maximum:
+            raise gl.vm.UserError("challenge limit exhausted")
+        sender = gl.message.sender_address.as_hex
+        if sender != str(incident.get("requester", "")):
+            raise gl.vm.UserError("only the charter operator may submit a challenge")
+        try:
+            items = challenge_evidence_json if isinstance(challenge_evidence_json, list) else json.loads(challenge_evidence_json)
+        except Exception:
+            raise gl.vm.UserError("challenge evidence must be a JSON array")
+        if not isinstance(items, list) or len(items) < 1 or len(items) > MAX_CHALLENGE_SOURCES:
+            raise gl.vm.UserError("challenge must contain between 1 and 2 sources")
+        urls = []
+        for raw in items:
+            url = self._canonical_url(str(raw.get("url", "") if isinstance(raw, dict) else raw).strip())
+            if not self._scope_allowed(url, charter) or url in incident.get("evidence_urls", []) or url in urls:
+                raise gl.vm.UserError("challenge source is outside the frozen policy or duplicated")
+            urls.append(url)
+        if charter.get("source_groups"):
+            grouped = [{"url": url, "group": self._source_group_for_url(url, charter)} for url in urls]
+            for item in grouped:
+                if not item["group"]:
+                    raise gl.vm.UserError("challenge source has no approved source group")
+        reason = str(challenge_reason).strip()
+        if len(reason) < 20 or len(reason) > 1200:
+            raise gl.vm.UserError("challenge reason must be between 20 and 1200 characters")
+        incident.setdefault("challenge_evidence_urls", [])
+        incident["challenge_evidence_urls"] = list(incident["challenge_evidence_urls"]) + urls
+        incident["challenge_reasons"] = list(incident.get("challenge_reasons", [])) + [reason]
+        incident["challenge_count"] = int(incident.get("challenge_count", 0)) + 1
+        incident["status"] = "CHALLENGED"
+        self.incidents[incident_key] = json.dumps(incident, sort_keys=True)
+        return incident_key
+
+    @gl.public.write
+    def finalize_incident(self, incident_key: str) -> dict:
+        raw_record = self.incidents.get(incident_key, "")
+        if not raw_record:
+            raise gl.vm.UserError("incident not found")
+        incident = json.loads(raw_record)
+        if str(incident.get("status", "")) not in ("ASSESSMENT_PROVISIONAL", "CHALLENGED"):
+            raise gl.vm.UserError("incident has no provisional assessment")
+        if _now() < int(incident.get("challenge_deadline", 0)):
+            raise gl.vm.UserError("challenge window is still open")
+        return self._assess_incident(incident_key)
 
     @gl.public.view
     def get_incident_json(self, incident_key: str) -> str:

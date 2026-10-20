@@ -9,7 +9,7 @@ def read(name):
 
 def test_every_contract_pins_stable_runner():
     expected = 'py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6'
-    for name in ("charter_registry.py", "exigency_engine.py", "capability_gate.py", "protected_vault.py"):
+    for name in ("charter_registry.py", "exigency_engine.py", "capability_gate.py", "protected_vault.py", "protected_route.py"):
         assert expected in read(name)
 
 
@@ -17,7 +17,7 @@ def test_authority_is_finality_gated():
     engine = read("exigency_engine.py")
     gate = read("capability_gate.py")
     assert 'emit(on="finalized").issue_capability' in engine
-    assert 'emit(on="finalized").emergency_pause_' in gate
+    assert 'emit(on="finalized").apply_emergency_action' in gate
     assert 'on="accepted"' not in engine
     assert 'on="accepted"' not in gate
 
@@ -91,3 +91,24 @@ def test_final_assessment_commits_to_actual_fetched_bytes():
     assert "http_status" in engine
     assert "evidence_commitment_digest" in engine
     assert "Provenance fields are code-derived from the actual fetched bytes" in engine
+
+
+def test_v2_policy_is_bounded_and_drift_fails_closed():
+    registry = read("charter_registry.py")
+    engine = read("exigency_engine.py")
+    assert "publish_charter_v2" in registry
+    assert "source_groups" in registry
+    assert "minimum_source_groups" in registry
+    assert "challenge_window_minutes" in registry
+    assert "drift_detected" in engine
+    assert "challenge_incident" in engine
+    assert "finalize_incident" in engine
+
+
+def test_second_target_uses_same_narrow_interface():
+    gate = read("capability_gate.py")
+    route = read("protected_route.py")
+    assert "No arbitrary calldata" in gate
+    assert "def apply_emergency_action" in route
+    assert "DISABLE_PROTECTED_ROUTE" in route
+    assert "get_governance_address" in route

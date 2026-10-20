@@ -9,13 +9,14 @@ recovery. The target stores no user value and has no external payout path.
 ## Deployed stack
 
 - Network: Studionet 61999
-- Registry: `0xcb07C70A9f27b885031ab09693eC9AB49FE29ad5`
-- Engine: `0x87Db5c9eBfe51c790572E77bEbe4e77A382f5234`
-- Gate: `0x3e3002E2955510171CC9e6373616a5e1A5439CA8`
-- Protected target: `0xA4b7b2B65CcC436c2CaE6e2d0fE66f45e9bBAbBb`
-- Source commit for this deployed contract stack:
-  `34f97bee971fd4c0c750ab0dd8cf05ab48f191f2`
-- Source verification: 4/4 exact byte matches
+- Registry: `0xA4dba5B0572B3D721955Ce3A9E3dc46F791e4C92`
+- Engine: `0x903f895E256817aBFE97f101292B94F85d0b59BA`
+- Gate: `0xE383404e8C00868A86BD412F4e72Cb13328Ed2EF`
+- Protected vault: `0xF3dC371E50c296c6Ef1067eAe95104F864F391B3`
+- Protected route: `0x7217760864796a1CaeDAaFB418b7d168a91331a4`
+- Source commit for this deployed contract stack: recorded in
+  `deployment-manifest.public.json`
+- Source verification: 5/5 exact byte matches
 
 The committed `deployment-manifest.public.json` is the authoritative current
 deployment record.
@@ -45,7 +46,7 @@ governance rejection.
 
 ## Current health evidence
 
-Deployment health run: [37054512946](https://github.com/Bibidee/exigency/actions/runs/37054512946) — `SUCCESS`.
+Deployment health will be rerun after the V2 production alias is live.
 
 It verified `/`, `/command`, and `/vault`, Studionet RPC, chain ID `61999`, all
 four contract reads, protected-target readability, an unpaused target, and
@@ -76,8 +77,8 @@ target-governance deployment. Missing intermediate hashes remain
 
 ## Test results
 
-- Unit: 14 passed
-- Direct Mode: 29 passed
+- Unit: 16 passed
+- Direct Mode: blocked by the local GenLayer runner stdin/runtime issue
 - Browser: 9 passed
 - Contract lint and validation: passed
 - Typecheck: passed

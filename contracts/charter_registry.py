@@ -9,6 +9,7 @@ from genlayer import *
 
 ALLOWED_ACTIONS = (
     "PAUSE_PROTECTED_ACTION",
+    "DISABLE_PROTECTED_ROUTE",
 )
 
 
@@ -75,8 +76,122 @@ class CharterRegistry(gl.Contract):
                 prefix += "/"
         return host, prefix
 
+    def _parse_source_groups(self, raw_groups) -> list:
+        """Normalise V2 evidence-group policy into frozen host allowlists."""
+        try:
+            groups = raw_groups if isinstance(raw_groups, list) else json.loads(raw_groups)
+        except Exception:
+            raise gl.vm.UserError("source groups must be a JSON array")
+        if not isinstance(groups, list) or len(groups) < 2 or len(groups) > 8:
+            raise gl.vm.UserError("provide between 2 and 8 source groups")
+        normalised = []
+        seen = []
+        for item in groups:
+            if not isinstance(item, dict):
+                raise gl.vm.UserError("source group must be an object")
+            name = str(item.get("name", "")).strip().lower()
+            if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{1,63}", name) or name in seen:
+                raise gl.vm.UserError("invalid or duplicate source group name")
+            hosts = item.get("hosts", [])
+            if not isinstance(hosts, list) or len(hosts) < 1 or len(hosts) > 8:
+                raise gl.vm.UserError("each source group needs between 1 and 8 hosts")
+            clean_hosts = []
+            for host in hosts:
+                value = self._normalise_host(str(host))
+                if value not in clean_hosts:
+                    clean_hosts.append(value)
+            normalised.append({"name": name, "hosts": clean_hosts})
+            seen.append(name)
+        return normalised
+
+    @gl.public.write
+    def publish_charter_v2(
+        self,
+        charter_key: str,
+        protocol_key: str,
+        protocol_name: str,
+        protected_target: str,
+        trigger_policy: str,
+        evidence_policy: str,
+        evidence_hosts_csv: str,
+        allowed_actions_csv: str,
+        max_pause_minutes: int,
+        capability_ttl_minutes: int,
+        activation_delay_minutes: int,
+        source_groups_json: str,
+        minimum_source_groups: int,
+        challenge_window_minutes: int,
+        maximum_challenges: int,
+    ) -> str:
+        """Publish a V2 charter with explicit evidence diversity and challenge bounds.
+
+        The original publish_charter entrypoint remains unchanged for V1 clients.
+        V2 incidents must use the frozen source-group policy stored here.
+        """
+        charter_key = self._publish_charter(
+            charter_key,
+            protocol_key,
+            protocol_name,
+            protected_target,
+            trigger_policy,
+            evidence_policy,
+            evidence_hosts_csv,
+            allowed_actions_csv,
+            max_pause_minutes,
+            capability_ttl_minutes,
+            activation_delay_minutes,
+        )
+        groups = self._parse_source_groups(source_groups_json)
+        if minimum_source_groups < 2 or minimum_source_groups > len(groups):
+            raise gl.vm.UserError("minimum source groups must be within the group policy")
+        if challenge_window_minutes < 0 or challenge_window_minutes > 1440:
+            raise gl.vm.UserError("challenge window must be between 0 and 1440 minutes")
+        if maximum_challenges < 0 or maximum_challenges > 3:
+            raise gl.vm.UserError("maximum challenges must be between 0 and 3")
+
+        raw = self.charters.get(charter_key, "")
+        record = json.loads(raw)
+        record["source_groups"] = groups
+        record["minimum_source_groups"] = int(minimum_source_groups)
+        record["challenge_window_minutes"] = int(challenge_window_minutes)
+        record["maximum_challenges"] = int(maximum_challenges)
+        record["challenge_policy"] = "CHARTER_OWNER"
+        frozen = dict(record)
+        frozen.pop("charter_digest", None)
+        record["charter_digest"] = self._digest(frozen)
+        self.charters[charter_key] = json.dumps(record, sort_keys=True)
+        return charter_key
+
     @gl.public.write
     def publish_charter(
+        self,
+        charter_key: str,
+        protocol_key: str,
+        protocol_name: str,
+        protected_target: str,
+        trigger_policy: str,
+        evidence_policy: str,
+        evidence_hosts_csv: str,
+        allowed_actions_csv: str,
+        max_pause_minutes: int,
+        capability_ttl_minutes: int,
+        activation_delay_minutes: int,
+    ) -> str:
+        return self._publish_charter(
+            charter_key,
+            protocol_key,
+            protocol_name,
+            protected_target,
+            trigger_policy,
+            evidence_policy,
+            evidence_hosts_csv,
+            allowed_actions_csv,
+            max_pause_minutes,
+            capability_ttl_minutes,
+            activation_delay_minutes,
+        )
+
+    def _publish_charter(
         self,
         charter_key: str,
         protocol_key: str,

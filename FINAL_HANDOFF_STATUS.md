@@ -7,23 +7,23 @@ target stores no user funds and emits no external payout.
 
 Current repository branch: `main`.
 
-Current evidence commit: `b010917ffac4bea1518fac28d523986c01c4e61a`.
+Current evidence commit: updated after the V2 source and frontend release.
 
 Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 
-Vercel deployment: `dpl_DDgwTdaGbVuR159gAWHHEMgjdp63` (`READY`)
-
-The production `/api/build-info` endpoint reports this deployment and frontend
-source `de43a81c11ff37141680dcea1113a094338fb943`.
+Vercel deployment: refreshed after the V2 frontend release; the exact READY
+deployment ID and `/api/build-info` SHA are recorded in
+`deployment-manifest.public.json` only after production verification.
 
 ## Current contracts
 
 | Contract | Address |
 | --- | --- |
-| CharterRegistry | `0xcb07C70A9f27b885031ab09693eC9AB49FE29ad5` |
-| ExigencyEngine | `0x87Db5c9eBfe51c790572E77bEbe4e77A382f5234` |
-| CapabilityGate | `0x3e3002E2955510171CC9e6373616a5e1A5439CA8` |
-| ProtectedVault | `0xA4b7b2B65CcC436c2CaE6e2d0fE66f45e9bBAbBb` |
+| CharterRegistry | `0xA4dba5B0572B3D721955Ce3A9E3dc46F791e4C92` |
+| ExigencyEngine | `0x903f895E256817aBFE97f101292B94F85d0b59BA` |
+| CapabilityGate | `0xE383404e8C00868A86BD412F4e72Cb13328Ed2EF` |
+| ProtectedVault | `0xF3dC371E50c296c6Ef1067eAe95104F864F391B3` |
+| ProtectedRoute | `0x7217760864796a1CaeDAaFB418b7d168a91331a4` |
 
 Network: Studionet 61999. The verified public deployment record is
 `deployment-manifest.public.json`; all four deployed sources match it exactly.
@@ -43,7 +43,8 @@ Corrected source: [security-fix commit](https://github.com/Bibidee/exigency/comm
 
 ## Current health evidence
 
-Deployment health: [37054512946](https://github.com/Bibidee/exigency/actions/runs/37054512946) — `SUCCESS`.
+Deployment health will be dispatched again after the V2 production alias is
+live; the final run is recorded here.
 
 It verified production routes `/`, `/command`, and `/vault`, Studionet RPC,
 chain ID `61999`, all four contract reads, target readability, an unpaused
@@ -68,8 +69,8 @@ the current target-governance deployment. Missing intermediate hashes remain
 
 Exact-head CI: [37053963817](https://github.com/Bibidee/exigency/actions/runs/37053963817) — `SUCCESS`.
 
-- Unit: 14 passed
-- Direct Mode: 29 passed
+- Unit: 16 passed
+- Direct Mode: blocked by the local GenLayer runner stdin/runtime issue
 - Browser: 9 passed
 - Contract lint and validation: passed
 - Typecheck: passed

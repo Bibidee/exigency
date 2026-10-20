@@ -12,6 +12,7 @@ export type DeploymentAddresses = {
   exigencyEngine: `0x${string}` | "";
   capabilityGate: `0x${string}` | "";
   protectedVault: `0x${string}` | "";
+  protectedRoute: `0x${string}` | "";
 };
 
 const DEPLOYED_ADDRESSES: DeploymentAddresses = publicManifest.contracts as DeploymentAddresses;
@@ -21,9 +22,10 @@ export const ADDRESSES: DeploymentAddresses = {
   exigencyEngine: (process.env.NEXT_PUBLIC_EXIGENCY_ENGINE_ADDRESS || DEPLOYED_ADDRESSES.exigencyEngine) as DeploymentAddresses["exigencyEngine"],
   capabilityGate: (process.env.NEXT_PUBLIC_CAPABILITY_GATE_ADDRESS || DEPLOYED_ADDRESSES.capabilityGate) as DeploymentAddresses["capabilityGate"],
   protectedVault: (process.env.NEXT_PUBLIC_PROTECTED_VAULT_ADDRESS || DEPLOYED_ADDRESSES.protectedVault) as DeploymentAddresses["protectedVault"],
+  protectedRoute: (process.env.NEXT_PUBLIC_PROTECTED_ROUTE_ADDRESS || DEPLOYED_ADDRESSES.protectedRoute || "") as DeploymentAddresses["protectedRoute"],
 };
 
-export const isConfigured = Object.values(ADDRESSES).every(Boolean);
+export const isConfigured = [ADDRESSES.charterRegistry, ADDRESSES.exigencyEngine, ADDRESSES.capabilityGate, ADDRESSES.protectedVault].every(Boolean);
 
 export function explorerTx(hash: string) {
   return `${NETWORK.explorer}/tx/${hash}`;

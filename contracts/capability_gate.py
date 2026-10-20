@@ -8,6 +8,7 @@ from genlayer import *
 
 ALLOWED_ACTIONS = (
     "PAUSE_PROTECTED_ACTION",
+    "DISABLE_PROTECTED_ROUTE",
 )
 
 
@@ -152,16 +153,16 @@ class CapabilityGate(gl.Contract):
         self.capabilities[capability_key] = json.dumps(record, sort_keys=True)
 
         protected = gl.get_contract_at(Address(target_hex))
-        if action_class == "PAUSE_PROTECTED_ACTION":
-            protected.emit(on="finalized").emergency_pause_protected_action(
-                int(duration_minutes),
-                str(record["incident_key"]),
-                capability_key,
-                str(record["action_digest"]),
-                str(record["holder"]),
-            )
-        else:
-            raise gl.vm.UserError("unsupported action class")
+        # Both protected targets implement this deliberately narrow interface.
+        # No arbitrary calldata is accepted or forwarded by the Gate.
+        protected.emit(on="finalized").apply_emergency_action(
+            action_class,
+            int(duration_minutes),
+            str(record["incident_key"]),
+            capability_key,
+            str(record["action_digest"]),
+            str(record["holder"]),
+        )
 
         return action_class
 

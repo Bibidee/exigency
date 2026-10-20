@@ -28,7 +28,7 @@ function command(candidates, args, label) {
   throw new Error(`${label} was not found`);
 }
 
-const contracts = ["capability_gate.py", "charter_registry.py", "exigency_engine.py", "protected_vault.py"];
+const contracts = ["capability_gate.py", "charter_registry.py", "exigency_engine.py", "protected_vault.py", "protected_route.py"];
 for (const contract of contracts) command(pythonCandidates, ["-m", "py_compile", join("contracts", contract)], "Python");
 if (process.argv.includes("--compile-only")) process.exit(0);
 for (const contract of contracts) {

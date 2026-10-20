@@ -74,3 +74,20 @@ EXIGENT capability changes whether that action is accepted.
 Charters are immutable and protocol-owner-bound. Activation selects only the
 version used for future incidents, and each incident stores the frozen charter
 digest it was assessed against.
+
+## V2 policy extensions
+
+V2 preserves the Registry → Engine → Gate chain and adds bounded policy state:
+
+- `source_groups` and `minimum_source_groups` require distinct approved host
+  groups before an incident can be assessed;
+- each assessment commits the actual HTTP status and content digest, and a
+  changed digest across assessment rounds is marked as drift and fails closed;
+- a confirmed result can remain `ASSESSMENT_PROVISIONAL` during a charter-
+  defined challenge window. Only bounded post-window reassessment can issue a
+  capability.
+
+The Gate forwards one fixed `apply_emergency_action` envelope. It never accepts
+arbitrary calldata. `ProtectedVault` implements the pause action and
+`ProtectedRoute` implements `DISABLE_PROTECTED_ROUTE` under the same Gate and
+target-governance checks.

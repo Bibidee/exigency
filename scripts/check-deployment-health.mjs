@@ -31,4 +31,10 @@ if (typeof status.protected_action_paused !== "boolean") throw new Error("Protec
 if (typeof status.protected_action_count !== "string") throw new Error("Protected target action count is unavailable");
 const engine = await client.readContract({ address: manifest.contracts.capabilityGate, functionName: "get_engine_address", args: [] });
 if (String(engine).toLowerCase() !== manifest.contracts.exigencyEngine.toLowerCase()) throw new Error("CapabilityGate engine address does not match the deployment manifest");
-console.log(JSON.stringify({ baseUrl, buildInfo, network: manifest.network, chainId: manifest.chainId, rpcReachable: true, routes: ["/", "/command", "/vault"], contractsRead: { charterRegistry: true, exigencyEngine: true, capabilityGate: true, protectedVault: true }, counts: { charters: charterKeys.length, incidents: incidentKeys.length, capabilities: capabilityKeys.length }, protectedVault: manifest.contracts.protectedVault, protectedActionPaused: status.protected_action_paused, protectedActionCount: status.protected_action_count }));
+let protectedRoute = null;
+if (manifest.contracts.protectedRoute) {
+  const routeRaw = await client.readContract({ address: manifest.contracts.protectedRoute, functionName: "get_status_json", args: [] });
+  protectedRoute = JSON.parse(routeRaw);
+  if (String(protectedRoute.gate_address).toLowerCase() !== manifest.contracts.capabilityGate.toLowerCase()) throw new Error("ProtectedRoute gate address does not match the deployment manifest");
+}
+console.log(JSON.stringify({ baseUrl, buildInfo, network: manifest.network, chainId: manifest.chainId, rpcReachable: true, routes: ["/", "/command", "/vault"], contractsRead: { charterRegistry: true, exigencyEngine: true, capabilityGate: true, protectedVault: true, protectedRoute: Boolean(protectedRoute) }, counts: { charters: charterKeys.length, incidents: incidentKeys.length, capabilities: capabilityKeys.length }, protectedVault: manifest.contracts.protectedVault, protectedActionPaused: status.protected_action_paused, protectedActionCount: status.protected_action_count, protectedRoute }));

@@ -19,6 +19,11 @@ export type CharterRecord = {
   eligible_at: number;
   activation_delay_minutes: number;
   charter_digest: string;
+  source_groups?: Array<{name: string; hosts: string[]}>;
+  minimum_source_groups?: number;
+  challenge_window_minutes?: number;
+  maximum_challenges?: number;
+  challenge_policy?: string;
 };
 
 export type IncidentRecord = {
@@ -40,6 +45,13 @@ export type IncidentRecord = {
   assessment_digest: string;
   assessment_count: number;
   capability_key: string;
+  evidence_items?: Array<{url: string; group: string}>;
+  evidence_mode?: string;
+  assessment_stage?: string;
+  challenge_deadline?: number;
+  challenge_count?: number;
+  challenge_evidence_urls?: string[];
+  challenge_reasons?: string[];
 };
 
 export type CapabilityRecord = {
@@ -97,6 +109,10 @@ export async function publishCharter(account: `0x${string}`, args: unknown[]) {
   return submitWrite(account, ADDRESSES.charterRegistry, "publish_charter", args);
 }
 
+export async function publishCharterV2(account: `0x${string}`, args: unknown[]) {
+  return submitWrite(account, ADDRESSES.charterRegistry, "publish_charter_v2", args);
+}
+
 export async function activateCharter(account: `0x${string}`, charterKey: string) {
   return submitWrite(account, ADDRESSES.charterRegistry, "activate_charter", [charterKey]);
 }
@@ -107,6 +123,14 @@ export async function openIncident(account: `0x${string}`, args: unknown[]) {
 
 export async function assessIncident(account: `0x${string}`, incidentKey: string) {
   return submitWrite(account, ADDRESSES.exigencyEngine, "assess_incident", [incidentKey]);
+}
+
+export async function challengeIncident(account: `0x${string}`, incidentKey: string, evidenceJson: string, reason: string) {
+  return submitWrite(account, ADDRESSES.exigencyEngine, "challenge_incident", [incidentKey, evidenceJson, reason]);
+}
+
+export async function finalizeIncident(account: `0x${string}`, incidentKey: string) {
+  return submitWrite(account, ADDRESSES.exigencyEngine, "finalize_incident", [incidentKey]);
 }
 
 export async function executeCapability(account: `0x${string}`, capability: CapabilityRecord) {
@@ -124,4 +148,15 @@ export async function reconcileCapability(account: `0x${string}`, capabilityKey:
 
 export async function executeProtectedAction(account: `0x${string}`, actionKey: string) {
   return submitWrite(account, ADDRESSES.protectedVault, "execute_protected_action", [actionKey]);
+}
+
+export async function getProtectedRouteStatus() {
+  if (!ADDRESSES.protectedRoute) return null;
+  const raw = await readContract<string>(ADDRESSES.protectedRoute, "get_status_json", []);
+  return JSON.parse(raw) as Record<string, unknown>;
+}
+
+export async function executeProtectedRoute(account: `0x${string}`, routeKey: string) {
+  if (!ADDRESSES.protectedRoute) throw new Error("Protected route is not deployed.");
+  return submitWrite(account, ADDRESSES.protectedRoute, "execute_route", [routeKey]);
 }

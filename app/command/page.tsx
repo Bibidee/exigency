@@ -7,13 +7,14 @@ import AppShell from "@/components/AppShell";
 import PageIntro from "@/components/PageIntro";
 import Panel from "@/components/Panel";
 import { ADDRESSES, NETWORK, isConfigured } from "@/lib/config";
-import { getVaultStatus, listCapabilityKeys, listCharterKeys, listIncidentKeys } from "@/lib/contracts";
+import { getProtectedRouteStatus, getVaultStatus, listCapabilityKeys, listCharterKeys, listIncidentKeys } from "@/lib/contracts";
 
 export default function CommandPage() {
   const [charters, setCharters] = useState<string[]>([]);
   const [incidents, setIncidents] = useState<string[]>([]);
   const [capabilities, setCapabilities] = useState<string[]>([]);
   const [vault, setVault] = useState<Record<string, unknown> | null>(null);
+  const [route, setRoute] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -25,6 +26,7 @@ export default function CommandPage() {
       try { const value = await listIncidentKeys(); if (!cancelled) setIncidents(value); } catch (e) { failures.push(`incidents: ${e instanceof Error ? e.message : String(e)}`); }
       try { const value = await listCapabilityKeys(); if (!cancelled) setCapabilities(value); } catch (e) { failures.push(`capabilities: ${e instanceof Error ? e.message : String(e)}`); }
       try { const value = await getVaultStatus(); if (!cancelled) setVault(value); } catch (e) { failures.push(`vault: ${e instanceof Error ? e.message : String(e)}`); }
+      try { const value = await getProtectedRouteStatus(); if (!cancelled) setRoute(value); } catch (e) { failures.push(`route: ${e instanceof Error ? e.message : String(e)}`); }
       if (!cancelled && failures.length) setError(failures.join("\n"));
     };
     void load();
@@ -68,6 +70,8 @@ export default function CommandPage() {
           </div>
         </Panel>
       </div>
+
+      {route && <Panel eyebrow="Second protected target" title="Protected route state"><div className="panel-body"><dl className="keyvals"><div className="keyval"><dt>Route disabled</dt><dd>{String(route.route_disabled)}</dd></div><div className="keyval"><dt>Route executions</dt><dd className="mono">{String(route.route_execution_count)}</dd></div><div className="keyval"><dt>Governance</dt><dd className="digest">{String(route.governance_address)}</dd></div></dl></div></Panel>}
 
       <Panel eyebrow="Canonical target" title="Studionet configuration" className="" >
         <div className="panel-body"><dl className="keyvals">

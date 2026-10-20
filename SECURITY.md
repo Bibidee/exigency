@@ -67,6 +67,23 @@ This is not a two-wallet successful separation-of-duties lifecycle.
 
 ## References
 
+## V2 evidence and challenge boundaries
+
+V2 charters freeze named source groups and a minimum distinct-group count.
+Incident evidence must declare its group, and the URL host must belong to the
+group's frozen allowlist. This prevents satisfying a diversity requirement with
+multiple URLs from one source family.
+
+Assessment rounds commit the actual HTTP status and content SHA-256 for every
+source. A changed digest across reassessment rounds is marked as conflicting;
+no authority is issued from that round. A confirmed V2 result is provisional
+until its challenge window closes. Challenge count and source count are
+bounded by the charter, and only final reassessment can issue a capability.
+
+`ProtectedRoute` is a second target using the same fixed Gate envelope as
+`ProtectedVault`. It accepts no arbitrary calldata and repeats the target-
+governance holder check before applying `DISABLE_PROTECTED_ROUTE`.
+
 - [GenLayer Messages](https://docs.genlayer.com/developers/intelligent-contracts/features/messages)
 - [GenLayer Value Transfers](https://docs.genlayer.com/developers/intelligent-contracts/features/value-transfers)
 - [GenVM v0.3 changelog](https://github.com/genlayerlabs/genvm/blob/main/doc/website/src/python-sdk/changelog-notes/v0.3.rst)

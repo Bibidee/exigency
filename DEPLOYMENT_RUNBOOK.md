@@ -56,6 +56,7 @@ Deployment order is deliberate:
 3. ExigencyEngine(registry, gate)
 4. bind gate -> engine
 5. ProtectedVault(gate)
+6. ProtectedRoute(gate)
 
 `deploy/deployScript.ts` produces local `.env.generated` and
 `deployment-manifest.generated.json` for a fresh deployment. The verified
@@ -89,7 +90,19 @@ Capability TTL: 30 minutes
 Activation delay: 1 minute
 ```
 
-For reproducible mechanics testing, `demo/evidence/` contains clearly-labelled synthetic fixtures. After the repository is public, replace `OWNER/REPO` in the incident form with the actual GitHub path and approve `raw.githubusercontent.com` in the charter. For the strongest review demonstration, also run at least one case using genuinely independent public incident/security sources rather than relying only on project-owned fixtures.
+For reproducible mechanics testing, `demo/evidence/` contains clearly-labelled synthetic fixtures. The public repository paths are already filled into the incident form; approve `raw.githubusercontent.com` and `github.com` in the charter's named source groups. For the strongest review demonstration, also run at least one case using genuinely independent public incident/security sources rather than relying only on project-owned fixtures.
+
+For V2, publish through `publish_charter_v2` with at least two named source
+groups and a minimum distinct-group count. Freeze incident evidence as
+`{"group":"name","url":"https://..."}` objects. A confirmed assessment is
+provisional while its challenge window is open; call `challenge_incident` at
+most the charter-defined number of times, then `finalize_incident` after the
+window closes. A source digest change across rounds is recorded as drift and
+cannot issue authority.
+
+The deploy script also deploys `ProtectedRoute`. It uses the same Gate and
+holder envelope as `ProtectedVault`; its V2 action is
+`DISABLE_PROTECTED_ROUTE`.
 
 ## 7. Archive evidence
 
