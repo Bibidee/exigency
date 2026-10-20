@@ -46,9 +46,12 @@ governance rejection.
 
 ## Current health evidence
 
-Production deployment: `dpl_5xX6ea47LCRVdt7i7cCgvYi5FsU8` (`READY`).
+Production deployment: `dpl_wz8QTEpaRBqRJUUUk9xYB8VNAFYM` (`READY`).
 The production `/api/build-info` endpoint reports frontend source
 `e6a7a9f8b920dafcaad57304c1d763072c580217`.
+The final `2c5e111` commit is documentation/evidence-only; exact Vercel
+Git-integration metadata for that documentation commit is not independently
+available.
 
 It verified `/`, `/command`, and `/vault`, Studionet RPC, chain ID `61999`, all
 five contract reads, both target bindings, the current protected-route state,
@@ -72,7 +75,7 @@ target-governance deployment. Missing intermediate hashes remain
 ## Frontend
 
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
-- Deployment: `dpl_5xX6ea47LCRVdt7i7cCgvYi5FsU8`
+- Deployment: `dpl_wz8QTEpaRBqRJUUUk9xYB8VNAFYM`
 - Deployment state: `READY`
 - Frontend source from `/api/build-info`:
   `e6a7a9f8b920dafcaad57304c1d763072c580217`

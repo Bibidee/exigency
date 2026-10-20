@@ -11,10 +11,13 @@ The final repository SHA is the exact-head commit reported by the final CI run b
 
 Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 
-Vercel deployment: `dpl_5xX6ea47LCRVdt7i7cCgvYi5FsU8` (`READY`)
+Vercel deployment: `dpl_wz8QTEpaRBqRJUUUk9xYB8VNAFYM` (`READY`)
 
 The production `/api/build-info` endpoint reports frontend source
 `e6a7a9f8b920dafcaad57304c1d763072c580217`.
+The final `2c5e111` commit is documentation/evidence-only; exact Vercel
+Git-integration metadata for that documentation commit is not independently
+available.
 
 ## Current contracts
 
