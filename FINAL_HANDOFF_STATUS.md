@@ -67,7 +67,9 @@ the current target-governance deployment. Missing intermediate hashes remain
 
 ## Test baseline
 
-Exact-head CI: to be refreshed for this documentation commit.
+Exact-head functional CI: [39467828257](https://github.com/Bibidee/exigency/actions/runs/39467828257) — `SUCCESS`.
+The final repository commit after that run contains documentation-only evidence
+updates; no contract or frontend source changed afterward.
 
 - Unit: 16 passed
 - Direct Mode: 32 passed in CI
