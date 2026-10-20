@@ -46,20 +46,20 @@ governance rejection.
 
 ## Current health evidence
 
-Production deployment: `dpl_HueMeEeFWbUweDZVEsbWKoSfTVVQ` (`READY`).
+Production deployment: `dpl_5xX6ea47LCRVdt7i7cCgvYi5FsU8` (`READY`).
 The production `/api/build-info` endpoint reports frontend source
-`b52d44a586d3e98dc2dedfffe8efa52067266e70`.
+`e6a7a9f8b920dafcaad57304c1d763072c580217`.
 
 It verified `/`, `/command`, and `/vault`, Studionet RPC, chain ID `61999`, all
-five contract reads, both target bindings, unpaused targets, and `5/5`
-deployed source byte matches.
+five contract reads, both target bindings, the current protected-route state,
+and `5/5` deployed source byte matches.
 
 Current counts on this fresh deployment are:
 
-- charters: `0`
-- incidents: `0`
-- capabilities: `0`
-- protectedActionCount: `0`
+- charters: `5`
+- incidents: `4`
+- capabilities: `1`
+- protected route: `route_disabled=true`, `route_execution_count=0`
 
 ## Historical pre-governance-fix lifecycle
 
@@ -72,10 +72,10 @@ target-governance deployment. Missing intermediate hashes remain
 ## Frontend
 
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
-- Deployment: `dpl_DDgwTdaGbVuR159gAWHHEMgjdp63`
+- Deployment: `dpl_5xX6ea47LCRVdt7i7cCgvYi5FsU8`
 - Deployment state: `READY`
 - Frontend source from `/api/build-info`:
-  `de43a81c11ff37141680dcea1113a094338fb943`
+  `e6a7a9f8b920dafcaad57304c1d763072c580217`
 
 ## Test results
 
@@ -94,6 +94,7 @@ Browser mocks remain development/test-only and are not available in production.
 
 - No live failed payout is attempted because the current target has no payout
   path; the safety decision is structural, not a fabricated failure proof.
-- Five moderate transitive npm advisories remain; no unsafe forced upgrade was
+- Four moderate transitive GenLayer/Vitest tooling advisories remain; high and
+  critical findings are cleared. No unsafe forced GenLayer downgrade was
   applied.
 - Some historical lifecycle hashes remain `NOT RECORDED`.

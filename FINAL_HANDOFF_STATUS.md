@@ -11,10 +11,10 @@ The final repository SHA is the exact-head commit reported by the final CI run b
 
 Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 
-Vercel deployment: `dpl_HueMeEeFWbUweDZVEsbWKoSfTVVQ` (`READY`)
+Vercel deployment: `dpl_5xX6ea47LCRVdt7i7cCgvYi5FsU8` (`READY`)
 
 The production `/api/build-info` endpoint reports frontend source
-`b52d44a586d3e98dc2dedfffe8efa52067266e70`.
+`e6a7a9f8b920dafcaad57304c1d763072c580217`.
 
 ## Current contracts
 
@@ -44,18 +44,37 @@ Corrected source: [security-fix commit](https://github.com/Bibidee/exigency/comm
 
 ## Current health evidence
 
-Deployment health: [39467650675](https://github.com/Bibidee/exigency/actions/runs/39467650675) — `SUCCESS`.
+Deployment health: the local health check passed after the production alias was updated; the exact-head GitHub health run is recorded after the final commit.
 
 It verified production routes `/`, `/command`, and `/vault`, Studionet RPC,
-chain ID `61999`, all five contract reads, both target bindings, unpaused
-targets, and `5/5` deployed source byte matches.
+chain ID `61999`, all five contract reads, both target bindings, the current
+protected-route state, and `5/5` deployed source byte matches.
 
-Current live counts on this fresh deployment:
+Current live counts after the fresh V2 lifecycle:
 
-- charters: `0`
-- incidents: `0`
-- capabilities: `0`
-- protectedActionCount: `0`
+- charters: `5`
+- incidents: `4`
+- capabilities: `1`
+- protected route: `route_disabled=true`, `route_execution_count=0`
+
+## Current V2 live lifecycle
+
+The unlocked Studionet CLI completed a fresh grouped-evidence lifecycle against
+the current five-contract deployment:
+
+- Charter: `V2-LIVE-1792526492`
+- Incident: `V2-INC-1792526492`
+- Capability: `EXC-V2-INC-1792526492`
+- Challenge: [0xb25a0ce0…4869](https://explorer-studio.genlayer.com/tx/0xb25a0ce07f9d5f069a5bb5fe18a63e13eac132ac8cef66982d119464e0cd4869)
+- Finalization: [0xc6611149…ad42](https://explorer-studio.genlayer.com/tx/0xc661114921fb8cff2f00adce43224965dec0526beff2d32c81a785eb25fdad42)
+- Capability issuance child: [0xc16668d0…2bd6c](https://explorer-studio.genlayer.com/tx/0xc16668d0aa0cc576d1e0886761573b74eefcbb3a67b779ace92a6c51f1b2bd6c)
+- Capability execution: [0x200c8748…6da7](https://explorer-studio.genlayer.com/tx/0x200c874858c8878490b38495fc3e51048360a880f9acb7e3db50675865626da7)
+- Protected-route child: [0x42029d19…7d3c](https://explorer-studio.genlayer.com/tx/0x42029d1932ce62d788c690d646237498bcbfc356e624a57477c7f9f47bcd7d3c)
+- Reconciliation: [0x8a81bd52…a769](https://explorer-studio.genlayer.com/tx/0x8a81bd528935d49f5bd73b89e5c4bfdabc9e8cfb2ab29db0480e09bef921a769)
+
+The final read showed `TRIGGER_CONFIRMED`, `APPLIED`, `consumed=true`, and
+`route_disabled=true`. Charter publication, activation, incident opening, and
+the two assessment parent hashes were not recorded separately.
 
 ## Historical pre-governance-fix lifecycle
 
@@ -67,9 +86,8 @@ the current target-governance deployment. Missing intermediate hashes remain
 
 ## Test baseline
 
-Exact-head functional CI: [39467828257](https://github.com/Bibidee/exigency/actions/runs/39467828257) — `SUCCESS`.
-The final repository commit after that run contains documentation-only evidence
-updates; no contract or frontend source changed afterward.
+The dependency/security patch is committed and pushed; exact-head CI and health
+links are recorded after that final commit.
 
 - Unit: 16 passed
 - Direct Mode: 32 passed in CI
@@ -85,6 +103,7 @@ Browser mocks are test-only and unavailable in production code paths; all
 
 - Live failed-payout recovery is not a feature because the target does not
   transfer or custody GEN.
-- Five moderate transitive npm advisories remain; no unsafe forced upgrade was
+- Four moderate transitive GenLayer/Vitest tooling advisories remain; high and
+  critical findings are cleared. No unsafe forced GenLayer downgrade was
   applied.
 - Some historical lifecycle transaction hashes remain `NOT RECORDED`.
