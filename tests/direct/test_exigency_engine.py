@@ -133,7 +133,7 @@ def test_v2_evidence_requires_declared_distinct_source_groups(direct_vm, direct_
             {"name": "independent", "hosts": ["github.com"]},
         ],
     )
-    with direct_vm.expect_revert("minimum source groups"):
+    with direct_vm.expect_revert("minimum source-group diversity"):
         _open(engine, "INC-ENGINE-GROUP-01", [{"group": "official", "url": "https://example.com/evidence/primary"}])
     with direct_vm.expect_revert("does not belong to its declared source group"):
         _open(engine, "INC-ENGINE-GROUP-02", [{"group": "official", "url": "https://github.com/Bibidee/exigency"}, {"group": "independent", "url": "https://example.com/evidence/primary"}])
