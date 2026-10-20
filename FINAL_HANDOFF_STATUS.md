@@ -11,7 +11,7 @@ The final repository SHA is the exact-head commit reported by the final CI run b
 
 Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 
-Vercel deployment: `dpl_FYPyWPGnRtGwh85ZfG1naEVXkzsJ` (`READY`)
+Vercel deployment: `dpl_2Y5jYRPLyhNfh8VXmUfKAgt6VfCH` (`READY`)
 
 The production `/api/build-info` endpoint reports frontend source
 `d598887af943d3db9b9d982d7e2bf53a2054164c`.

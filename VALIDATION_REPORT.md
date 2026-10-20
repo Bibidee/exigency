@@ -46,7 +46,7 @@ governance rejection.
 
 ## Current health evidence
 
-Production deployment: `dpl_FYPyWPGnRtGwh85ZfG1naEVXkzsJ` (`READY`).
+Production deployment: `dpl_2Y5jYRPLyhNfh8VXmUfKAgt6VfCH` (`READY`).
 The production `/api/build-info` endpoint reports frontend source
 `d598887af943d3db9b9d982d7e2bf53a2054164c`.
 
@@ -72,7 +72,7 @@ target-governance deployment. Missing intermediate hashes remain
 ## Frontend
 
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
-- Deployment: `dpl_FYPyWPGnRtGwh85ZfG1naEVXkzsJ`
+- Deployment: `dpl_2Y5jYRPLyhNfh8VXmUfKAgt6VfCH`
 - Deployment state: `READY`
 - Frontend source from `/api/build-info`:
   `e6a7a9f8b920dafcaad57304c1d763072c580217`
