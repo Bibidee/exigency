@@ -11,9 +11,10 @@ Current evidence commit: updated after the V2 source and frontend release.
 
 Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 
-Vercel deployment: refreshed after the V2 frontend release; the exact READY
-deployment ID and `/api/build-info` SHA are recorded in
-`deployment-manifest.public.json` only after production verification.
+Vercel deployment: `dpl_HueMeEeFWbUweDZVEsbWKoSfTVVQ` (`READY`)
+
+The production `/api/build-info` endpoint reports frontend source
+`b52d44a586d3e98dc2dedfffe8efa52067266e70`.
 
 ## Current contracts
 
@@ -47,8 +48,8 @@ Deployment health will be dispatched again after the V2 production alias is
 live; the final run is recorded here.
 
 It verified production routes `/`, `/command`, and `/vault`, Studionet RPC,
-chain ID `61999`, all four contract reads, target readability, an unpaused
-protected target, and `4/4` deployed source byte matches.
+chain ID `61999`, all five contract reads, both target bindings, unpaused
+targets, and `5/5` deployed source byte matches.
 
 Current live counts on this fresh deployment:
 

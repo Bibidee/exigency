@@ -46,11 +46,13 @@ governance rejection.
 
 ## Current health evidence
 
-Deployment health will be rerun after the V2 production alias is live.
+Production deployment: `dpl_HueMeEeFWbUweDZVEsbWKoSfTVVQ` (`READY`).
+The production `/api/build-info` endpoint reports frontend source
+`b52d44a586d3e98dc2dedfffe8efa52067266e70`.
 
 It verified `/`, `/command`, and `/vault`, Studionet RPC, chain ID `61999`, all
-four contract reads, protected-target readability, an unpaused target, and
-`4/4` deployed source byte matches.
+five contract reads, both target bindings, unpaused targets, and `5/5`
+deployed source byte matches.
 
 Current counts on this fresh deployment are:
 
