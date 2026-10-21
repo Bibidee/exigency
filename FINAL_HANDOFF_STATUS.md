@@ -6,7 +6,7 @@ EXIGENT is a five-contract, non-custodial protected-action deployment on
 Studionet 61999. The targets store no user funds and emit no external payout.
 
 - Branch: `main`
-- Current hardening HEAD: see the exact final SHA in the submission report.
+- Current hardening HEAD: see the exact SHA reported with the final evidence run.
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 - Vercel deployment: `dpl_2Y5jYRPLyhNfh8VXmUfKAgt6VfCH` (`READY`)
 - Runtime frontend source: `d598887af943d3db9b9d982d7e2bf53a2054164c`
@@ -64,8 +64,8 @@ unchanged before finalization.
 
 ## Exact-head validation
 
-Exact-head CI and deployment-health run IDs are recorded in the submission
-report for the final repository SHA.
+Exact-head CI and deployment health are run for the final repository SHA and
+reported with the final evidence record.
 The current test tree contains:
 
 - Unit: 16

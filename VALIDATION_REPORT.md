@@ -86,8 +86,8 @@ that the bounded route pause expired normally and the current route is open.
 - Build: passed
 - Source verification: 5/5 exact byte matches
 
-Exact-head CI and deployment-health run IDs for the final repository commit are
-recorded in the submission report. Workflows:
+Exact-head CI and deployment health are required for the final repository
+commit. Workflows:
 [CI](https://github.com/Bibidee/exigency/actions/workflows/ci.yml) and
 [deployment health](https://github.com/Bibidee/exigency/actions/workflows/health.yml).
 

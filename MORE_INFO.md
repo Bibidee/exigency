@@ -70,8 +70,8 @@ including the bounded-deadline rejection.
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 - Vercel deployment: `dpl_2Y5jYRPLyhNfh8VXmUfKAgt6VfCH` (`READY`)
 - Frontend runtime source: `d598887af943d3db9b9d982d7e2bf53a2054164c`
-- Exact-head CI and deployment health: run IDs are recorded in the submission
-  report for the final repository SHA.
+- Exact-head CI and deployment health are recorded for the final repository
+  commit in `REVIEW_EVIDENCE.md` and `VALIDATION_REPORT.md`.
 - Unit: 16; Direct Mode: 47; Browser: 9
 
 The new Direct Mode coverage includes V2 challenge bounds, provisional/final

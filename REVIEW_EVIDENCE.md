@@ -70,8 +70,9 @@ authorization boundaries.
 
 The local health check after the fresh deployment verified `/`, `/command`,
 `/vault`, Studionet RPC, all five contract reads, both target bindings,
-protected-route state, and 5/5 source matches. The exact-head deployment-health
-run for the final evidence commit is recorded below after push.
+protected-route state, and 5/5 source matches. Exact-head CI and deployment
+health are run for the final repository SHA and reported with the final
+evidence record.
 
 ## Current V2 live lifecycle
 
@@ -101,8 +102,7 @@ bounded route pause expired and the current route is open again.
 
 ## Verification results
 
-Exact-head CI is required for the final repository commit; the final run ID is
-recorded in the submission report. The workflow is
+Exact-head CI is required for the final repository commit. The workflow is
 [CI](https://github.com/Bibidee/exigency/actions/workflows/ci.yml).
 
 - Unit: 16 passed
