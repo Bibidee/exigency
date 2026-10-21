@@ -54,16 +54,18 @@ All five deployed sources are verified exact byte matches.
 - [Protected-route child](https://explorer-studio.genlayer.com/tx/0x42029d1932ce62d788c690d646237498bcbfc356e624a57477c7f9f47bcd7d3c)
 - [Reconciliation](https://explorer-studio.genlayer.com/tx/0x8a81bd528935d49f5bd73b89e5c4bfdabc9e8cfb2ab29db0480e09bef921a769)
 
-The final state was `TRIGGER_CONFIRMED`, capability `APPLIED`,
-`consumed=true`, and `route_disabled=true`. Missing parent transaction hashes
-are intentionally `NOT RECORDED`.
+The final lifecycle state was `TRIGGER_CONFIRMED`, capability `APPLIED`,
+`consumed=true`, and `route_disabled=true`. The later health read confirms the
+bounded route pause expired normally and the current route is open. Missing
+parent transaction hashes are intentionally `NOT RECORDED`.
 
 ## Current validation
 
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 - Vercel deployment: `dpl_2Y5jYRPLyhNfh8VXmUfKAgt6VfCH` (`READY`)
 - Frontend runtime source: `d598887af943d3db9b9d982d7e2bf53a2054164c`
-- Exact-head CI: [39559395702](https://github.com/Bibidee/exigency/actions/runs/39559395702)
+- Exact-head CI and deployment health: run IDs are recorded in the submission
+  report for the final repository SHA.
 - Unit: 16; Direct Mode: 43; Browser: 9
 
 The new Direct Mode coverage includes V2 challenge bounds, provisional/final

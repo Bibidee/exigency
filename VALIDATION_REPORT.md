@@ -64,9 +64,10 @@ are recorded separately from GitHub exact-head CI.
 - Protected-route child: [0x42029d19…7d3c](https://explorer-studio.genlayer.com/tx/0x42029d1932ce62d788c690d646237498bcbfc356e624a57477c7f9f47bcd7d3c)
 - Reconciliation: [0x8a81bd52…a769](https://explorer-studio.genlayer.com/tx/0x8a81bd528935d49f5bd73b89e5c4bfdabc9e8cfb2ab29db0480e09bef921a769)
 
-The final read showed `TRIGGER_CONFIRMED`, capability `APPLIED`,
-`consumed=true`, and `route_disabled=true`. Missing parent transaction hashes
-remain `NOT RECORDED`.
+The final lifecycle read showed `TRIGGER_CONFIRMED`, capability `APPLIED`,
+`consumed=true`, and `route_disabled=true`. The subsequent health read confirms
+that the bounded route pause expired normally and the current route is open.
+Missing parent transaction hashes remain `NOT RECORDED`.
 
 ## Test results
 
@@ -78,8 +79,10 @@ remain `NOT RECORDED`.
 - Build: passed
 - Source verification: 5/5 exact byte matches
 
-Exact-head CI for the current test tree:
-[39559395702](https://github.com/Bibidee/exigency/actions/runs/39559395702).
+Exact-head CI and deployment-health run IDs for the final repository commit are
+recorded in the submission report. Workflows:
+[CI](https://github.com/Bibidee/exigency/actions/workflows/ci.yml) and
+[deployment health](https://github.com/Bibidee/exigency/actions/workflows/health.yml).
 
 Browser mocks are development/test-only and unavailable in production.
 

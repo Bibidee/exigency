@@ -6,7 +6,7 @@ EXIGENT is a five-contract, non-custodial protected-action deployment on
 Studionet 61999. The targets store no user funds and emit no external payout.
 
 - Branch: `main`
-- Current hardening HEAD: `fae052db7ae5e8ad72115185b1c051c9a31584c6`
+- Current hardening HEAD: see the exact final SHA in the submission report.
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 - Vercel deployment: `dpl_2Y5jYRPLyhNfh8VXmUfKAgt6VfCH` (`READY`)
 - Runtime frontend source: `d598887af943d3db9b9d982d7e2bf53a2054164c`
@@ -48,12 +48,15 @@ The recorded unlocked-CLI lifecycle is:
 - Protected-route child: [transaction](https://explorer-studio.genlayer.com/tx/0x42029d1932ce62d788c690d646237498bcbfc356e624a57477c7f9f47bcd7d3c)
 - Reconciliation: [transaction](https://explorer-studio.genlayer.com/tx/0x8a81bd528935d49f5bd73b89e5c4bfdabc9e8cfb2ab29db0480e09bef921a769)
 
-Final state: `TRIGGER_CONFIRMED`, capability `APPLIED`, `consumed=true`, and
-`route_disabled=true`. Missing parent hashes remain `NOT RECORDED`.
+Final lifecycle state: `TRIGGER_CONFIRMED`, capability `APPLIED`,
+`consumed=true`, and `route_disabled=true`. The later health read confirms the
+bounded route pause expired normally and the current route is open. Missing
+parent hashes remain `NOT RECORDED`.
 
 ## Exact-head validation
 
-Current CI run: [39559395702](https://github.com/Bibidee/exigency/actions/runs/39559395702).
+Exact-head CI and deployment-health run IDs are recorded in the submission
+report for the final repository SHA.
 The current test tree contains:
 
 - Unit: 16

@@ -68,10 +68,11 @@ authorization boundaries.
 
 ## Current health evidence
 
-The final deployment-health run must be recorded after the final evidence commit
-and exact-head CI. It verifies `/`, `/command`, `/vault`, Studionet RPC, all five
-contract reads, both target bindings, protected-route state, and 5/5 source
-matches.
+Deployment health run: [39559965159](https://github.com/Bibidee/exigency/actions/runs/39559965159) — `SUCCESS`.
+It verified `/`, `/command`, `/vault`, Studionet RPC, all five contract reads,
+both target bindings, protected-route state, and 5/5 source matches. The route
+pause from the recorded lifecycle has expired normally; current health reports
+`route_disabled=false` and `route_disabled_until` in the past.
 
 ## Current V2 live lifecycle
 
@@ -88,16 +89,16 @@ five-contract deployment:
 - Protected-route child: [transaction](https://explorer-studio.genlayer.com/tx/0x42029d1932ce62d788c690d646237498bcbfc356e624a57477c7f9f47bcd7d3c)
 - Reconciliation: [transaction](https://explorer-studio.genlayer.com/tx/0x8a81bd528935d49f5bd73b89e5c4bfdabc9e8cfb2ab29db0480e09bef921a769)
 
-The final read showed `TRIGGER_CONFIRMED`, capability `APPLIED`,
-`consumed=true`, and `route_disabled=true`. Missing parent hashes are marked
-`NOT RECORDED` rather than invented.
+The final lifecycle read showed `TRIGGER_CONFIRMED`, capability `APPLIED`,
+`consumed=true`, and `route_disabled=true`. The later health read confirms the
+bounded route pause expired and the current route is open again. Missing parent
+hashes are marked `NOT RECORDED` rather than invented.
 
 ## Verification results
 
-Current exact-head CI is tracked at
-[39559395702](https://github.com/Bibidee/exigency/actions/runs/39559395702).
-The final evidence commit must update this link only if a later documentation
-commit creates a newer exact-head run.
+Exact-head CI is required for the final repository commit; the final run ID is
+recorded in the submission report. The workflow is
+[CI](https://github.com/Bibidee/exigency/actions/workflows/ci.yml).
 
 - Unit: 16 passed
 - Direct Mode: 43 passed in CI
