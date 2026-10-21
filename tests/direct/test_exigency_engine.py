@@ -47,8 +47,6 @@ def _install_v2_hook(
     maximum_challenges=1,
 ):
     """Install the smallest cross-contract surface needed by V2 tests."""
-    from genlayer.py import calldata
-
     target_governance = target_governance or owner
     charter = {
         "protocol_key": "PROTO-ENGINE-V2-DIRECT",
@@ -71,6 +69,8 @@ def _install_v2_hook(
     messages = []
 
     def hook(vm, request):
+        from genlayer.py import calldata
+
         call = request.get("CallContract")
         if call:
             method = call["calldata"]["method"]
