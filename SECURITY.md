@@ -45,12 +45,13 @@ acknowledgement, retry or administrator restoration method.
 
 ## Capability risks
 
-The Gate exposes only `PAUSE_PROTECTED_ACTION`. It does not implement generic
-method selectors, arbitrary calldata, value transfer, or an admin bypass. The
-protected target verifies the Gate address, binds governance to the deployment
-wallet, and rejects a capability whose holder is not that governance wallet.
-The Engine performs the same charter-owner/governance check before issuance,
-and the target repeats it at application time.
+The Gate exposes only the two explicitly allowlisted bounded actions:
+`PAUSE_PROTECTED_ACTION` and `DISABLE_PROTECTED_ROUTE`. It does not implement
+generic method selectors, arbitrary calldata, value transfer, or an admin
+bypass. Both protected targets verify the Gate address, bind governance to the
+deployment wallet, and reject a capability whose holder is not that governance
+wallet. The Engine performs the same charter-owner/governance check before
+issuance, and each target repeats it at application time.
 
 ## Prompt injection and source risks
 
@@ -82,7 +83,9 @@ bounded by the charter, and only final reassessment can issue a capability.
 
 `ProtectedRoute` is a second target using the same fixed Gate envelope as
 `ProtectedVault`. It accepts no arbitrary calldata and repeats the target-
-governance holder check before applying `DISABLE_PROTECTED_ROUTE`.
+governance holder check before applying `DISABLE_PROTECTED_ROUTE`. The route
+target records a bounded disabled-until state; the capability does not name or
+selectively disable an arbitrary route key.
 
 - [GenLayer Messages](https://docs.genlayer.com/developers/intelligent-contracts/features/messages)
 - [GenLayer Value Transfers](https://docs.genlayer.com/developers/intelligent-contracts/features/value-transfers)

@@ -26,7 +26,7 @@ Do not use Studio Dev. Do not use 61997. Do not silently change the GenVM depend
 ## Start here
 
 1. Read `README.md`, `ARCHITECTURE.md`, `SECURITY.md`, `REVIEW_TARGET.md`, `DEPLOYMENT_RUNBOOK.md` and this file.
-2. Inspect all four contracts and the direct/unit tests.
+2. Inspect all five contracts and the direct/unit tests.
 3. Run the current validation suite before changing source.
 4. Fix actual failures in place; preserve the product architecture unless a genuine runtime incompatibility requires a documented correction.
 
@@ -61,7 +61,7 @@ Take the repository as far as credentials and Studionet availability allow:
 6. Run `genvm-lint check` and `genvm-lint validate` for every contract.
 7. Run TypeScript typecheck and Next production build.
 8. Inspect current stable GenLayer docs only where runtime/API uncertainty exists. Do not migrate to preview/61997 syntax.
-9. Deploy all four contracts to **61999** using `deploy/deployScript.ts` if the configured wallet permits it.
+9. Deploy all five contracts to **61999** using `deploy/deployScript.ts` if the configured wallet permits it.
 10. Verify each deployment reaches FINALIZED and archive addresses + tx hashes.
 11. Copy `.env.generated` to `.env.local` and run the real frontend against the deployed contracts.
 12. Publish and activate a demo charter using the actual ProtectedVault address.
@@ -70,7 +70,7 @@ Take the repository as far as credentials and Studionet availability allow:
 15. Execute the capability and verify the protected-vault child transaction and actual pause state.
 16. Exercise negative and adversarial cases: disallowed source, weak evidence, conflicting evidence, over-limit duration, replay and parameter tampering.
 17. Verify a direct call to a vault emergency method fails from an ordinary wallet.
-18. Run and, if necessary, harden the included `npm run source:verify` deployed-source provenance check for all four contracts.
+18. Run and, if necessary, harden the included `npm run source:verify` deployed-source provenance check for all five contracts.
 19. Update README and a final validation report with only evidence actually observed. Do not claim green checks that were not run.
 20. Keep the frontend visually distinctive. Improve responsiveness/accessibility where needed, but do not copy ODDLOCKK routes/layouts and do not convert the product to all-lowercase styling.
 
@@ -80,6 +80,7 @@ Take the repository as far as credentials and Studionet availability allow:
 - `ExigencyEngine`: the only semantic/nondeterministic decision owner.
 - `CapabilityGate`: one-time finality-derived authority and replay protection.
 - `ProtectedVault`: consequential target with no admin emergency bypass.
+- `ProtectedRoute`: second constrained target with only `DISABLE_PROTECTED_ROUTE`.
 - Capability issuance only `on="finalized"`.
 - Protected action only `on="finalized"`.
 - No centralized backend or browser-computed final verdict.

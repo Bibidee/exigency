@@ -38,15 +38,129 @@ def _install_registry_hook(direct_vm, owner, *, scopes=None, source_groups=None,
     direct_vm._gl_call_hook = hook
 
 
+def _install_v2_hook(
+    direct_vm,
+    owner,
+    *,
+    target_governance=None,
+    challenge_window=10,
+    maximum_challenges=1,
+):
+    """Install the smallest cross-contract surface needed by V2 tests."""
+    from genlayer.py import calldata
+
+    target_governance = target_governance or owner
+    charter = {
+        "protocol_key": "PROTO-ENGINE-V2-DIRECT",
+        "protocol_name": "Engine V2 Direct Test",
+        "owner": to_hex(owner),
+        "protected_target": to_hex(target_governance),
+        "charter_digest": "a" * 64,
+        "allowed_actions": ["PAUSE_PROTECTED_ACTION"],
+        "max_pause_minutes": 30,
+        "capability_ttl_minutes": 30,
+        "evidence_hosts": ["example.com", "github.com"],
+        "source_groups": [
+            {"name": "official", "hosts": ["example.com"]},
+            {"name": "independent", "hosts": ["github.com"]},
+        ],
+        "minimum_source_groups": 2,
+        "challenge_window_minutes": challenge_window,
+        "maximum_challenges": maximum_challenges,
+    }
+    messages = []
+
+    def hook(vm, request):
+        call = request.get("CallContract")
+        if call:
+            method = call["calldata"]["method"]
+            if method == "get_charter_json":
+                value = json.dumps(charter)
+            elif method == "get_active_charter_key":
+                value = "CHARTER-ENGINE-V2-DIRECT"
+            elif method == "get_governance_address":
+                value = to_hex(target_governance)
+            else:
+                raise AssertionError(f"unexpected V2 registry/target call: {method}")
+            return b"\x00" + calldata.encode(value)
+        post = request.get("PostMessage")
+        if post:
+            messages.append(post)
+            return None
+        raise AssertionError(f"unexpected cross-contract request: {request}")
+
+    direct_vm._gl_call_hook = hook
+    direct_vm._v2_messages = messages
+    return messages
+
+
+def _deploy_v2_engine(
+    direct_vm,
+    direct_deploy,
+    owner,
+    *,
+    target_governance=None,
+    challenge_window=10,
+    maximum_challenges=1,
+):
+    _install_v2_hook(
+        direct_vm,
+        owner,
+        target_governance=target_governance,
+        challenge_window=challenge_window,
+        maximum_challenges=maximum_challenges,
+    )
+    return direct_deploy("contracts/exigency_engine.py", to_hex(owner), to_hex(owner))
+
+
+def _v2_evidence():
+    return [
+        {"group": "official", "url": "https://example.com/evidence/primary"},
+        {"group": "independent", "url": "https://github.com/Bibidee/exigency"},
+    ]
+
+
+def _v2_assessment(decision, state="SUPPORTS_TRIGGER"):
+    return {
+        "decision": decision,
+        "summary": "Direct-mode V2 assessment fixture.",
+        "trigger_clauses": ["bounded trigger clause"],
+        "material_findings": ["bounded source finding"],
+        "source_states": [
+            {
+                "url": "https://example.com/evidence/primary",
+                "state": state,
+                "finding": "fixture official source state",
+            },
+            {
+                "url": "https://github.com/Bibidee/exigency",
+                "state": state,
+                "finding": "fixture independent source state",
+            },
+        ],
+    }
+
+
+def _prepare_v2_assessment(direct_vm, direct_deploy, direct_alice, key, assessment, **kwargs):
+    direct_vm.warp("2026-09-27T20:00:00Z")
+    engine = _deploy_v2_engine(direct_vm, direct_deploy, direct_alice, **kwargs)
+    direct_vm.sender = direct_alice
+    direct_vm.mock_web("example.com", {"method": "GET", "status": 200, "body": "approved official evidence"})
+    direct_vm.mock_web("github.com", {"method": "GET", "status": 200, "body": "approved independent evidence"})
+    direct_vm.mock_llm("Return ONLY a JSON object", json.dumps(assessment))
+    _open(engine, key, _v2_evidence(), charter_key="CHARTER-ENGINE-V2-DIRECT")
+    return engine
+
+
 def _deploy_engine(direct_vm, direct_deploy, owner, *, scopes=None, source_groups=None, target=None, challenge_window=0, maximum_challenges=0):
     _install_registry_hook(direct_vm, owner, scopes=scopes, source_groups=source_groups, target=target, challenge_window=challenge_window, maximum_challenges=maximum_challenges)
     return direct_deploy("contracts/exigency_engine.py", to_hex(owner), to_hex(owner))
 
 
-def _open(engine, key, evidence):
+def _open(engine, key, evidence, charter_key="CHARTER-ENGINE-DIRECT"):
     return engine.open_incident(
         key,
-        "CHARTER-ENGINE-DIRECT",
+        charter_key,
         "PAUSE_PROTECTED_ACTION",
         5,
         "This incident reason is long enough to exercise the direct engine behavior.",
@@ -234,3 +348,233 @@ def test_expired_incident_cannot_be_assessed(direct_vm, direct_deploy, direct_al
     direct_vm.warp("2026-09-28T20:00:01Z")
     with direct_vm.expect_revert("incident assessment window has expired"):
         engine.assess_incident("INC-ENGINE-EXPIRY-01")
+
+
+def test_v2_provisional_confirmation_does_not_issue_authority(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_v2_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-V2-PROVISIONAL-01",
+        _v2_assessment("TRIGGER_CONFIRMED"),
+    )
+    messages = direct_vm._v2_messages
+
+    direct_vm.sender = direct_alice
+    result = engine.assess_incident("INC-V2-PROVISIONAL-01")
+    record = json.loads(engine.get_incident_json("INC-V2-PROVISIONAL-01"))
+    assert result["decision"] == "TRIGGER_CONFIRMED"
+    assert record["status"] == "ASSESSMENT_PROVISIONAL"
+    assert record["assessment_stage"] == "PROVISIONAL"
+    assert record["capability_key"] == ""
+    assert messages == []
+
+
+def test_v2_valid_challenge_is_frozen_and_unauthorized_challenge_rejected(
+    direct_vm, direct_deploy, direct_alice, direct_bob
+):
+    engine = _prepare_v2_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-V2-CHALLENGE-01",
+        _v2_assessment("TRIGGER_CONFIRMED"),
+    )
+    direct_vm.sender = direct_alice
+    engine.assess_incident("INC-V2-CHALLENGE-01")
+
+    direct_vm.sender = direct_bob
+    with direct_vm.expect_revert("only the charter operator may submit a challenge"):
+        engine.challenge_incident(
+            "INC-V2-CHALLENGE-01",
+            json.dumps(["https://github.com/Bibidee/exigency/CHALLENGE-SOURCE"]),
+            "An unrelated wallet must not alter the frozen challenge evidence.",
+        )
+
+    direct_vm.sender = direct_alice
+    engine.challenge_incident(
+        "INC-V2-CHALLENGE-01",
+        json.dumps(["https://github.com/Bibidee/exigency/CHALLENGE-SOURCE"]),
+        "The independent source should be included in the bounded challenge review.",
+    )
+    record = json.loads(engine.get_incident_json("INC-V2-CHALLENGE-01"))
+    assert record["status"] == "CHALLENGED"
+    assert record["challenge_count"] == 1
+    assert record["challenge_evidence_urls"] == ["https://github.com/Bibidee/exigency/CHALLENGE-SOURCE"]
+    assert record["challenge_reasons"] == ["The independent source should be included in the bounded challenge review."]
+
+
+def test_v2_challenge_after_deadline_is_rejected(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_v2_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-V2-DEADLINE-01",
+        _v2_assessment("TRIGGER_CONFIRMED"),
+    )
+    direct_vm.sender = direct_alice
+    engine.assess_incident("INC-V2-DEADLINE-01")
+    deadline = json.loads(engine.get_incident_json("INC-V2-DEADLINE-01"))["challenge_deadline"]
+    assert deadline > 0
+    direct_vm.warp("2026-09-27T20:11:00Z")
+    with direct_vm.expect_revert("challenge window has closed"):
+        engine.challenge_incident(
+            "INC-V2-DEADLINE-01",
+            json.dumps(["https://github.com/Bibidee/exigency/CHALLENGE-SOURCE"]),
+            "This challenge is deliberately submitted after the deadline.",
+        )
+
+
+def test_v2_maximum_challenge_count_is_enforced(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_v2_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-V2-MAX-CHALLENGE-01",
+        _v2_assessment("TRIGGER_CONFIRMED"),
+        maximum_challenges=1,
+    )
+    direct_vm.sender = direct_alice
+    engine.assess_incident("INC-V2-MAX-CHALLENGE-01")
+    engine.challenge_incident(
+        "INC-V2-MAX-CHALLENGE-01",
+        json.dumps(["https://github.com/Bibidee/exigency/CHALLENGE-ONE"]),
+        "The first bounded challenge is accepted for review.",
+    )
+    with direct_vm.expect_revert("challenge limit exhausted"):
+        engine.challenge_incident(
+            "INC-V2-MAX-CHALLENGE-01",
+            json.dumps(["https://github.com/Bibidee/exigency/CHALLENGE-TWO"]),
+            "The second challenge must exceed the configured maximum.",
+        )
+
+
+def test_v2_finalization_before_deadline_is_rejected(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_v2_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-V2-EARLY-FINAL-01",
+        _v2_assessment("TRIGGER_CONFIRMED"),
+    )
+    direct_vm.sender = direct_alice
+    engine.assess_incident("INC-V2-EARLY-FINAL-01")
+    with direct_vm.expect_revert("challenge window is still open"):
+        engine.finalize_incident("INC-V2-EARLY-FINAL-01")
+
+
+def test_v2_final_confirmation_emits_only_finalized_capability(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_v2_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-V2-FINAL-01",
+        _v2_assessment("TRIGGER_CONFIRMED"),
+    )
+    messages = direct_vm._v2_messages
+    direct_vm.sender = direct_alice
+    engine.assess_incident("INC-V2-FINAL-01")
+    record = json.loads(engine.get_incident_json("INC-V2-FINAL-01"))
+    direct_vm.warp("2026-09-27T20:11:00Z")
+    engine.finalize_incident("INC-V2-FINAL-01")
+    record = json.loads(engine.get_incident_json("INC-V2-FINAL-01"))
+    assert record["status"] == "AUTHORITY_PENDING_FINALITY"
+    assert record["assessment_stage"] == "FINAL"
+    assert record["capability_key"] == "EXC-INC-V2-FINAL-01"
+    assert len(messages) == 1
+    assert messages[0]["calldata"]["method"] == "issue_capability"
+    assert messages[0]["on"] == "finalized"
+
+
+def test_v2_final_reassessment_can_overturn_confirmation_without_authority(
+    direct_vm, direct_deploy, direct_alice
+):
+    engine = _prepare_v2_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-V2-OVERTURNED-01",
+        _v2_assessment("TRIGGER_CONFIRMED"),
+    )
+    messages = direct_vm._v2_messages
+    direct_vm.sender = direct_alice
+    engine.assess_incident("INC-V2-OVERTURNED-01")
+    record = json.loads(engine.get_incident_json("INC-V2-OVERTURNED-01"))
+    direct_vm.warp("2026-09-27T20:11:00Z")
+    direct_vm.clear_mocks()
+    direct_vm.mock_web("example.com", {"method": "GET", "status": 200, "body": "changed evidence"})
+    direct_vm.mock_web("github.com", {"method": "GET", "status": 200, "body": "changed independent evidence"})
+    direct_vm.mock_llm("Return ONLY a JSON object", json.dumps(_v2_assessment("TRIGGER_NOT_CONFIRMED", "CONTRADICTS_TRIGGER")))
+    engine.finalize_incident("INC-V2-OVERTURNED-01")
+    record = json.loads(engine.get_incident_json("INC-V2-OVERTURNED-01"))
+    assert record["status"] == "ASSESSED_NO_AUTHORITY"
+    assert record["assessment_stage"] == "FINAL"
+    assert record["capability_key"] == ""
+    assert messages == []
+
+
+def test_v2_source_drift_fails_closed(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_v2_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-V2-DRIFT-01",
+        _v2_assessment("INSUFFICIENT_EVIDENCE", "UNAVAILABLE"),
+        challenge_window=0,
+        maximum_challenges=0,
+    )
+    direct_vm.sender = direct_alice
+    first = engine.assess_incident("INC-V2-DRIFT-01")
+    assert first["decision"] == "INSUFFICIENT_EVIDENCE"
+    direct_vm.clear_mocks()
+    direct_vm.mock_web("example.com", {"method": "GET", "status": 200, "body": "changed official evidence"})
+    direct_vm.mock_web("github.com", {"method": "GET", "status": 200, "body": "changed independent evidence"})
+    direct_vm.mock_llm("Return ONLY a JSON object", json.dumps(_v2_assessment("INSUFFICIENT_EVIDENCE", "UNAVAILABLE")))
+    second = engine.assess_incident("INC-V2-DRIFT-01")
+    record = json.loads(engine.get_incident_json("INC-V2-DRIFT-01"))
+    assert second["drift_detected"] is True
+    assert set(second["drifted_urls"]) == {"https://example.com/evidence/primary", "https://github.com/Bibidee/exigency"}
+    assert second["decision"] == "CONFLICTING_EVIDENCE"
+    assert record["capability_key"] == ""
+
+
+def test_v2_identical_source_rounds_do_not_report_drift(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_v2_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-V2-NO-DRIFT-01",
+        _v2_assessment("INSUFFICIENT_EVIDENCE", "UNAVAILABLE"),
+        challenge_window=0,
+        maximum_challenges=0,
+    )
+    direct_vm.sender = direct_alice
+    engine.assess_incident("INC-V2-NO-DRIFT-01")
+    second = engine.assess_incident("INC-V2-NO-DRIFT-01")
+    assert second["decision"] == "INSUFFICIENT_EVIDENCE"
+    assert second.get("drift_detected", False) is False
+    assert "drifted_urls" not in second
+
+
+def test_unrelated_target_governance_cannot_create_authority_after_positive_assessment(
+    direct_vm, direct_deploy, direct_alice, direct_bob
+):
+    engine = _prepare_v2_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-V2-GOVERNANCE-01",
+        _v2_assessment("TRIGGER_CONFIRMED"),
+        target_governance=direct_bob,
+        challenge_window=0,
+        maximum_challenges=0,
+    )
+    messages = direct_vm._v2_messages
+    direct_vm.sender = direct_alice
+    result = engine.assess_incident("INC-V2-GOVERNANCE-01")
+    record = json.loads(engine.get_incident_json("INC-V2-GOVERNANCE-01"))
+    assert result["decision"] == "TRIGGER_CONFIRMED"
+    assert result["authority_status"] == "TARGET_GOVERNANCE_REJECTED"
+    assert record["status"] == "ASSESSED_NO_AUTHORITY"
+    assert record["capability_key"] == ""
+    assert messages == []

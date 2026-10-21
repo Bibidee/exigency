@@ -7,13 +7,15 @@ commits its charter before an incident, the operator freezes the evidence and
 requested action, GenLayer validators independently assess the evidence, and
 deterministic contracts bind the resulting capability.
 
-## Four-contract separation
+## Five-contract separation
 
 - **CharterRegistry** owns immutable ex-ante policy and activation.
 - **ExigencyEngine** owns incident state and nondeterministic evidence analysis.
 - **CapabilityGate** owns finality-gated, holder-bound execution authority.
 - **ProtectedVault** is the non-custodial protected consequence target and has
   no emergency-admin bypass.
+- **ProtectedRoute** is a second protected consequence target with a bounded
+  route-disable action under the same Gate interface and governance boundary.
 
 Finality of assessment, capability issuance and protected-target execution are
 separate transitions. No accepted-but-unfinalized parent creates authority.
@@ -90,4 +92,5 @@ V2 preserves the Registry → Engine → Gate chain and adds bounded policy stat
 The Gate forwards one fixed `apply_emergency_action` envelope. It never accepts
 arbitrary calldata. `ProtectedVault` implements the pause action and
 `ProtectedRoute` implements `DISABLE_PROTECTED_ROUTE` under the same Gate and
-target-governance checks.
+target-governance checks. This is a multi-target constrained emergency-action
+framework, not an arbitrary target-execution gateway.

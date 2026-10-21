@@ -36,8 +36,8 @@ Do **not** substitute Studio Dev / chain 61997. The repository-local `genlayer@0
   provenance check. The V2 deployment record is updated only after it reports
   the production alias as READY.
 - Final checks: 16 unit, 9 browser tests, and all five deployed contract sources
-  match exactly. Direct Mode remains blocked by the local GenLayer test-runner
-  stdin/runtime issue documented in the final report.
+  match exactly. The complete Direct Mode suite passes in GitHub CI; the local
+  Windows runner has a documented stdin/runtime limitation.
 - Browser E2E mocks are test-only and unavailable in production code paths;
   runtime mock hooks are gated by `process.env.NODE_ENV !== "production"`.
 
@@ -121,6 +121,13 @@ A non-custodial protected consequence surface:
 
 There is deliberately no owner/admin pause function. The emergency method only
 accepts the configured `CapabilityGate` as caller.
+
+### `ProtectedRoute`
+
+The second protected target uses the same narrow Gate envelope and target-side
+governance check. Its only supported emergency action is the explicitly
+allowlisted `DISABLE_PROTECTED_ROUTE`; it does not accept arbitrary calldata or
+selectively disable an arbitrary route key.
 
 ## Authority lifecycle
 
@@ -256,19 +263,19 @@ The intended review flow is adversarial, not a happy-path-only demo:
 2. Prove activation fails before the delay.
 3. Activate it after the delay.
 4. Execute the protected action before any emergency capability.
-5. Open an incident using only approved evidence hosts.
-6. Prove a disallowed host is rejected before consensus.
-7. Assess a genuine evidence set.
-8. Show `ACCEPTED` is not enough: capability is absent until the parent is `FINALIZED` and its child issuance executes.
-9. Execute the exact capability.
-10. Show the protected action pause takes effect only after the gate execution finalizes and its child runs.
-11. Replay the capability and show rejection.
-12. Change target/action/duration and show digest or envelope rejection.
-13. Attempt to call the vault emergency method directly and show the caller is rejected.
-14. Exercise an insufficient/conflicting-evidence case and show that no capability exists.
-15. Inspect the stored per-source HTTP status/content digests and the aggregate evidence commitment.
+5. Open an incident using only approved evidence hosts and named source groups.
+6. Prove a disallowed host or missing source group is rejected before consensus.
+7. Assess a genuine evidence set and observe a provisional result when the challenge window is non-zero.
+8. Submit the bounded charter-owner challenge, then finalize only after the window closes.
+9. Show `ACCEPTED` is not enough: capability is absent until the parent is `FINALIZED` and its child issuance executes.
+10. Execute the exact capability against either the Vault or the constrained ProtectedRoute action.
+11. Show the protected child takes effect only after the Gate execution finalizes.
+12. Replay the capability and change target/action/duration to show envelope rejection.
+13. Attempt to call either target emergency method directly and show the caller is rejected.
+14. Exercise an insufficient/conflicting-evidence or drift case and show that no capability exists.
+15. Inspect the stored per-source HTTP status/content digests and aggregate evidence commitment.
 16. Rotate to a newer charter and prove an already-open incident remains bound to its original digest.
-17. Prove a different wallet cannot publish another version under the claimed protocol key and an older charter cannot roll back a newer active version.
+17. Prove a different wallet cannot publish another version under the claimed protocol key or obtain authority over another target.
 
 ## Important implementation boundary
 

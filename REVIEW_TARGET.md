@@ -21,7 +21,8 @@ The reviewer should be able to observe that removing GenLayer changes the trust 
 
 ## Contract quality evidence
 
-- four contracts with distinct lifecycle responsibilities;
+- five contracts with distinct lifecycle responsibilities: Registry, Engine,
+  Gate, ProtectedVault and ProtectedRoute;
 - validators independently fetch all frozen evidence URLs;
 - validators independently reconstruct the assessment;
 - per-source semantic states must match;
@@ -31,6 +32,12 @@ The reviewer should be able to observe that removing GenLayer changes the trust 
 - protocol-key ownership prevents cross-wallet charter takeover and charter activation cannot roll back to an older version;
 - incidents remain bound to the charter digest they froze even after a newer version activates;
 - capability issuance and execution are finality gated;
+- V2 charters require named source groups and a minimum group-diversity count;
+- confirmed V2 assessments can remain provisional through a bounded
+  charter-owner challenge window before final reassessment;
+- source-content drift across assessment rounds fails closed;
+- target governance must authorize the charter owner before authority is
+  issued and again before the target applies it;
 - replay, expiry, caller and parameter tampering are rejected.
 
 ## Engineering evidence
@@ -50,12 +57,14 @@ The deployed app should allow the reviewer to:
 
 - publish a charter;
 - inspect the activation delay and activate the charter;
-- deposit test GEN;
+- execute the non-custodial protected action while it is open;
 - freeze an incident;
+- freeze grouped evidence and, where configured, submit the bounded challenge;
 - request the real GenLayer assessment;
 - see source-level semantic findings;
 - understand that accepted is provisional and finality is required;
 - open the issued capability;
 - execute it;
 - observe the protected vault become paused;
+- inspect the second ProtectedRoute target and its bounded disabled state;
 - see meaningful wallet/network/contract errors.

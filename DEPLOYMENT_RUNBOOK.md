@@ -84,7 +84,7 @@ Recommended demo charter:
 
 ```text
 Protocol key: EXIGENT-DEMO
-Allowed actions: PAUSE_PROTECTED_ACTION
+Allowed actions: PAUSE_PROTECTED_ACTION or DISABLE_PROTECTED_ROUTE
 Max pause: 90 minutes
 Capability TTL: 30 minutes
 Activation delay: 1 minute
@@ -108,8 +108,8 @@ holder envelope as `ProtectedVault`; its V2 action is
 
 Before submission, record:
 
-- all four deployment transaction hashes;
-- all four contract addresses;
+- all five deployment transaction hashes;
+- all five contract addresses;
 - gate binding transaction;
 - charter publish + activation transactions;
 - one positive incident;
@@ -119,5 +119,10 @@ Before submission, record:
 - one negative/uncertain case that produces no capability;
 - replay rejection;
 - direct vault emergency-call rejection.
+
+The current V2 target set is non-custodial: `ProtectedVault` accepts no user
+GEN and has no deposit, withdrawal, payout or refund flow. Review evidence
+must use the protected action and the second `ProtectedRoute` target rather
+than stale payout-era instructions.
 
 Then run `npm run source:verify` and archive its output. If the current RPC cannot return deployed source bytes, recover source from finalized deployment transaction data and document the fallback explicitly rather than claiming a match you could not verify.
