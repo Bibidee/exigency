@@ -73,7 +73,7 @@ The current test tree contains:
 
 - Unit: 16
 - Direct Mode: 47
-- Browser: 9
+- Browser: 19
 - Contract lint/validation: passing
 - Typecheck: passing
 - Build: passing
@@ -82,6 +82,12 @@ The new Direct Mode checks cover V2 challenge bounds, provisional/final
 assessment behavior, final-only capability issuance, source drift, overturned
 results, and target-governance authorization. Browser mocks remain test-only and
 are gated away from production.
+
+The frontend hardening pass adds conservative assessment-budget and
+deadline/expiry guards, challenge group/duplicate/capacity validation, and
+session-local source-provenance warnings. These are mitigations for the user
+journey only; they do not modify the deployed Engine or claim to constrain
+direct contract callers.
 
 ## Limitations
 

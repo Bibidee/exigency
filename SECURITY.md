@@ -85,6 +85,34 @@ finalization fails closed after exhausted assessment retries. Only final
 reassessment can issue a capability. A capability already in `DISPATCHED`
 state cannot be redispatched until reconciliation.
 
+## Frontend safety guards and immutable limits
+
+The incident page now exposes the remaining assessment budget, incident expiry,
+challenge deadline, charter challenge count and combined source count. It
+blocks a challenge-enabled assessment when the call would consume the last
+attempt needed for final reassessment. It also blocks finalization when the
+challenge deadline reaches incident expiry, when the incident is expired, or
+when the remaining expiry margin is too small for variable transaction
+finality. These are conservative browser checks, not new protocol authority;
+direct contract callers are not bound by them.
+
+Challenge entry is validated before a write: the UI rejects wrong source
+groups, duplicate URLs, exhausted charter challenge counts and more than ten
+combined unique assessment sources. The unchanged contract remains the final
+enforcement boundary and can still reject or receive calls made outside the
+frontend.
+
+The browser also keeps a session-local comparison of assessments it has
+previously observed. It distinguishes previously available evidence that later
+becomes unavailable, changed and unchanged source digests, and source-fetch
+failures. A newly unavailable source is explicitly presented as a frontend
+provenance warning, not as an on-chain drift verdict. The contract's own
+`drift_detected` result remains separately identified.
+
+These guards mitigate reviewer and operator error; they do not repair the
+immutable assessment-retry or evidence-normalization boundaries in the already
+deployed Engine.
+
 `ProtectedRoute` is a second target using the same fixed Gate envelope as
 `ProtectedVault`. It accepts no arbitrary calldata and repeats the target-
 governance holder check before applying `DISABLE_PROTECTED_ROUTE`. The route

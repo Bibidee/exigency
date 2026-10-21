@@ -108,7 +108,7 @@ Exact-head CI is required for the final repository commit. The workflow is
 
 - Unit: 16 passed
 - Direct Mode: 47 passed in CI
-- Browser: 9 passed
+- Browser: 19 passed
 - Contract lint/validation: passed
 - Typecheck: passed
 - Build: passed
@@ -116,6 +116,21 @@ Exact-head CI is required for the final repository commit. The workflow is
 
 Browser mocks are gated out of production with
 `process.env.NODE_ENV !== "production"`.
+
+## Frontend hardening status
+
+The frontend now displays the remaining assessment budget, challenge deadline,
+incident expiry, charter challenge count and combined source count. It blocks
+known-invalid assessment/finalization paths and rejects wrong source groups,
+duplicates and over-capacity challenge submissions before a write. These are
+conservative frontend mitigations; they do not change or conceal the immutable
+Engine boundaries, and direct contract callers are not bound by them.
+
+Assessment provenance observed by the current browser is compared across
+rounds. Previously available evidence becoming unavailable, changed digests,
+unchanged digests and source-fetch failures are labeled as frontend audit
+warnings. They are not presented as on-chain drift unless the contract itself
+sets `drift_detected`.
 
 ## Remaining limitations
 

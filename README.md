@@ -35,7 +35,7 @@ Do **not** substitute Studio Dev / chain 61997. The repository-local `genlayer@0
 - The public `/api/build-info` endpoint is the authoritative frontend deployment
   provenance check. The V2 deployment record is updated only after it reports
   the production alias as READY.
-- Final checks: 16 unit, 47 Direct Mode, 9 browser tests, and all five deployed
+- Final checks: 16 unit, 47 Direct Mode, 19 browser tests, and all five deployed
   contract sources match exactly. The complete Direct Mode suite passes in GitHub CI; the local
   Windows runner has a documented stdin/runtime limitation.
 - Browser E2E mocks are test-only and unavailable in production code paths;
@@ -295,6 +295,19 @@ windows, exhausted challenge counts, incident-expiry overruns, and redispatch of
 an already-dispatched capability fail closed. Combined base and challenge
 evidence is bounded to the contract's supported maximum rather than silently
 truncated.
+
+The incident page also shows assessment attempts remaining, challenge and
+incident deadlines, and the current finalization viability. It conservatively
+blocks a known-invalid assessment/finalization path when the immutable Engine
+would have no reassessment budget or no safe expiry margin. Challenge inputs are
+checked for canonical URLs, source-group membership, duplicates and the ten
+source combined limit before a write. These are frontend mitigations only;
+direct callers remain subject to the deployed contract's actual behavior.
+
+When a browser has observed an earlier assessment, the page compares later
+source provenance and labels newly unavailable evidence, changed or unchanged
+digests and fetch failures. This warning is explicitly not an on-chain drift
+verdict; the contract's own `drift_detected` field is shown separately.
 
 EXIGENT does **not** claim GenLayer proves that a protocol is legally entitled to act, nor that web sources are universally true. The bounded question is:
 

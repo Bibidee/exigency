@@ -80,7 +80,7 @@ that the bounded route pause expired normally and the current route is open.
 
 - Unit: 16 passed
 - Direct Mode: 47 passed in CI
-- Browser: 9 passed
+- Browser: 19 passed
 - Contract lint and validation: passed
 - Typecheck: passed
 - Build: passed
@@ -92,6 +92,21 @@ commit. Workflows:
 [deployment health](https://github.com/Bibidee/exigency/actions/workflows/health.yml).
 
 Browser mocks are development/test-only and unavailable in production.
+
+## Frontend-only lifecycle safeguards
+
+The deployed contracts remain unchanged. The incident page now shows the
+assessment budget, challenge count, combined source count, challenge deadline
+and incident expiry. It blocks known-invalid assessment and finalization paths
+when a challenge-enabled flow would consume the last reassessment attempt, when
+the deadline reaches expiry, when the incident has expired, or when the
+remaining finality margin is too small. Challenge entries are checked for
+canonical URLs, correct source groups, duplicates and the ten-source limit.
+
+These are frontend mitigations only; a direct contract caller is not bound by
+them. The browser also presents session-local source-provenance changes,
+including previously available evidence becoming unavailable, separately from
+the contract's own `drift_detected` result.
 
 ## Limitations
 

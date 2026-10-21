@@ -73,12 +73,21 @@ including the bounded-deadline rejection.
 - Frontend runtime source: `1545bc7c981c7380e35d7f9fdf4d71783d43c318`
 - Exact-head CI and deployment health are recorded for the final repository
   commit in `REVIEW_EVIDENCE.md` and `VALIDATION_REPORT.md`.
-- Unit: 16; Direct Mode: 47; Browser: 9
+- Unit: 16; Direct Mode: 47; Browser: 19
 
 The new Direct Mode coverage includes V2 challenge bounds, provisional/final
 assessment behavior, final-only capability issuance, overturned results,
 source drift, and target-governance rejection. Browser mocks are unavailable in
 production code paths.
+
+The incident frontend now exposes the assessment budget, challenge/expiry
+deadlines and evidence-source capacity. It conservatively blocks a challenge-
+enabled retry that would leave no reassessment attempt, blocks finalization
+when its expiry window is not viable, and validates challenge groups,
+duplicates and the ten-source combined limit. These checks are frontend-only;
+the deployed contract behavior and its direct-call limitations are unchanged.
+The browser separately labels session-local evidence provenance changes and
+does not turn missing evidence into an on-chain drift verdict.
 
 ## Limitations
 

@@ -38,6 +38,7 @@ export type IncidentRecord = {
   reason: string;
   evidence_urls: string[];
   opened_at: number;
+  expires_at: number;
   incident_digest: string;
   action_digest: string;
   status: string;
