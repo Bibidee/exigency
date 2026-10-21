@@ -6,7 +6,7 @@ EXIGENT is a five-contract, non-custodial protected-action deployment on
 Studionet 61999. The targets store no user funds and emit no external payout.
 
 - Branch: `main`
-- Current hardening HEAD: `e381c8977b075637e0337cf5bbac91b5d2c63cdd`
+- Current hardening HEAD: `fae052db7ae5e8ad72115185b1c051c9a31584c6`
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 - Vercel deployment: `dpl_2Y5jYRPLyhNfh8VXmUfKAgt6VfCH` (`READY`)
 - Runtime frontend source: `d598887af943d3db9b9d982d7e2bf53a2054164c`
@@ -53,7 +53,7 @@ Final state: `TRIGGER_CONFIRMED`, capability `APPLIED`, `consumed=true`, and
 
 ## Exact-head validation
 
-Current CI run: [39558290471](https://github.com/Bibidee/exigency/actions/runs/39558290471).
+Current CI run: [39559395702](https://github.com/Bibidee/exigency/actions/runs/39559395702).
 The current test tree contains:
 
 - Unit: 16

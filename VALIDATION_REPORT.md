@@ -79,7 +79,7 @@ remain `NOT RECORDED`.
 - Source verification: 5/5 exact byte matches
 
 Exact-head CI for the current test tree:
-[39558290471](https://github.com/Bibidee/exigency/actions/runs/39558290471).
+[39559395702](https://github.com/Bibidee/exigency/actions/runs/39559395702).
 
 Browser mocks are development/test-only and unavailable in production.
 

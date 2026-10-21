@@ -63,7 +63,7 @@ are intentionally `NOT RECORDED`.
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 - Vercel deployment: `dpl_2Y5jYRPLyhNfh8VXmUfKAgt6VfCH` (`READY`)
 - Frontend runtime source: `d598887af943d3db9b9d982d7e2bf53a2054164c`
-- Exact-head CI: [39558290471](https://github.com/Bibidee/exigency/actions/runs/39558290471)
+- Exact-head CI: [39559395702](https://github.com/Bibidee/exigency/actions/runs/39559395702)
 - Unit: 16; Direct Mode: 43; Browser: 9
 
 The new Direct Mode coverage includes V2 challenge bounds, provisional/final

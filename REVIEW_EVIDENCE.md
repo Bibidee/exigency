@@ -95,7 +95,7 @@ The final read showed `TRIGGER_CONFIRMED`, capability `APPLIED`,
 ## Verification results
 
 Current exact-head CI is tracked at
-[39558290471](https://github.com/Bibidee/exigency/actions/runs/39558290471).
+[39559395702](https://github.com/Bibidee/exigency/actions/runs/39559395702).
 The final evidence commit must update this link only if a later documentation
 commit creates a newer exact-head run.
 
