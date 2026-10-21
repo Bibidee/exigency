@@ -67,6 +67,7 @@ including the bounded-deadline rejection.
 
 ## Current validation
 
+- Immutable reviewer comparison: [V1 baseline → final evidence package](https://github.com/Bibidee/exigency/compare/f15da235433e91ae27ac3604db397b03966fd629...7bb69279a53f012636e3383560d43f2149759165)
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 - Vercel deployment: `dpl_5qFzmoK9c99KYcJzqAPN7uqcM9AT` (`READY`)
 - Frontend deployment URL: `exigency-lcccxhx98-bibidees-projects.vercel.app`

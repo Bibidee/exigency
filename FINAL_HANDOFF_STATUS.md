@@ -7,6 +7,7 @@ Studionet 61999. The targets store no user funds and emit no external payout.
 
 - Branch: `main`
 - Current hardening HEAD: see the exact SHA reported with the final evidence run.
+- Immutable reviewer comparison: [V1 baseline → final evidence package](https://github.com/Bibidee/exigency/compare/f15da235433e91ae27ac3604db397b03966fd629...7bb69279a53f012636e3383560d43f2149759165)
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
 - Vercel deployment: `dpl_5qFzmoK9c99KYcJzqAPN7uqcM9AT` (`READY`)
 - Deployment URL: `exigency-lcccxhx98-bibidees-projects.vercel.app`

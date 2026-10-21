@@ -8,6 +8,7 @@ baseline is the last V1 audit head:
 - Baseline: `f15da235433e91ae27ac3604db397b03966fd629`
 - Frontend hardening implementation: `f6a1600ccf542db4cb7e5ed33b1f7e83ddaba523`
 - Immutable comparison: [V1 baseline → frontend hardening](https://github.com/Bibidee/exigency/compare/f15da235433e91ae27ac3604db397b03966fd629...f6a1600ccf542db4cb7e5ed33b1f7e83ddaba523)
+- Final evidence comparison: [V1 baseline → final evidence package](https://github.com/Bibidee/exigency/compare/f15da235433e91ae27ac3604db397b03966fd629...7bb69279a53f012636e3383560d43f2149759165)
 
 The final evidence/documentation commits after the frontend deployment are
 separate from the browser bundle. No Intelligent Contract source was changed
