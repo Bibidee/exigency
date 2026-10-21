@@ -9,16 +9,17 @@ recovery. The targets store no user value and expose no external payout path.
 ## Deployed V2 stack
 
 - Network: Studionet 61999
-- Registry: `0xA4dba5B0572B3D721955Ce3A9E3dc46F791e4C92`
-- Engine: `0x903f895E256817aBFE97f101292B94F85d0b59BA`
-- Gate: `0xE383404e8C00868A86BD412F4e72Cb13328Ed2EF`
-- Protected vault: `0xF3dC371E50c296c6Ef1067eAe95104F864F391B3`
-- Protected route: `0x7217760864796a1CaeDAaFB418b7d168a91331a4`
-- Deployed contract source commit: `5c7664b59f6ac4ea6839dbf85e2ad3174fec96ef`
+- Registry: `0xBBf3A67273c0AB100ef1DD7EFD0Eb8B4dB73Fb95`
+- Engine: `0xD9F68dCD02eE4297be263Db08735bF571F20feda`
+- Gate: `0xAAfc06B7a2fc25aC2ce721a0A371717dEb2488Bd`
+- Protected vault: `0x1e6e9699dD76fc1d3825914e9B8ff5AeF3d140C0`
+- Protected route: `0xf6E180AB7ECddCa8A9fF5265B57cc8C7F77eD33c`
+- Deployed contract source commit: `132c1832cd113db8d38b77335539851846e7ea7e`
 - Source verification: 5/5 exact byte matches
 
 The committed `deployment-manifest.public.json` is the authoritative deployment
-record. No contract redeployment was required for this test/documentation pass.
+record. This pass used a fresh five-contract deployment because the V2 boundary
+fix changed Intelligent Contract source.
 
 ## Steward authorization fix
 
@@ -54,25 +55,31 @@ are recorded separately from GitHub exact-head CI.
 
 ## Current live V2 lifecycle
 
-- Charter: `V2-LIVE-1792526492`
-- Incident: `V2-INC-1792526492`
-- Capability: `EXC-V2-INC-1792526492`
-- Challenge: [0xb25a0ce0…4869](https://explorer-studio.genlayer.com/tx/0xb25a0ce07f9d5f069a5bb5fe18a63e13eac132ac8cef66982d119464e0cd4869)
-- Finalization: [0xc6611149…ad42](https://explorer-studio.genlayer.com/tx/0xc661114921fb8cff2f00adce43224965dec0526beff2d32c81a785eb25fdad42)
-- Capability issuance child: [0xc16668d0…2bd6c](https://explorer-studio.genlayer.com/tx/0xc16668d0aa0cc576d1e0886761573b74eefcbb3a67b779ace92a6c51f1b2bd6c)
-- Capability execution: [0x200c8748…6da7](https://explorer-studio.genlayer.com/tx/0x200c874858c8878490b38495fc3e51048360a880f9acb7e3db50675865626da7)
-- Protected-route child: [0x42029d19…7d3c](https://explorer-studio.genlayer.com/tx/0x42029d1932ce62d788c690d646237498bcbfc356e624a57477c7f9f47bcd7d3c)
-- Reconciliation: [0x8a81bd52…a769](https://explorer-studio.genlayer.com/tx/0x8a81bd528935d49f5bd73b89e5c4bfdabc9e8cfb2ab29db0480e09bef921a769)
+- Charter: `V2-BOUNDARY-1792583486906`
+- Incident: `V2-BOUNDARY-INC-1792583486906`
+- Capability: `EXC-V2-BOUNDARY-INC-1792583486906`
+- Publish: [0xede28c92…03d53](https://explorer-studio.genlayer.com/tx/0xede28c92952fb357b879d57b537921ba4a3a7f65a1b678f1c5430a0cc0803d53)
+- Activate: [0xfc8140d2…b599c](https://explorer-studio.genlayer.com/tx/0xfc8140d21d7c96f8fa4b54f061ef81a05412e896d68ce8eb410ea2e14c5b599c)
+- Open incident: [0x960f6864…b2dde](https://explorer-studio.genlayer.com/tx/0x960f686481a095ce84b07b354ba1576f89dc0ea998f9eb47a2959282b3db2dde)
+- Assessment: [0xa0336b77…c3233](https://explorer-studio.genlayer.com/tx/0xa0336b7761b583eeaad7cc592f2589fc77023098d52b89f8a9a75fec984c3233)
+- Late challenge rejected: [0x6f1d57b3…878a7](https://explorer-studio.genlayer.com/tx/0x6f1d57b37f2999cd479a5d86d0c7bc02c02f48617c32350ad3203383643878a7)
+- Finalization: [0x0f074882…92d0e](https://explorer-studio.genlayer.com/tx/0x0f0748822e1c51714bde630fa31d115c723a5035948b67b9a699b2329a792d0e)
+- Capability issuance child: [0x2b5eb9e9…13f5d](https://explorer-studio.genlayer.com/tx/0x2b5eb9e956ca6f425ff0e0017ba69a1f1992f6f23705890df7be2603a2013f5d)
+- Capability execution: [0x45833f3d…1f266](https://explorer-studio.genlayer.com/tx/0x45833f3dcf2c066ad3ee544cb61e8fa5c2ed5b13df7724b44f79871db5f1f266)
+- Protected-route child: [0x0b7c2952…69c4e](https://explorer-studio.genlayer.com/tx/0x0b7c29529dd5ed03c2dd887a5219c75a084a4cd24769ed4edfe80838f4069c4e)
+- Reconciliation: [0x0ad1401a…8b361](https://explorer-studio.genlayer.com/tx/0x0ad1401a784c8ff939326d4a9190864f0b88b002222243009d56fcefb2e8b361)
 
-The final lifecycle read showed `TRIGGER_CONFIRMED`, capability `APPLIED`,
-`consumed=true`, and `route_disabled=true`. The subsequent health read confirms
+The late challenge finalized with `FINISHED_WITH_ERROR` because its challenge
+window had closed; the incident remained provisional and was not retried. The
+continuation finalized the unchanged incident once, then produced capability
+state `APPLIED`, `consumed=true`, `dispatch_count=1`, and route pause state
+`route_disabled=true` until `1792584354`. The subsequent health read confirms
 that the bounded route pause expired normally and the current route is open.
-Missing parent transaction hashes remain `NOT RECORDED`.
 
 ## Test results
 
 - Unit: 16 passed
-- Direct Mode: 43 passed in CI
+- Direct Mode: 47 passed in CI
 - Browser: 9 passed
 - Contract lint and validation: passed
 - Typecheck: passed
@@ -90,8 +97,8 @@ Browser mocks are development/test-only and unavailable in production.
 
 - No live failed payout is attempted because the current targets have no payout
   path; the safety decision is structural rather than fabricated proof.
-- Three moderate transitive GenLayer/Vitest tooling advisories remain. The Vite
-  high finding and all critical findings are cleared; no unsafe forced GenLayer
-  downgrade was used.
+- Three moderate transitive/tooling npm advisories remain; `npm audit fix
+  --force` would replace the pinned GenLayer CLI with a breaking version, so no
+  unsafe forced upgrade was applied.
 - Some historical lifecycle hashes remain `NOT RECORDED`.
 - Direct Mode is limited locally on Windows but passes in GitHub CI.

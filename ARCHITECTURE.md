@@ -87,7 +87,14 @@ V2 preserves the Registry → Engine → Gate chain and adds bounded policy stat
   changed digest across assessment rounds is marked as drift and fails closed;
 - a confirmed result can remain `ASSESSMENT_PROVISIONAL` during a charter-
   defined challenge window. Only bounded post-window reassessment can issue a
-  capability.
+  capability;
+- combined base and challenge evidence is rejected above the bounded source
+  maximum instead of being silently truncated;
+- challenge deadlines are capped at incident expiry, and challenge/finalization
+  writes fail after their applicable deadline or after assessment retries are
+  exhausted;
+- a capability in `DISPATCHED` state cannot be redispatched until it is
+  reconciled, preventing unbounded duplicate child actions.
 
 The Gate forwards one fixed `apply_emergency_action` envelope. It never accepts
 arbitrary calldata. `ProtectedVault` implements the pause action and

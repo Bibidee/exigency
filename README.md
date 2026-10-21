@@ -35,8 +35,8 @@ Do **not** substitute Studio Dev / chain 61997. The repository-local `genlayer@0
 - The public `/api/build-info` endpoint is the authoritative frontend deployment
   provenance check. The V2 deployment record is updated only after it reports
   the production alias as READY.
-- Final checks: 16 unit, 9 browser tests, and all five deployed contract sources
-  match exactly. The complete Direct Mode suite passes in GitHub CI; the local
+- Final checks: 16 unit, 47 Direct Mode, 9 browser tests, and all five deployed
+  contract sources match exactly. The complete Direct Mode suite passes in GitHub CI; the local
   Windows runner has a documented stdin/runtime limitation.
 - Browser E2E mocks are test-only and unavailable in production code paths;
   runtime mock hooks are gated by `process.env.NODE_ENV !== "production"`.
@@ -291,7 +291,10 @@ window before final reassessment.
 The V2 frontend exposes source-group policy at charter publication,
 `group|URL` entries at incident freeze, and challenge/final-reassessment
 controls on the incident page. Missing groups, source drift, expired challenge
-windows and exhausted challenge counts fail closed.
+windows, exhausted challenge counts, incident-expiry overruns, and redispatch of
+an already-dispatched capability fail closed. Combined base and challenge
+evidence is bounded to the contract's supported maximum rather than silently
+truncated.
 
 EXIGENT does **not** claim GenLayer proves that a protocol is legally entitled to act, nor that web sources are universally true. The bounded question is:
 

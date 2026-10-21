@@ -25,13 +25,13 @@ by exact-head CI below.
 
 | Contract | Address | Source SHA-256 |
 | --- | --- | --- |
-| CharterRegistry | `0xA4dba5B0572B3D721955Ce3A9E3dc46F791e4C92` | `8466a290331fb1ddf51afdbb18ca92fa2d7e239e5759d9169cd0b8f4831895ec` |
-| ExigencyEngine | `0x903f895E256817aBFE97f101292B94F85d0b59BA` | `797005664d556d912e20c8ed13894036c66cc981cd3e48387f1855e57a992ade` |
-| CapabilityGate | `0xE383404e8C00868A86BD412F4e72Cb13328Ed2EF` | `379578b05ba959572ac5ba25aa6ddea2a0dae69a868575b7da861ba702615d0c` |
-| ProtectedVault | `0xF3dC371E50c296c6Ef1067eAe95104F864F391B3` | `8c3a51660efc0428d7c6efbf2edd1c5e601e5c005c852c9564ec4bd9a16c60d9` |
-| ProtectedRoute | `0x7217760864796a1CaeDAaFB418b7d168a91331a4` | `7f6e3ddaec3146d2c04bfb9375b54b8e9c5ece6d7b4909fff3d34cd26c3e2b6c` |
+| CharterRegistry | `0xBBf3A67273c0AB100ef1DD7EFD0Eb8B4dB73Fb95` | `8466a290331fb1ddf51afdbb18ca92fa2d7e239e5759d9169cd0b8f4831895ec` |
+| ExigencyEngine | `0xD9F68dCD02eE4297be263Db08735bF571F20feda` | `6619a4c88018ccab6b20c6a3bab32899f806dae21e338db6cf4a472249dfabd7` |
+| CapabilityGate | `0xAAfc06B7a2fc25aC2ce721a0A371717dEb2488Bd` | `0d8c240e5c0168f5dc8049163ad521fe620caca6a4c8589d2d7ec3c6a8e77447` |
+| ProtectedVault | `0x1e6e9699dD76fc1d3825914e9B8ff5AeF3d140C0` | `8c3a51660efc0428d7c6efbf2edd1c5e601e5c005c852c9564ec4bd9a16c60d9` |
+| ProtectedRoute | `0xf6E180AB7ECddCa8A9fF5265B57cc8C7F77eD33c` | `7f6e3ddaec3146d2c04bfb9375b54b8e9c5ece6d7b4909fff3d34cd26c3e2b6c` |
 
-Deployed contract source commit: `5c7664b59f6ac4ea6839dbf85e2ad3174fec96ef`.
+Deployed contract source commit: `132c1832cd113db8d38b77335539851846e7ea7e`.
 The committed `deployment-manifest.public.json` is the authoritative address,
 transaction, and source-hash record. `npm run source:verify` reports 5/5 exact
 byte matches.
@@ -68,31 +68,36 @@ authorization boundaries.
 
 ## Current health evidence
 
-Deployment health run: [39559965159](https://github.com/Bibidee/exigency/actions/runs/39559965159) — `SUCCESS`.
-It verified `/`, `/command`, `/vault`, Studionet RPC, all five contract reads,
-both target bindings, protected-route state, and 5/5 source matches. The route
-pause from the recorded lifecycle has expired normally; current health reports
-`route_disabled=false` and `route_disabled_until` in the past.
+The local health check after the fresh deployment verified `/`, `/command`,
+`/vault`, Studionet RPC, all five contract reads, both target bindings,
+protected-route state, and 5/5 source matches. The exact-head deployment-health
+run for the final evidence commit is recorded below after push.
 
 ## Current V2 live lifecycle
 
-The unlocked Studionet CLI completed the recorded lifecycle against the current
-five-contract deployment:
+The unlocked CLI completed a fresh lifecycle against the current five-contract
+deployment. The one-minute challenge was submitted after its deadline and was
+rejected; no duplicate challenge was submitted. The incident was then finalized
+once and the capability was executed and reconciled once:
 
-- Charter: `V2-LIVE-1792526492`
-- Incident: `V2-INC-1792526492`
-- Capability: `EXC-V2-INC-1792526492`
-- Challenge: [transaction](https://explorer-studio.genlayer.com/tx/0xb25a0ce07f9d5f069a5bb5fe18a63e13eac132ac8cef66982d119464e0cd4869)
-- Finalization: [transaction](https://explorer-studio.genlayer.com/tx/0xc661114921fb8cff2f00adce43224965dec0526beff2d32c81a785eb25fdad42)
-- Capability issuance child: [transaction](https://explorer-studio.genlayer.com/tx/0xc16668d0aa0cc576d1e0886761573b74eefcbb3a67b779ace92a6c51f1b2bd6c)
-- Capability execution: [transaction](https://explorer-studio.genlayer.com/tx/0x200c874858c8878490b38495fc3e51048360a880f9acb7e3db50675865626da7)
-- Protected-route child: [transaction](https://explorer-studio.genlayer.com/tx/0x42029d1932ce62d788c690d646237498bcbfc356e624a57477c7f9f47bcd7d3c)
-- Reconciliation: [transaction](https://explorer-studio.genlayer.com/tx/0x8a81bd528935d49f5bd73b89e5c4bfdabc9e8cfb2ab29db0480e09bef921a769)
+- Charter: `V2-BOUNDARY-1792583486906`
+- Incident: `V2-BOUNDARY-INC-1792583486906`
+- Capability: `EXC-V2-BOUNDARY-INC-1792583486906`
+- Publish: [transaction](https://explorer-studio.genlayer.com/tx/0xede28c92952fb357b879d57b537921ba4a3a7f65a1b678f1c5430a0cc0803d53)
+- Activate: [transaction](https://explorer-studio.genlayer.com/tx/0xfc8140d21d7c96f8fa4b54f061ef81a05412e896d68ce8eb410ea2e14c5b599c)
+- Open incident: [transaction](https://explorer-studio.genlayer.com/tx/0x960f686481a095ce84b07b354ba1576f89dc0ea998f9eb47a2959282b3db2dde)
+- Assessment: [transaction](https://explorer-studio.genlayer.com/tx/0xa0336b7761b583eeaad7cc592f2589fc77023098d52b89f8a9a75fec984c3233)
+- Late challenge rejected: [transaction](https://explorer-studio.genlayer.com/tx/0x6f1d57b37f2999cd479a5d86d0c7bc02c02f48617c32350ad3203383643878a7)
+- Finalization: [transaction](https://explorer-studio.genlayer.com/tx/0x0f0748822e1c51714bde630fa31d115c723a5035948b67b9a699b2329a792d0e)
+- Capability issuance child: [transaction](https://explorer-studio.genlayer.com/tx/0x2b5eb9e956ca6f425ff0e0017ba69a1f1992f6f23705890df7be2603a2013f5d)
+- Capability execution: [transaction](https://explorer-studio.genlayer.com/tx/0x45833f3dcf2c066ad3ee544cb61e8fa5c2ed5b13df7724b44f79871db5f1f266)
+- Protected-route child: [transaction](https://explorer-studio.genlayer.com/tx/0x0b7c29529dd5ed03c2dd887a5219c75a084a4cd24769ed4edfe80838f4069c4e)
+- Reconciliation: [transaction](https://explorer-studio.genlayer.com/tx/0x0ad1401a784c8ff939326d4a9190864f0b88b002222243009d56fcefb2e8b361)
 
-The final lifecycle read showed `TRIGGER_CONFIRMED`, capability `APPLIED`,
-`consumed=true`, and `route_disabled=true`. The later health read confirms the
-bounded route pause expired and the current route is open again. Missing parent
-hashes are marked `NOT RECORDED` rather than invented.
+The final lifecycle read showed incident `AUTHORITY_PENDING_FINALITY`, assessment
+`FINAL`, capability `APPLIED`, `consumed=true`, `dispatch_count=1`, and
+`route_disabled=true` until `1792584354`. The later health read confirms the
+bounded route pause expired and the current route is open again.
 
 ## Verification results
 
@@ -101,7 +106,7 @@ recorded in the submission report. The workflow is
 [CI](https://github.com/Bibidee/exigency/actions/workflows/ci.yml).
 
 - Unit: 16 passed
-- Direct Mode: 43 passed in CI
+- Direct Mode: 47 passed in CI
 - Browser: 9 passed
 - Contract lint/validation: passed
 - Typecheck: passed
@@ -113,9 +118,9 @@ Browser mocks are gated out of production with
 
 ## Remaining limitations
 
-- Three moderate transitive GenLayer/Vitest tooling advisories remain; the Vite
-  high finding and all critical findings are cleared without an unsafe forced
-  downgrade.
+- Three moderate transitive/tooling npm advisories remain; `npm audit fix
+  --force` would replace the pinned GenLayer CLI with a breaking version, so no
+  unsafe forced upgrade was applied.
 - Some historical lifecycle transaction hashes remain `NOT RECORDED`.
 - Direct Mode cannot be run reliably by the local Windows runner; the complete
   suite passes in GitHub CI.

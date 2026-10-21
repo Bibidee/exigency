@@ -33,31 +33,37 @@ Studionet chain `61999`:
 
 | Contract | Address |
 | --- | --- |
-| CharterRegistry | `0xA4dba5B0572B3D721955Ce3A9E3dc46F791e4C92` |
-| ExigencyEngine | `0x903f895E256817aBFE97f101292B94F85d0b59BA` |
-| CapabilityGate | `0xE383404e8C00868A86BD412F4e72Cb13328Ed2EF` |
-| ProtectedVault | `0xF3dC371E50c296c6Ef1067eAe95104F864F391B3` |
-| ProtectedRoute | `0x7217760864796a1CaeDAaFB418b7d168a91331a4` |
+| CharterRegistry | `0xBBf3A67273c0AB100ef1DD7EFD0Eb8B4dB73Fb95` |
+| ExigencyEngine | `0xD9F68dCD02eE4297be263Db08735bF571F20feda` |
+| CapabilityGate | `0xAAfc06B7a2fc25aC2ce721a0A371717dEb2488Bd` |
+| ProtectedVault | `0x1e6e9699dD76fc1d3825914e9B8ff5AeF3d140C0` |
+| ProtectedRoute | `0xf6E180AB7ECddCa8A9fF5265B57cc8C7F77eD33c` |
 
-Deployed contract source commit: `5c7664b59f6ac4ea6839dbf85e2ad3174fec96ef`.
+Deployed contract source commit: `132c1832cd113db8d38b77335539851846e7ea7e`.
 All five deployed sources are verified exact byte matches.
 
 ## Fresh V2 lifecycle evidence
 
-- Charter: `V2-LIVE-1792526492`
-- Incident: `V2-INC-1792526492`
-- Capability: `EXC-V2-INC-1792526492`
-- [Challenge](https://explorer-studio.genlayer.com/tx/0xb25a0ce07f9d5f069a5bb5fe18a63e13eac132ac8cef66982d119464e0cd4869)
-- [Finalization](https://explorer-studio.genlayer.com/tx/0xc661114921fb8cff2f00adce43224965dec0526beff2d32c81a785eb25fdad42)
-- [Capability child](https://explorer-studio.genlayer.com/tx/0xc16668d0aa0cc576d1e0886761573b74eefcbb3a67b779ace92a6c51f1b2bd6c)
-- [Capability execution](https://explorer-studio.genlayer.com/tx/0x200c874858c8878490b38495fc3e51048360a880f9acb7e3db50675865626da7)
-- [Protected-route child](https://explorer-studio.genlayer.com/tx/0x42029d1932ce62d788c690d646237498bcbfc356e624a57477c7f9f47bcd7d3c)
-- [Reconciliation](https://explorer-studio.genlayer.com/tx/0x8a81bd528935d49f5bd73b89e5c4bfdabc9e8cfb2ab29db0480e09bef921a769)
+- Charter: `V2-BOUNDARY-1792583486906`
+- Incident: `V2-BOUNDARY-INC-1792583486906`
+- Capability: `EXC-V2-BOUNDARY-INC-1792583486906`
+- [Publish](https://explorer-studio.genlayer.com/tx/0xede28c92952fb357b879d57b537921ba4a3a7f65a1b678f1c5430a0cc0803d53)
+- [Activate](https://explorer-studio.genlayer.com/tx/0xfc8140d21d7c96f8fa4b54f061ef81a05412e896d68ce8eb410ea2e14c5b599c)
+- [Open incident](https://explorer-studio.genlayer.com/tx/0x960f686481a095ce84b07b354ba1576f89dc0ea998f9eb47a2959282b3db2dde)
+- [Assessment](https://explorer-studio.genlayer.com/tx/0xa0336b7761b583eeaad7cc592f2589fc77023098d52b89f8a9a75fec984c3233)
+- [Late challenge rejected](https://explorer-studio.genlayer.com/tx/0x6f1d57b37f2999cd479a5d86d0c7bc02c02f48617c32350ad3203383643878a7)
+- [Finalization](https://explorer-studio.genlayer.com/tx/0x0f0748822e1c51714bde630fa31d115c723a5035948b67b9a699b2329a792d0e)
+- [Capability child](https://explorer-studio.genlayer.com/tx/0x2b5eb9e956ca6f425ff0e0017ba69a1f1992f6f23705890df7be2603a2013f5d)
+- [Capability execution](https://explorer-studio.genlayer.com/tx/0x45833f3dcf2c066ad3ee544cb61e8fa5c2ed5b13df7724b44f79871db5f1f266)
+- [Protected-route child](https://explorer-studio.genlayer.com/tx/0x0b7c29529dd5ed03c2dd887a5219c75a084a4cd24769ed4edfe80838f4069c4e)
+- [Reconciliation](https://explorer-studio.genlayer.com/tx/0x0ad1401a784c8ff939326d4a9190864f0b88b002222243009d56fcefb2e8b361)
 
-The final lifecycle state was `TRIGGER_CONFIRMED`, capability `APPLIED`,
-`consumed=true`, and `route_disabled=true`. The later health read confirms the
-bounded route pause expired normally and the current route is open. Missing
-parent transaction hashes are intentionally `NOT RECORDED`.
+The challenge transaction finalized with an execution error because the
+challenge window had closed; the incident remained `ASSESSMENT_PROVISIONAL` and
+was not challenged twice. Finalization then produced `AUTHORITY_PENDING_FINALITY`,
+and the capability completed `APPLIED`, `consumed=true`, `dispatch_count=1`.
+The route pause later expired normally. This is the corrected lifecycle proof,
+including the bounded-deadline rejection.
 
 ## Current validation
 
@@ -66,7 +72,7 @@ parent transaction hashes are intentionally `NOT RECORDED`.
 - Frontend runtime source: `d598887af943d3db9b9d982d7e2bf53a2054164c`
 - Exact-head CI and deployment health: run IDs are recorded in the submission
   report for the final repository SHA.
-- Unit: 16; Direct Mode: 43; Browser: 9
+- Unit: 16; Direct Mode: 47; Browser: 9
 
 The new Direct Mode coverage includes V2 challenge bounds, provisional/final
 assessment behavior, final-only capability issuance, overturned results,
@@ -77,8 +83,9 @@ production code paths.
 
 - The targets are non-custodial, so live payout failure cannot be fabricated or
   demonstrated; failure recovery is not part of this architecture.
-- Three moderate transitive tooling advisories remain; the Vite high finding and
-  all critical findings are cleared without a forced incompatible downgrade.
+- Three moderate transitive/tooling npm advisories remain; `npm audit fix
+  --force` would replace the pinned GenLayer CLI with a breaking version, so no
+  unsafe forced upgrade was applied.
 - Some historical lifecycle hashes remain `NOT RECORDED`.
 - Local Windows Direct Mode execution is limited; GitHub CI runs the complete
   suite.

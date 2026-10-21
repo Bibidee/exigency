@@ -49,6 +49,20 @@ Use the wallet/account already configured for the stable CLI:
 npm run deploy
 ```
 
+If the GenLayer CLI wrapper hangs while discovering deploy scripts on Windows,
+use the repository's explicit unlocked path instead:
+
+```bash
+npm run deploy:unlocked
+```
+
+It asks for the selected local keystore password without writing the private
+key to disk, deploys the same five-contract stack, waits for finality and
+successful execution, binds Gate → Engine, and writes the generated manifest.
+For the complete V2 proof against that deployment, use
+`npm run lifecycle:v2:unlocked`; `npm run lifecycle:v2:continue` is only for
+continuing an already-created incident after a bounded challenge deadline.
+
 Deployment order is deliberate:
 
 1. CharterRegistry

@@ -79,7 +79,11 @@ Assessment rounds commit the actual HTTP status and content SHA-256 for every
 source. A changed digest across reassessment rounds is marked as conflicting;
 no authority is issued from that round. A confirmed V2 result is provisional
 until its challenge window closes. Challenge count and source count are
-bounded by the charter, and only final reassessment can issue a capability.
+bounded by the charter, combined evidence above the supported maximum is
+rejected, challenge deadlines cannot extend beyond incident expiry, and
+finalization fails closed after exhausted assessment retries. Only final
+reassessment can issue a capability. A capability already in `DISPATCHED`
+state cannot be redispatched until reconciliation.
 
 `ProtectedRoute` is a second target using the same fixed Gate envelope as
 `ProtectedVault`. It accepts no arbitrary calldata and repeats the target-
