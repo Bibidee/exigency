@@ -30,6 +30,7 @@ MAX_FETCH_ERROR = 300
 MAX_ASSESSMENT_ATTEMPTS = 3
 INCIDENT_EXPIRY_SECONDS = 24 * 60 * 60
 MAX_CHALLENGE_SOURCES = 2
+MAX_ASSESSMENT_SOURCES = 8 + MAX_CHALLENGE_SOURCES
 
 
 def _now() -> int:
@@ -71,7 +72,7 @@ def _normalise_assessment(raw, expected_urls: list) -> dict:
     states = []
     seen = []
     if isinstance(raw.get("source_states"), list):
-        for item in raw["source_states"][:8]:
+        for item in raw["source_states"][:MAX_ASSESSMENT_SOURCES]:
             if not isinstance(item, dict):
                 continue
             url = str(item.get("url", "")).strip()
@@ -225,6 +226,8 @@ class ExigencyEngine(gl.Contract):
         for url in incident.get("challenge_evidence_urls", []):
             if url not in urls:
                 urls.append(url)
+        if len(urls) > MAX_ASSESSMENT_SOURCES:
+            raise gl.vm.UserError("combined evidence exceeds bounded assessment source limit")
         return urls
 
     def _get_charter(self, charter_key: str) -> dict:
@@ -644,7 +647,10 @@ Return only JSON: {{"equivalent": true}} or {{"equivalent": false}}.
             elif challenge_window > 0 and not finalising_challenge:
                 incident["status"] = "ASSESSMENT_PROVISIONAL"
                 incident["assessment_stage"] = "PROVISIONAL"
-                incident["challenge_deadline"] = _now() + challenge_window * 60
+                incident["challenge_deadline"] = min(
+                    _now() + challenge_window * 60,
+                    int(incident.get("expires_at", _now())),
+                )
             else:
                 capability_key = "EXC-" + incident_key
                 incident["capability_key"] = capability_key
@@ -677,6 +683,8 @@ Return only JSON: {{"equivalent": true}} or {{"equivalent": false}}.
         if not raw_record:
             raise gl.vm.UserError("incident not found")
         incident = json.loads(raw_record)
+        if _now() >= int(incident.get("expires_at", 0)):
+            raise gl.vm.UserError("incident assessment window has expired")
         if str(incident.get("status", "")) not in ("ASSESSMENT_PROVISIONAL", "CHALLENGED"):
             raise gl.vm.UserError("incident is not challengeable")
         if _now() >= int(incident.get("challenge_deadline", 0)):
@@ -722,6 +730,10 @@ Return only JSON: {{"equivalent": true}} or {{"equivalent": false}}.
         if not raw_record:
             raise gl.vm.UserError("incident not found")
         incident = json.loads(raw_record)
+        if _now() >= int(incident.get("expires_at", 0)):
+            raise gl.vm.UserError("incident assessment window has expired")
+        if int(incident.get("assessment_count", 0)) >= MAX_ASSESSMENT_ATTEMPTS:
+            raise gl.vm.UserError("incident assessment retry limit exhausted")
         if str(incident.get("status", "")) not in ("ASSESSMENT_PROVISIONAL", "CHALLENGED"):
             raise gl.vm.UserError("incident has no provisional assessment")
         if _now() < int(incident.get("challenge_deadline", 0)):

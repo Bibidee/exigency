@@ -141,14 +141,27 @@ def _v2_assessment(decision, state="SUPPORTS_TRIGGER"):
     }
 
 
-def _prepare_v2_assessment(direct_vm, direct_deploy, direct_alice, key, assessment, **kwargs):
+def _v2_assessment_for_urls(urls, decision="TRIGGER_CONFIRMED", state="SUPPORTS_TRIGGER"):
+    return {
+        "decision": decision,
+        "summary": "Direct-mode bounded multi-source assessment fixture.",
+        "trigger_clauses": ["bounded trigger clause"],
+        "material_findings": ["bounded source finding"],
+        "source_states": [
+            {"url": url, "state": state, "finding": "fixture source state"}
+            for url in urls
+        ],
+    }
+
+
+def _prepare_v2_assessment(direct_vm, direct_deploy, direct_alice, key, assessment, *, evidence=None, **kwargs):
     direct_vm.warp("2026-09-27T20:00:00Z")
     engine = _deploy_v2_engine(direct_vm, direct_deploy, direct_alice, **kwargs)
     direct_vm.sender = direct_alice
     direct_vm.mock_web("example.com", {"method": "GET", "status": 200, "body": "approved official evidence"})
     direct_vm.mock_web("github.com", {"method": "GET", "status": 200, "body": "approved independent evidence"})
     direct_vm.mock_llm("Return ONLY a JSON object", json.dumps(assessment))
-    _open(engine, key, _v2_evidence(), charter_key="CHARTER-ENGINE-V2-DIRECT")
+    _open(engine, key, evidence or _v2_evidence(), charter_key="CHARTER-ENGINE-V2-DIRECT")
     return engine
 
 
@@ -461,6 +474,85 @@ def test_v2_finalization_before_deadline_is_rejected(direct_vm, direct_deploy, d
     engine.assess_incident("INC-V2-EARLY-FINAL-01")
     with direct_vm.expect_revert("challenge window is still open"):
         engine.finalize_incident("INC-V2-EARLY-FINAL-01")
+
+
+def test_v2_combined_base_and_challenge_evidence_preserves_all_sources(direct_vm, direct_deploy, direct_alice):
+    base_urls = [
+        f"https://example.com/evidence/base-{index}"
+        if index % 2 == 0
+        else f"https://github.com/Bibidee/exigency/base-{index}"
+        for index in range(8)
+    ]
+    challenge_urls = [
+        "https://example.com/evidence/challenge-official",
+        "https://github.com/Bibidee/exigency/challenge-independent",
+    ]
+    all_urls = base_urls + challenge_urls
+    engine = _prepare_v2_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-V2-COMBINED-SOURCES-01",
+        _v2_assessment_for_urls(all_urls),
+        evidence=[
+            {"group": "official" if index % 2 == 0 else "independent", "url": url}
+            for index, url in enumerate(base_urls)
+        ],
+    )
+    for host in ("example.com", "github.com"):
+        direct_vm.mock_web(host, {"method": "GET", "status": 200, "body": f"approved {host} evidence"})
+    direct_vm.mock_llm("Return ONLY a JSON object", json.dumps(_v2_assessment_for_urls(all_urls)))
+    direct_vm.sender = direct_alice
+    engine.assess_incident("INC-V2-COMBINED-SOURCES-01")
+    engine.challenge_incident(
+        "INC-V2-COMBINED-SOURCES-01",
+        json.dumps([{"group": "official", "url": challenge_urls[0]}, {"group": "independent", "url": challenge_urls[1]}]),
+        "The challenge adds one approved source from each frozen source group.",
+    )
+    direct_vm.warp("2026-09-27T20:11:00Z")
+    direct_vm.mock_llm("Return ONLY a JSON object", json.dumps(_v2_assessment_for_urls(all_urls)))
+    engine.finalize_incident("INC-V2-COMBINED-SOURCES-01")
+    record = json.loads(engine.get_incident_json("INC-V2-COMBINED-SOURCES-01"))
+    assessment = json.loads(record["assessment_json"])
+    assert len(assessment["source_states"]) == 10
+    assert {item["url"] for item in assessment["source_states"]} == set(all_urls)
+
+
+def test_v2_finalization_rejects_exhausted_assessment_retries(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-V2-EXHAUSTED-FINAL-01",
+        _assessment("INSUFFICIENT_EVIDENCE"),
+    )
+    direct_vm.sender = direct_alice
+    for _ in range(3):
+        engine.assess_incident("INC-V2-EXHAUSTED-FINAL-01")
+    with direct_vm.expect_revert("incident assessment retry limit exhausted"):
+        engine.finalize_incident("INC-V2-EXHAUSTED-FINAL-01")
+
+
+def test_v2_challenge_deadline_is_capped_by_incident_expiry(direct_vm, direct_deploy, direct_alice):
+    engine = _prepare_v2_assessment(
+        direct_vm,
+        direct_deploy,
+        direct_alice,
+        "INC-V2-DEADLINE-CAP-01",
+        _v2_assessment("TRIGGER_CONFIRMED"),
+        challenge_window=60 * 48,
+    )
+    direct_vm.sender = direct_alice
+    engine.assess_incident("INC-V2-DEADLINE-CAP-01")
+    record = json.loads(engine.get_incident_json("INC-V2-DEADLINE-CAP-01"))
+    assert record["challenge_deadline"] == record["expires_at"]
+    direct_vm.warp("2026-09-28T20:00:00Z")
+    with direct_vm.expect_revert("incident assessment window has expired"):
+        engine.challenge_incident(
+            "INC-V2-DEADLINE-CAP-01",
+            json.dumps(["https://github.com/Bibidee/exigency/deadline-cap"]),
+            "The incident expiry must bound any challenge deadline.",
+        )
 
 
 def test_v2_final_confirmation_emits_only_finalized_capability(direct_vm, direct_deploy, direct_alice):

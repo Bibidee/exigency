@@ -1,3 +1,4 @@
+import hashlib
 import json
 from tests.direct.conftest import to_hex
 
@@ -83,3 +84,54 @@ def test_expiry_blocks_first_dispatch_but_reconcile_is_idempotent_before_dispatc
         gate.execute_capability("EXC-EXPIRY", to_hex(direct_bob), "PAUSE_PROTECTED_ACTION", 30)
     assert gate.reconcile_capability("EXC-EXPIRY") == "ISSUED"
     assert json.loads(gate.get_capability_json("EXC-EXPIRY"))["dispatch_count"] == 0
+
+
+def test_dispatched_capability_cannot_be_redispatched_before_reconcile(
+    direct_vm, direct_deploy, direct_alice, direct_bob
+):
+    direct_vm.sender = direct_alice
+    gate = direct_deploy("contracts/capability_gate.py")
+    gate.bind_engine(to_hex(direct_bob))
+    action_digest = hashlib.sha256(
+        json.dumps(
+            {
+                "incident_key": "INC-REDISPATCH",
+                "charter_digest": "b" * 64,
+                "target": to_hex(direct_bob),
+                "action_class": "PAUSE_PROTECTED_ACTION",
+                "duration_minutes": 30,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    direct_vm.sender = direct_bob
+    gate.issue_capability(
+        "EXC-REDISPATCH",
+        "INC-REDISPATCH",
+        to_hex(direct_bob),
+        to_hex(direct_bob),
+        "PAUSE_PROTECTED_ACTION",
+        30,
+        action_digest,
+        "b" * 64,
+        "c" * 64,
+        1800,
+    )
+    messages = []
+
+    def hook(vm, request):
+        post = request.get("PostMessage")
+        if post:
+            messages.append(post)
+            return None
+        raise AssertionError(f"unexpected cross-contract request: {request}")
+
+    direct_vm._gl_call_hook = hook
+    gate.execute_capability("EXC-REDISPATCH", to_hex(direct_bob), "PAUSE_PROTECTED_ACTION", 30)
+    with direct_vm.expect_revert("capability already dispatched"):
+        gate.execute_capability("EXC-REDISPATCH", to_hex(direct_bob), "PAUSE_PROTECTED_ACTION", 30)
+    record = json.loads(gate.get_capability_json("EXC-REDISPATCH"))
+    assert record["dispatch_status"] == "DISPATCHED"
+    assert record["dispatch_count"] == 1
+    assert len(messages) == 1

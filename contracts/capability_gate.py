@@ -119,9 +119,10 @@ class CapabilityGate(gl.Contract):
                 raise
             except Exception:
                 pass
-        # Expiry gates only the first dispatch. Once a capability was dispatched
-        # with a valid envelope, exact recovery remains possible until the child
-        # is reconciled; recovery can never change the bound action.
+            raise gl.vm.UserError("capability already dispatched")
+        # Expiry gates the only permitted dispatch. A dispatched capability must
+        # be reconciled before it can be considered applied; it is never
+        # redispatched while the child result remains unresolved.
         if str(record.get("dispatch_status", "ISSUED")) == "ISSUED" and _now() > int(record.get("expires_at", 0)):
             raise gl.vm.UserError("capability expired")
 
