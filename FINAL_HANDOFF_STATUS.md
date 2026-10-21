@@ -72,8 +72,9 @@ are gated away from production.
 
 - Live failed-payout recovery is not a feature because the targets do not
   transfer or custody GEN.
-- Four moderate transitive GenLayer/Vitest tooling advisories remain; high and
-  critical findings are cleared without an unsafe forced downgrade.
+- Three moderate transitive GenLayer/Vitest tooling advisories remain; the Vite
+  high finding and all critical findings are cleared without an unsafe forced
+  downgrade.
 - Some historical lifecycle transaction hashes remain `NOT RECORDED`.
 - Direct Mode is limited by the local Windows runner; GitHub CI is the complete
   execution environment.

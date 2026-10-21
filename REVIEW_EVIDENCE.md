@@ -112,8 +112,9 @@ Browser mocks are gated out of production with
 
 ## Remaining limitations
 
-- Four moderate transitive GenLayer/Vitest tooling advisories remain; high and
-  critical findings are cleared without an unsafe forced downgrade.
+- Three moderate transitive GenLayer/Vitest tooling advisories remain; the Vite
+  high finding and all critical findings are cleared without an unsafe forced
+  downgrade.
 - Some historical lifecycle transaction hashes remain `NOT RECORDED`.
 - Direct Mode cannot be run reliably by the local Windows runner; the complete
   suite passes in GitHub CI.

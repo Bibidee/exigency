@@ -87,7 +87,8 @@ Browser mocks are development/test-only and unavailable in production.
 
 - No live failed payout is attempted because the current targets have no payout
   path; the safety decision is structural rather than fabricated proof.
-- Four moderate transitive GenLayer/Vitest tooling advisories remain. High and
-  critical findings are cleared; no unsafe forced GenLayer downgrade was used.
+- Three moderate transitive GenLayer/Vitest tooling advisories remain. The Vite
+  high finding and all critical findings are cleared; no unsafe forced GenLayer
+  downgrade was used.
 - Some historical lifecycle hashes remain `NOT RECORDED`.
 - Direct Mode is limited locally on Windows but passes in GitHub CI.

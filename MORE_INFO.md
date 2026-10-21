@@ -75,8 +75,8 @@ production code paths.
 
 - The targets are non-custodial, so live payout failure cannot be fabricated or
   demonstrated; failure recovery is not part of this architecture.
-- Four moderate transitive tooling advisories remain; high and critical findings
-  are cleared without a forced incompatible downgrade.
+- Three moderate transitive tooling advisories remain; the Vite high finding and
+  all critical findings are cleared without a forced incompatible downgrade.
 - Some historical lifecycle hashes remain `NOT RECORDED`.
 - Local Windows Direct Mode execution is limited; GitHub CI runs the complete
   suite.
