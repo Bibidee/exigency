@@ -101,3 +101,15 @@ arbitrary calldata. `ProtectedVault` implements the pause action and
 `ProtectedRoute` implements `DISABLE_PROTECTED_ROUTE` under the same Gate and
 target-governance checks. This is a multi-target constrained emergency-action
 framework, not an arbitrary target-execution gateway.
+
+## Browser lifecycle safeguards
+
+The incident page adds a conservative operator layer over the immutable
+contract boundaries. It shows the remaining assessment budget, challenge count,
+combined source count, challenge deadline and incident expiry; blocks known-
+invalid assessment/finalization paths; validates source groups, canonical URLs,
+duplicates and the ten-source combined limit; and warns when previously
+observed evidence becomes unavailable. The last warning is session-local
+provenance, not an on-chain `drift_detected` result. These checks improve the
+browser journey only: direct contract callers are not constrained by them and
+the deployed Intelligent Contract source is unchanged.

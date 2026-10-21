@@ -8,14 +8,15 @@ Studionet 61999. The targets store no user funds and emit no external payout.
 - Branch: `main`
 - Current hardening HEAD: see the exact SHA reported with the final evidence run.
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
-- Vercel deployment: `dpl_4kwhGRBGLj9VvKR3eprcm3CsyKdi` (`READY`)
-- Deployment URL: `exigency-issss2uj3-bibidees-projects.vercel.app`
-- Runtime frontend source: `1545bc7c981c7380e35d7f9fdf4d71783d43c318`
+- Vercel deployment: `dpl_5qFzmoK9c99KYcJzqAPN7uqcM9AT` (`READY`)
+- Deployment URL: `exigency-lcccxhx98-bibidees-projects.vercel.app`
+- Runtime frontend source: `f6a1600ccf542db4cb7e5ed33b1f7e83ddaba523`
+- Deployment timestamp: `2026-10-21T18:25:48.191Z`
 
-The exact Vercel deployment-to-current-HEAD binding is not independently
-exported; production health and GitHub exact-head CI are recorded separately.
-The READY frontend was built from `1545bc7c981c7380e35d7f9fdf4d71783d43c318`;
-the final manifest/evidence commit after that deployment is documentation-only.
+The production alias, READY deployment, and runtime source are verified through
+`/api/build-info`. The frontend deployment was built from the hardening commit
+`f6a1600ccf542db4cb7e5ed33b1f7e83ddaba523`; later repository commits are
+documentation/provenance-only and do not change the deployed browser bundle.
 
 ## Current contracts
 

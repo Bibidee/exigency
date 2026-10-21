@@ -18,8 +18,8 @@ recovery. The targets store no user value and expose no external payout path.
 - Source verification: 5/5 exact byte matches
 
 The committed `deployment-manifest.public.json` is the authoritative deployment
-record. This pass used a fresh five-contract deployment because the V2 boundary
-fix changed Intelligent Contract source.
+record. This frontend hardening pass did not change Intelligent Contract source
+and did not redeploy any contract.
 
 ## Steward authorization fix
 
@@ -43,14 +43,15 @@ and target-side enforcement.
 ## Production
 
 - URL: [https://exigency.vercel.app/](https://exigency.vercel.app/)
-- Deployment: `dpl_4kwhGRBGLj9VvKR3eprcm3CsyKdi`
+- Deployment: `dpl_5qFzmoK9c99KYcJzqAPN7uqcM9AT`
 - State: `READY`
-- Deployment URL: [https://exigency-issss2uj3-bibidees-projects.vercel.app](https://exigency-issss2uj3-bibidees-projects.vercel.app)
+- Deployment URL: [https://exigency-lcccxhx98-bibidees-projects.vercel.app](https://exigency-lcccxhx98-bibidees-projects.vercel.app)
 - Frontend source from `/api/build-info`:
-  `1545bc7c981c7380e35d7f9fdf4d71783d43c318`
+  `f6a1600ccf542db4cb7e5ed33b1f7e83ddaba523`
+- Deployment timestamp: `2026-10-21T18:25:48.191Z`
 
 The production alias is READY and `/api/build-info` reports deployed frontend
-SHA `1545bc7c981c7380e35d7f9fdf4d71783d43c318`. The final manifest/evidence
+SHA `f6a1600ccf542db4cb7e5ed33b1f7e83ddaba523`. The final manifest/evidence
 commit after that deployment is documentation-only.
 
 ## Current live V2 lifecycle
