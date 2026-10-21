@@ -43,15 +43,14 @@ and target-side enforcement.
 ## Production
 
 - URL: [https://exigency.vercel.app/](https://exigency.vercel.app/)
-- Deployment: `dpl_2Y5jYRPLyhNfh8VXmUfKAgt6VfCH`
+- Deployment: `dpl_9YswUWyzHdZntjponchcF5yH19sS`
 - State: `READY`
-- Deployment URL: [https://exigency-17wfzgqll-bibidees-projects.vercel.app](https://exigency-17wfzgqll-bibidees-projects.vercel.app)
+- Deployment URL: [https://exigency-mls02h04y-bibidees-projects.vercel.app](https://exigency-mls02h04y-bibidees-projects.vercel.app)
 - Frontend source from `/api/build-info`:
-  `d598887af943d3db9b9d982d7e2bf53a2054164c`
+  `899203e96f39804a40aed6186ca98be3635d5d4f`
 
-Exact Vercel deployment-to-current-repository-HEAD binding is not independently
-exported by the runtime; production health and the runtime build-info endpoint
-are recorded separately from GitHub exact-head CI.
+The production alias is READY and `/api/build-info` reports the exact final
+repository SHA `899203e96f39804a40aed6186ca98be3635d5d4f`.
 
 ## Current live V2 lifecycle
 

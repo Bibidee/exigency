@@ -68,8 +68,9 @@ including the bounded-deadline rejection.
 ## Current validation
 
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
-- Vercel deployment: `dpl_2Y5jYRPLyhNfh8VXmUfKAgt6VfCH` (`READY`)
-- Frontend runtime source: `d598887af943d3db9b9d982d7e2bf53a2054164c`
+- Vercel deployment: `dpl_9YswUWyzHdZntjponchcF5yH19sS` (`READY`)
+- Frontend deployment URL: `exigency-mls02h04y-bibidees-projects.vercel.app`
+- Frontend runtime source: `899203e96f39804a40aed6186ca98be3635d5d4f`
 - Exact-head CI and deployment health are recorded for the final repository
   commit in `REVIEW_EVIDENCE.md` and `VALIDATION_REPORT.md`.
 - Unit: 16; Direct Mode: 47; Browser: 9

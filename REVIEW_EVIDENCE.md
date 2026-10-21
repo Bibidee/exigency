@@ -10,16 +10,16 @@ material is retained only as historical evidence.
 ## Production provenance
 
 - Production URL: [https://exigency.vercel.app/](https://exigency.vercel.app/)
-- Vercel deployment: `dpl_2Y5jYRPLyhNfh8VXmUfKAgt6VfCH`
+- Vercel deployment: `dpl_9YswUWyzHdZntjponchcF5yH19sS`
 - Deployment state: `READY`
-- Deployment URL: [https://exigency-17wfzgqll-bibidees-projects.vercel.app](https://exigency-17wfzgqll-bibidees-projects.vercel.app)
+- Deployment URL: [https://exigency-mls02h04y-bibidees-projects.vercel.app](https://exigency-mls02h04y-bibidees-projects.vercel.app)
 - Frontend source reported by `/api/build-info`:
-  `d598887af943d3db9b9d982d7e2bf53a2054164c`
+  `899203e96f39804a40aed6186ca98be3635d5d4f`
 - Network: GenLayer Studionet, chain `61999`
 
-The production alias and health are verified. The Vercel runtime reports the
-frontend source through `/api/build-info`; the final repository HEAD is tracked
-by exact-head CI below.
+The production alias, READY deployment, and exact Git SHA are verified. The
+Vercel runtime reports the frontend source through `/api/build-info`; it matches
+the final repository HEAD.
 
 ## Contract provenance
 
