@@ -8,12 +8,14 @@ Studionet 61999. The targets store no user funds and emit no external payout.
 - Branch: `main`
 - Current hardening HEAD: see the exact SHA reported with the final evidence run.
 - Production: [https://exigency.vercel.app/](https://exigency.vercel.app/)
-- Vercel deployment: `dpl_9YswUWyzHdZntjponchcF5yH19sS` (`READY`)
-- Deployment URL: `exigency-mls02h04y-bibidees-projects.vercel.app`
-- Runtime frontend source: `899203e96f39804a40aed6186ca98be3635d5d4f`
+- Vercel deployment: `dpl_4kwhGRBGLj9VvKR3eprcm3CsyKdi` (`READY`)
+- Deployment URL: `exigency-issss2uj3-bibidees-projects.vercel.app`
+- Runtime frontend source: `1545bc7c981c7380e35d7f9fdf4d71783d43c318`
 
 The exact Vercel deployment-to-current-HEAD binding is not independently
 exported; production health and GitHub exact-head CI are recorded separately.
+The READY frontend was built from `1545bc7c981c7380e35d7f9fdf4d71783d43c318`;
+the final manifest/evidence commit after that deployment is documentation-only.
 
 ## Current contracts
 

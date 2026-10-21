@@ -43,14 +43,15 @@ and target-side enforcement.
 ## Production
 
 - URL: [https://exigency.vercel.app/](https://exigency.vercel.app/)
-- Deployment: `dpl_9YswUWyzHdZntjponchcF5yH19sS`
+- Deployment: `dpl_4kwhGRBGLj9VvKR3eprcm3CsyKdi`
 - State: `READY`
-- Deployment URL: [https://exigency-mls02h04y-bibidees-projects.vercel.app](https://exigency-mls02h04y-bibidees-projects.vercel.app)
+- Deployment URL: [https://exigency-issss2uj3-bibidees-projects.vercel.app](https://exigency-issss2uj3-bibidees-projects.vercel.app)
 - Frontend source from `/api/build-info`:
-  `899203e96f39804a40aed6186ca98be3635d5d4f`
+  `1545bc7c981c7380e35d7f9fdf4d71783d43c318`
 
-The production alias is READY and `/api/build-info` reports the exact final
-repository SHA `899203e96f39804a40aed6186ca98be3635d5d4f`.
+The production alias is READY and `/api/build-info` reports deployed frontend
+SHA `1545bc7c981c7380e35d7f9fdf4d71783d43c318`. The final manifest/evidence
+commit after that deployment is documentation-only.
 
 ## Current live V2 lifecycle
 
