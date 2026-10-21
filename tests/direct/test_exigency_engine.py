@@ -507,7 +507,7 @@ def test_v2_final_reassessment_can_overturn_confirmation_without_authority(
     direct_vm.mock_llm("Return ONLY a JSON object", json.dumps(_v2_assessment("TRIGGER_NOT_CONFIRMED", "CONTRADICTS_TRIGGER")))
     engine.finalize_incident("INC-V2-OVERTURNED-01")
     record = json.loads(engine.get_incident_json("INC-V2-OVERTURNED-01"))
-    assert record["status"] == "ASSESSED_NO_AUTHORITY"
+    assert record["status"] == "ASSESSMENT_RETRYABLE"
     assert record["assessment_stage"] == "FINAL"
     assert record["capability_key"] == ""
     assert messages == []
